@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/Spectra> a owl:Class ;
+    rdfs:comment "Intensity of a signal with respect to a continuous variable (typically energies or wavelengths) that describes the interaction of the material with an incoming electromagnetic wave."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/SpectroscopicProperty> ;
+    skos:prefLabel "Spectra"@en .
+

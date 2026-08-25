@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAIRmat Ontology Explorer</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/n3/browser/n3.min.js"></script>
+    <style>
+        :root {
+            --fairmat-navy: #002B49;
+            --fairmat-blue: #00A1E0;
+            --bg-light: #F8F9FA;
+            --bg-panel: #FFFFFF;
+            --text-dark: #333333;
+            --text-muted: #6C757D;
+            --border-color: #DEE2E6;
+            --pill-bg: #E9ECEF;
+            --pill-hover: #D3D9DF;
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden; background-color: var(--bg-light); color: var(--text-dark);
+            display: flex;
+        }
+        #sidebar {
+            width: 340px; background: var(--bg-panel); border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; overflow: hidden; z-index: 10;
+        }
+        .sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .sidebar-header h2 { margin: 0; font-size: 1.2rem; color: var(--fairmat-navy); }
+        .sidebar-scroll-area { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .section { padding: 10px 20px; display: flex; flex-direction: column; }
+        .section-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: var(--text-dark); }
+        .pill-container { 
+            display: flex; flex-wrap: wrap; gap: 8px; max-height: 140px; overflow-y: auto;
+            background: #fafafa; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;
+        }
+        .pill {
+            background: var(--pill-bg); color: var(--text-dark); padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 500; cursor: pointer; user-select: none; border: 1px solid transparent; white-space: nowrap;
+        }
+        .pill:hover { background: var(--pill-hover); }
+        .pill.active { background: var(--fairmat-blue); color: #fff; }
+        #main-area { flex: 1; display: flex; flex-direction: column; position: relative; height: 100vh; overflow: hidden; }
+        #toolbar { height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: center; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .search-container { position: relative; width: 400px; }
+        .search-container input { width: 100%; padding: 10px 15px 10px 35px; border: 1px solid var(--border-color); border-radius: 20px; background: var(--pill-bg); font-size: 0.9rem; outline: none; box-sizing: border-box; }
+        #canvas-wrapper { flex: 1; position: relative; cursor: grab; background: var(--bg-light); overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #legend { position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.05); pointer-events: none; z-index: 5; }
+        .legend-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; color: var(--fairmat-navy); }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; margin-bottom: 5px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h2>Overview</h2>
+        </div>
+        <div class="sidebar-scroll-area">
+            <div class="section">
+                <div class="section-title">Nodes</div>
+                <div class="pill-container" id="node-pills"></div>
+            </div>
+            <div class="section">
+                <div class="section-title">Relations</div>
+                <div class="pill-container" id="relation-pills"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-area">
+        <div id="toolbar">
+            <div class="search-container">
+                <input type="text" id="global-search" placeholder="Search classes, properties, individuals...">
+            </div>
+        </div>
+        <div id="canvas-wrapper">
+            <canvas id="graph-canvas"></canvas>
+            <div id="legend">
+                <div class="legend-title">OWL2 Types</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+let rawQuads = []; 
+let fullGraph = { nodes: new Map(), links: [] };
+let filteredData = { nodes: [], links: [] };
+let activeSearch = "", activeNodeFilters = new Set(), activeRelFilters = new Set();
+let simulation, transform = d3.zoomIdentity;
+const canvas = document.getElementById('graph-canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+const wrapper = document.getElementById('canvas-wrapper');
+let width, height;
+
+const TYPE_COLORS = {
+    'Class': '#00A1E0', 'ObjectProperty': '#E87722', 'DatatypeProperty': '#6A9A1F',
+    'AnnotationProperty': '#9B59B6', 'NamedIndividual': '#E74C3C', 'Restriction': '#F1C40F', 'Unknown': '#BDC3C7'
+};
+
+const prefixes = {
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#", "skos": "http://www.w3.org/2004/02/skos/core#",
+    "owl": "http://www.w3.org/2002/07/owl#", "tax": "http://fairmat-nfdi.eu/taxonomy/",
+    "qudt": "http://qudt.org/2.1/schema/qudt/", "qk": "http://qudt.org/vocab/quantitykind/"
+};
+
+function getShort(uri) {
+    if(uri.startsWith("_:")) return uri; 
+    for (const [prefix, url] of Object.entries(prefixes)) {
+        if (uri.startsWith(url)) return prefix + ":" + uri.replace(url, "");
+    }
+    return uri.includes('#') ? uri.split('#').pop() : uri.split('/').pop();
+}
+
+async function loadOntology() {
+    try {
+        const response = await fetch('main.ttl');
+        const ttlString = await response.text();
+        parseTTL(ttlString);
+    } catch (e) {
+        console.error("Could not load main.ttl", e);
+    }
+}
+
+function parseTTL(ttlString) {
+    const parser = new N3.Parser();
+    fullGraph.nodes.clear();
+    fullGraph.links = [];
+    rawQuads = [];
+
+    const getNode = (id) => {
+        if (!fullGraph.nodes.has(id)) {
+            let type = id.startsWith("_:") ? 'BNode' : 'Unknown';
+            fullGraph.nodes.set(id, { id: id, label: getShort(id), annotations: {}, owlType: type });
+        }
+        return fullGraph.nodes.get(id);
+    };
+
+    parser.parse(ttlString, (error, quad) => {
+        if (quad) {
+            rawQuads.push(quad);
+            const s = quad.subject.value, p = quad.predicate.value, o = quad.object.value;
+            const subjNode = getNode(s);
+            
+            if (quad.object.termType === 'Literal') {
+                if (p.includes('label')) subjNode.label = getShort(s).split(':')[0] + ':' + o; 
+            } else {
+                if (p === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+                    subjNode.owlType = getShort(o).replace('owl:', '');
+                } else {
+                    getNode(o); 
+                    fullGraph.links.push({ source: s, target: o, type: getShort(p) });
+                }
+            }
+        } else {
+            buildLegend();
+            buildSidebar();
+            applyFilters();
+        }
+    });
+}
+
+function buildLegend() {
+    const lg = document.getElementById('legend');
+    lg.innerHTML = '<div class="legend-title">OWL2 Types</div>';
+    Object.keys(TYPE_COLORS).forEach(type => {
+        lg.innerHTML += `<div class="legend-item"><div class="legend-color" style="background:${TYPE_COLORS[type]}"></div><span>${type}</span></div>`;
+    });
+}
+
+function buildSidebar() {
+    let nodesList = Array.from(fullGraph.nodes.values()).filter(n => !n.id.startsWith("_:")).map(n => n.label).sort();
+    let relsList = Array.from(new Set(fullGraph.links.map(l => l.type))).sort();
+    renderPillGroup('node-pills', nodesList, activeNodeFilters);
+    renderPillGroup('relation-pills', relsList, activeRelFilters);
+}
+
+function renderPillGroup(containerId, dataList, activeSet) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    dataList.forEach(item => {
+        const el = document.createElement('div');
+        el.className = `pill ${activeSet.has(item) ? 'active' : ''}`;
+        el.textContent = item;
+        el.onclick = () => {
+            activeSet.has(item) ? activeSet.delete(item) : activeSet.add(item);
+            el.classList.toggle('active');
+            applyFilters();
+        };
+        container.appendChild(el);
+    });
+}
+
+function applyFilters() {
+    const q = activeSearch.toLowerCase();
+    let validNodes = Array.from(fullGraph.nodes.values());
+    let validLinks = fullGraph.links;
+
+    if (q) validNodes = validNodes.filter(n => n.label.toLowerCase().includes(q));
+    const validIds = new Set(validNodes.map(n => n.id));
+    filteredData.links = validLinks.filter(l => validIds.has(l.source.id || l.source) && validIds.has(l.target.id || l.target));
+    filteredData.nodes = validNodes;
+    initSimulation();
+}
+
+document.getElementById('global-search').addEventListener('keyup', (e) => {
+    activeSearch = e.target.value; applyFilters();
+});
+
+function resize() {
+    width = wrapper.clientWidth; height = wrapper.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr; canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    if (simulation) { simulation.force("center", d3.forceCenter(width/2, height/2)); simulation.alpha(0.3).restart(); }
+    draw();
+}
+window.addEventListener('resize', resize);
+
+function initSimulation() {
+    if (simulation) simulation.stop();
+    const nodes = filteredData.nodes.map(d => Object.assign({}, d));
+    const links = filteredData.links.map(d => Object.assign({}, d));
+
+    simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+        .force("charge", d3.forceManyBody().strength(-800))
+        .force("collide", d3.forceCollide().radius(35))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .on("tick", draw);
+
+    d3.select(canvas)
+        .call(d3.zoom().scaleExtent([0.1, 4]).on("zoom", e => { transform = e.transform; draw(); }))
+        .call(d3.drag().subject(e => simulation.find(transform.invertX(e.x), transform.invertY(e.y), 20))
+            .on("start", e => { if(!e.active) simulation.alphaTarget(0.3).restart(); e.subject.fx=e.subject.x; e.subject.fy=e.subject.y; })
+            .on("drag", e => { e.subject.fx = transform.invertX(e.x); e.subject.fy = transform.invertY(e.y); })
+            .on("end", e => { if(!e.active) simulation.alphaTarget(0); e.subject.fx=null; e.subject.fy=null; })
+        );
+}
+
+function draw() {
+    ctx.fillStyle = "#F8F9FA"; ctx.fillRect(0, 0, width, height);
+    ctx.save(); ctx.translate(transform.x, transform.y); ctx.scale(transform.k, transform.k);
+
+    ctx.strokeStyle = "#ccc"; ctx.lineWidth = 1.5;
+    simulation.force("link").links().forEach(d => {
+        ctx.beginPath(); ctx.moveTo(d.source.x, d.source.y); ctx.lineTo(d.target.x, d.target.y); ctx.stroke();
+    });
+
+    simulation.nodes().forEach(d => {
+        ctx.beginPath(); ctx.arc(d.x, d.y, 10, 0, 2*Math.PI);
+        ctx.fillStyle = TYPE_COLORS[d.owlType] || TYPE_COLORS['Unknown']; 
+        ctx.fill();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+        
+        ctx.fillStyle = "#333"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(d.label, d.x, d.y + 24);
+    });
+    ctx.restore();
+}
+
+resize();
+loadOntology();
+</script>
+</body>
+</html>

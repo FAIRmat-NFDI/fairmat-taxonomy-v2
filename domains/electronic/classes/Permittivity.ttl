@@ -1,0 +1,10 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/Permittivity> a owl:Class ;
+    rdfs:comment "Response of the material to polarize in the presence of an electric field."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    skos:altLabel "DielectricFunction"@en ;
+    skos:prefLabel "Permittivity"@en .
+

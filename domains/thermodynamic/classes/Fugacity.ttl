@@ -1,0 +1,14 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix qk: <http://qudt.org/vocab/quantitykind/> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/Fugacity> a owl:Class ;
+    rdfs:comment "Effective pressure of a species in a real gas."@en ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue qk:Fugacity ;
+            owl:onProperty qudt:hasQuantityKind ],
+        <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+    skos:prefLabel "Fugacity"@en .
+

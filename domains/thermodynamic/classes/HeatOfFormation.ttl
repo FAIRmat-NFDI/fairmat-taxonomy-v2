@@ -1,0 +1,10 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/HeatOfFormation> a owl:Class ;
+    rdfs:comment "Energy released or consumed when one mole of a substance is created from its pure elements."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+    skos:altLabel "EnthalpyOfFormation"@en ;
+    skos:prefLabel "HeatOfFormation"@en .
+

@@ -1,0 +1,14 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix qk: <http://qudt.org/vocab/quantitykind/> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/HallVoltage> a owl:Class ;
+    rdfs:comment "Voltage difference that arises in a metal when an electric current flows transversally and an applied magnetic field is applied perpendicularly to the plane."@en ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue qk:Voltage ;
+            owl:onProperty qudt:hasQuantityKind ],
+        <http://fairmat-nfdi.eu/taxonomy/ElectronicTransportProperty> ;
+    skos:prefLabel "HallVoltage"@en .
+

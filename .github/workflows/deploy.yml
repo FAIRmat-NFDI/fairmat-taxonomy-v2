@@ -1,0 +1,72 @@
+name: CI/CD & Multi-Branch Pages Deploy
+
+on:
+  push:
+    branches:
+      - '**'  # Matches every single branch in your repository
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages-${{ github.ref_name }}
+      url: ${{ steps.deployment.outputs.page_url || 'https://github.com' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Auto-combine modules to main.ttl (if modular folders exist)
+        run: |
+          if [ -d "domains" ] || [ -d "core" ]; then
+            echo "Modular structure detected. Rebuilding main.ttl..."
+            python py-utils/ttl-modulizer.py combine . main.ttl
+          else
+            echo "No modular folders found. Using existing main.ttl."
+          fi
+
+      - name: Prepare Web App Assets
+        run: |
+          cp main.ttl web-app/main.ttl
+
+      - name: Configure Git User
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit updated main.ttl back to current branch if changed
+        run: |
+          git add main.ttl
+          if git diff --staged --quiet; then
+            echo "No changes to main.ttl"
+          else
+            git commit -m "auto: rebuild and update main.ttl [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'web-app'
+
+      - name: Deploy to GitHub Pages (Fault Tolerant)
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true # Prevents pipeline failure if Pages isn't enabled yet by an admin
