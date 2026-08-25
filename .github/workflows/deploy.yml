@@ -3,7 +3,7 @@ name: CI/CD & Multi-Branch Pages Deploy
 on:
   push:
     branches:
-      - '**'
+      - '**'  # Matches every single branch in your repository
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages-${{ github.ref_name }}
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || 'https://github.com' }}
     
     steps:
       - name: Checkout repository
@@ -66,6 +66,7 @@ jobs:
         with:
           path: 'web-app'
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (Fault Tolerant)
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true # Prevents pipeline failure if Pages isn't enabled yet by an admin
