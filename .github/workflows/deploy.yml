@@ -1,13 +1,9 @@
-name: CI/CD & GitHub Pages Deploy
+name: CI/CD & Multi-Branch Pages Deploy
 
 on:
   push:
     branches:
-      - main
-      - 'dev/**'
-      - 'feature/**'
-  pull_request:
-    branches: [ "main" ]
+      - '**'  # Matches every single branch in your repository
 
 permissions:
   contents: write
@@ -15,8 +11,12 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-sync:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages-${{ github.ref_name }}
+      url: ${{ steps.deployment.outputs.page_url }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,6 +33,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Auto-combine modules to main.ttl (if modular folders exist)
+        run: |
+          # If you have a modular directory (e.g., domains/ or core/), 
+          # combine them back into main.ttl automatically. 
+          # Adjust "domains" to whatever base directory you use for modules.
+          if [ -d "domains" ] || [ -d "core" ]; then
+            echo "Modular structure detected. Rebuilding main.ttl..."
+            python py-utils/ttl-modulizer.py combine . main.ttl
+          else
+            echo "No modular folders found. Using existing main.ttl."
+          fi
+
       - name: Prepare Web App Assets
         run: |
           cp main.ttl web-app/main.ttl
@@ -42,30 +54,21 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit updated main.ttl if changed
-        if: github.event_name == 'push'
+      - name: Commit updated main.ttl back to current branch if changed
         run: |
           git add main.ttl
           if git diff --staged --quiet; then
             echo "No changes to main.ttl"
           else
-            git commit -m "auto: update main.ttl [skip ci]"
+            git commit -m "auto: rebuild and update main.ttl [skip ci]"
             git push origin HEAD:${{ github.ref_name }}
           fi
 
       - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v3
+        uses: upload-pages-artifact@v3
         with:
           path: 'web-app'
 
-  deploy:
-    needs: build-and-sync
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
