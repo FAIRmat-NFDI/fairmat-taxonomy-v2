@@ -3,7 +3,7 @@ name: CI/CD & Multi-Branch Pages Deploy
 on:
   push:
     branches:
-      - '**'  # Matches every single branch in your repository
+      - '**'
 
 permissions:
   contents: write
