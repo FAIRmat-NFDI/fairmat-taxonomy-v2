@@ -35,9 +35,6 @@ jobs:
 
       - name: Auto-combine modules to main.ttl (if modular folders exist)
         run: |
-          # If you have a modular directory (e.g., domains/ or core/), 
-          # combine them back into main.ttl automatically. 
-          # Adjust "domains" to whatever base directory you use for modules.
           if [ -d "domains" ] || [ -d "core" ]; then
             echo "Modular structure detected. Rebuilding main.ttl..."
             python py-utils/ttl-modulizer.py combine . main.ttl
@@ -65,7 +62,7 @@ jobs:
           fi
 
       - name: Upload artifact for GitHub Pages
-        uses: upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v3
         with:
           path: 'web-app'
 
