@@ -1,0 +1,7 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+qudt:hasQuantityKind a owl:ObjectProperty ;
+    rdfs:range qudt:QuantityKind .
+

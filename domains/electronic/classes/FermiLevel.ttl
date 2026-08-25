@@ -1,0 +1,10 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/FermiLevel> a owl:Class ;
+    rdfs:comment "Energy required to add or extract a charge from a material at zero temperature. It can be also defined as the chemical potential at zero temperature."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    skos:altLabel "ChemicalPotentialElectronic"@en ;
+    skos:prefLabel "FermiLevel"@en .
+

@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/PhononicSpecificHeatCapacity> a owl:Class ;
+    rdfs:comment "Contribution of the phononic degrees of freedom to the specific heat. This is the amount of heat needed to raise the temperature, and it is typically derived at constant volume (preventing the material expansion)."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/VibrationalProperty> ;
+    skos:prefLabel "PhononicSpecificHeatCapacity"@en .
+

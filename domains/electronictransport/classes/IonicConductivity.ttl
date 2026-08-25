@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/IonicConductivity> a owl:Class ;
+    rdfs:comment "Ability of the ions to move in the presence of an electric current."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicTransportProperty> ;
+    skos:prefLabel "IonicConductivity"@en .
+

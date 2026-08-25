@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/FermiSurface> a owl:Class ;
+    rdfs:comment "Energy boundary in reciprocal space that separates the filled and empty electronic states in a metal. It is related with the crossing points in reciprocal space by the chemical potential or, equivalently at zero temperature, the Fermi level."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    skos:prefLabel "FermiSurface"@en .
+

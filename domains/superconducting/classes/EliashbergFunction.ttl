@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/EliashbergFunction> a owl:Class ;
+    rdfs:comment "Spectral function describing the coupling of electrons and phonons in superconductors."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/SuperconductingProperty> ;
+    skos:prefLabel "EliashbergFunction"@en .
+

@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/MaximumEnergyProduct> a owl:Class ;
+    rdfs:comment "Figure of merit for the strength of a permanent magnet. It is defined as the maximal value of the broduct of the applied magnetic field and the magnetization in the demagnetization portion of the hysteresis loop where the two quantities are in opposite directions."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/MagneticProperty> ;
+    skos:prefLabel "MaximumEnergyProduct"@en .
+

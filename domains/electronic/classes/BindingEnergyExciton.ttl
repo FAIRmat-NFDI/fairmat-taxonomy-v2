@@ -1,0 +1,9 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/BindingEnergyExciton> a owl:Class ;
+    rdfs:comment "Binding energy of electron-hole pairs in semiconductors and insulators. The excitonic binding energy is given with respect to the bottom of the conduction or the top of the valence band."@en ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    skos:prefLabel "BindingEnergyExciton"@en .
+
