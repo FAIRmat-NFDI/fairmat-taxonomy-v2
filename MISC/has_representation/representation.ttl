@@ -1,0 +1,387 @@
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology .
+
+#################################################################
+##
+##  rep:Representation  -- the single umbrella class.
+##
+##  Everything in this module is a subclass of it:
+##
+##    rep:Representation
+##      ├── rep:DataStructureDefinition   the schema (qb:DSD)
+##      ├── rep:ComponentProperty         the slot descriptors
+##      │     ├── rep:Axis
+##      │     ├── rep:Signal
+##      │     └── rep:UnitAttribute
+##      ├── rep:Observation               one data point (qb:Observation)
+##      ├── rep:Scalar                    rank-based data containers
+##      ├── rep:Profile
+##      │     ├── rep:Spectrum
+##      │     ├── rep:TimeSeries
+##      │     └── rep:DepthProfile
+##      ├── rep:Image
+##      └── rep:VolumeData
+##
+##  Two qb bridges:
+##    DataStructureDefinition  rdfs:subClassOf  qb:DataStructureDefinition
+##    Scalar/Profile/Image/VolumeData  rdfs:subClassOf  qb:DataSet
+##    Observation              rdfs:subClassOf  qb:Observation
+##
+#################################################################
+
+rep:Representation a owl:Class ;
+    skos:prefLabel "Representation"@en ;
+    rdfs:comment "Umbrella class. Every concept in the representation module is a subclass."@en .
+
+#################################################################
+##  1. SCHEMA LAYER -- DataStructureDefinition
+##     Describes the shape of a dataset: which components, in what
+##     order. Shared across all datasets with the same structure.
+##     Aligns with qb:DataStructureDefinition.
+#################################################################
+
+rep:DataStructureDefinition a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    skos:closeMatch qb:DataStructureDefinition ;
+    skos:prefLabel "DataStructureDefinition"@en .
+
+qb:DataStructureDefinition a owl:Class .
+
+### qb plumbing -- ComponentSpecification blank nodes carry order
+### qb component property role hierarchy
+qb:ComponentProperty a owl:Class ;
+    owl:disjointUnionOf ( qb:DimensionProperty qb:MeasureProperty qb:AttributeProperty ) ;
+    skos:prefLabel "ComponentProperty"@en .
+
+qb:DimensionProperty a owl:Class ;
+    rdfs:subClassOf qb:ComponentProperty ;
+    skos:prefLabel "DimensionProperty"@en .
+
+qb:MeasureProperty a owl:Class ;
+    rdfs:subClassOf qb:ComponentProperty ;
+    skos:prefLabel "MeasureProperty"@en .
+
+qb:AttributeProperty a owl:Class ;
+    rdfs:subClassOf qb:ComponentProperty ;
+    skos:prefLabel "AttributeProperty"@en .
+
+### qb plumbing -- ComponentSpecification blank nodes carry order
+qb:component  a owl:ObjectProperty ;
+    rdfs:domain qb:DataStructureDefinition ;
+    rdfs:range  qb:ComponentSpecification .
+
+qb:ComponentSpecification a owl:Class .
+
+qb:dimension  a owl:ObjectProperty ;
+    rdfs:domain qb:ComponentSpecification ; rdfs:range qb:DimensionProperty .
+qb:measure    a owl:ObjectProperty ;
+    rdfs:domain qb:ComponentSpecification ; rdfs:range qb:MeasureProperty .
+qb:attribute  a owl:ObjectProperty ;
+    rdfs:domain qb:ComponentSpecification ; rdfs:range qb:AttributeProperty .
+qb:order      a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain qb:ComponentSpecification ; rdfs:range xsd:nonNegativeInteger .
+qb:componentAttachment a owl:ObjectProperty ;
+    rdfs:domain qb:ComponentSpecification .
+
+### DSD points to its components (shortcut for OWL inference)
+rep:hasComponent a owl:ObjectProperty ;
+    rdfs:domain rep:DataStructureDefinition ;
+    rdfs:range  rep:ComponentProperty ;
+    rdfs:comment "Shortcut: direct link DSD -> ComponentProperty. Mirrors qb:component/qb:dimension|measure|attribute. SHACL validates both agree."@en ;
+    skos:prefLabel "hasComponent"@en .
+
+#################################################################
+##  2. COMPONENT LAYER -- ComponentProperty and its three roles
+#################################################################
+
+rep:ComponentProperty a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    owl:disjointUnionOf ( rep:Axis rep:Signal rep:UnitAttribute ) ;
+    skos:prefLabel "ComponentProperty"@en .
+
+rep:Axis a owl:Class ;
+    rdfs:subClassOf rep:ComponentProperty , qb:DimensionProperty ;
+    skos:prefLabel "Axis"@en .
+
+rep:Signal a owl:Class ;
+    rdfs:subClassOf rep:ComponentProperty , qb:MeasureProperty ;
+    skos:prefLabel "Signal"@en .
+
+rep:UnitAttribute a owl:Class ;
+    rdfs:subClassOf rep:ComponentProperty , qb:AttributeProperty ;
+    skos:prefLabel "UnitAttribute"@en .
+
+### properties on component instances
+
+rep:hasQuantityKind a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain rep:ComponentProperty ;
+    rdfs:range  qudt:QuantityKind ;
+    skos:prefLabel "hasQuantityKind"@en .
+
+rep:hasUnit a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain rep:UnitAttribute ;
+    rdfs:range  qudt:Unit ;
+    skos:prefLabel "hasUnit"@en .
+
+rep:axis_name a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain rep:Axis ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "User-authored label. Carries no semantics."@en ;
+    skos:prefLabel "axis_name"@en .
+
+rep:order a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain rep:Axis ;
+    rdfs:range  xsd:nonNegativeInteger ;
+    rdfs:comment "Array position, slowest first (0-based). Matches <axis>_indices in NX."@en ;
+    skos:prefLabel "order"@en .
+
+rep:extent a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range  xsd:nonNegativeInteger ;
+    rdfs:comment """Top-level shape property. Two valid subjects:
+
+  rep:Representation  →  total number of observations
+                         rank-1: equals axis extent = signal extent
+                         rank-2: equals product of all axis extents
+                         rank-3: same
+
+  rep:Axis            →  length of this axis array
+                         signal extent is always product(axis extents) — never stated
+
+  rep:Signal gets NO rep:extent — it is always derivable.
+  SHACL validates: rep_extent == product(axis_extents)."""@en ;
+    skos:prefLabel "extent"@en .
+
+#################################################################
+##  3. DATA LAYER -- rank-based data containers
+##     Each is a subclass of rep:Representation AND qb:DataSet.
+##     Links to its DSD via qb:structure.
+##     rep:rank = number of Axis components (SHACL validates).
+#################################################################
+
+qb:DataSet a owl:Class .
+qb:structure a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain qb:DataSet ;
+    rdfs:range  qb:DataStructureDefinition .
+
+rep:rank a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain rep:Representation ;
+    rdfs:range  xsd:nonNegativeInteger ;
+    rdfs:comment "Number of Axis components. Asserted by producer. SHACL validates rank == COUNT(qb:dimension components)."@en ;
+    skos:prefLabel "rank"@en .
+
+
+##  qb OBSERVATION PATTERN  (the correct way to store axis + signal values)
+##  ──────────────────────────────────────────────────────────────────────────
+##  Each component (Axis, Signal) is BOTH an individual (with metadata) AND
+##  an RDF property (used as a predicate on observations). This is OWL 2 punning.
+##
+##  Axis (rep:Axis ⊑ qb:DimensionProperty ⊑ rdf:Property):
+##    ex:energy a rep:Axis ; rep:hasQuantityKind qk:Energy .
+##    _:obs ex:energy "7980.0"^^xsd:double .    ← axis IRI is the predicate
+##
+##  Signal (rep:Signal ⊑ qb:MeasureProperty ⊑ rdf:Property):
+##    ex:intensity a rep:Signal ; rep:hasQuantityKind tax:Intensity .
+##    _:obs ex:intensity "12.0"^^xsd:double .   ← signal IRI is the predicate
+##
+##  rep:index remains for flat-array position (HDF5 reference).
+
+### rank-based classes -- DEFINED on rank literal, derived by reasoner
+
+rep:Scalar a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf (
+        rep:Representation
+        [ a owl:Restriction ; owl:onProperty rep:rank ;
+          owl:hasValue "0"^^xsd:nonNegativeInteger ] ) ] ;
+    skos:closeMatch qb:DataSet ;
+    skos:prefLabel "Scalar"@en .
+
+rep:Profile a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf (
+        rep:Representation
+        [ a owl:Restriction ; owl:onProperty rep:rank ;
+          owl:hasValue "1"^^xsd:nonNegativeInteger ] ) ] ;
+    skos:closeMatch qb:DataSet ;
+    skos:prefLabel "Profile"@en .
+
+rep:Image a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf (
+        rep:Representation
+        [ a owl:Restriction ; owl:onProperty rep:rank ;
+          owl:hasValue "2"^^xsd:nonNegativeInteger ] ) ] ;
+    skos:closeMatch qb:DataSet ;
+    skos:prefLabel "Image"@en .
+
+rep:VolumeData a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf (
+        rep:Representation
+        [ a owl:Restriction ; owl:onProperty rep:rank ;
+          owl:hasValue "3"^^xsd:nonNegativeInteger ] ) ] ;
+    skos:closeMatch qb:DataSet ;
+    skos:prefLabel "VolumeData"@en .
+
+### named Profile sub-types -- primitive, asserted by producer
+rep:Spectrum     a owl:Class ; rdfs:subClassOf rep:Profile ; skos:prefLabel "Spectrum"@en .
+rep:TimeSeries   a owl:Class ; rdfs:subClassOf rep:Profile ; skos:prefLabel "TimeSeries"@en .
+rep:DepthProfile a owl:Class ; rdfs:subClassOf rep:Profile ; skos:prefLabel "DepthProfile"@en .
+
+#################################################################
+##  4. OBSERVATION LAYER -- one point in the cube
+##     Subclass of rep:Representation AND qb:Observation.
+#################################################################
+
+qb:Observation a owl:Class .
+qb:dataSet a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain qb:Observation ; rdfs:range qb:DataSet .
+
+rep:Observation a owl:Class ;
+    rdfs:subClassOf rep:Representation ;
+    skos:closeMatch qb:Observation ;
+    skos:prefLabel "Observation"@en .
+
+#################################################################
+##  5. CONNECTION TO TAXONOMY
+#################################################################
+
+rep:has_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:Representation ;
+    skos:prefLabel "has_representation"@en .
+
+##  Typed subproperties — two inference chains per triple:
+##    (1) rdfs:range → subtype asserted directly (visible before reasoning)
+##    (2) rep:rank equivalentClass → subtype inferred (validates rank matches)
+##  Conflict between the two → HermiT flags inconsistency.
+
+rep:has_scalar_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:has_representation ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:Scalar ;
+    skos:prefLabel "has_scalar_representation"@en .
+
+rep:has_spectrum_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:has_representation ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:Spectrum ;
+    skos:prefLabel "has_spectrum_representation"@en .
+
+rep:has_timeseries_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:has_representation ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:TimeSeries ;
+    skos:prefLabel "has_timeseries_representation"@en .
+
+rep:has_depthprofile_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:has_representation ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:DepthProfile ;
+    skos:prefLabel "has_depthprofile_representation"@en .
+
+rep:has_image_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:has_representation ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:Image ;
+    skos:prefLabel "has_image_representation"@en .
+
+rep:has_volume_representation a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:has_representation ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:VolumeData ;
+    skos:prefLabel "has_volume_representation"@en .
+
+
+rep:has_dsd a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range  rep:DataStructureDefinition ;
+    skos:prefLabel "has_dsd"@en .
+
+#################################################################
+##  6. QUDT vocabulary
+#################################################################
+
+qudt:QuantityKind a owl:Class .
+qudt:Unit         a owl:Class .
+
+qk:Energy      a owl:NamedIndividual , qudt:QuantityKind ; skos:prefLabel "Energy"@en .
+qk:Length      a owl:NamedIndividual , qudt:QuantityKind ; skos:prefLabel "Length"@en .
+qk:Time        a owl:NamedIndividual , qudt:QuantityKind ; skos:prefLabel "Time"@en .
+qk:Temperature a owl:NamedIndividual , qudt:QuantityKind ; skos:prefLabel "Temperature"@en .
+
+tax:Intensity a owl:NamedIndividual , qudt:QuantityKind ;
+    skos:prefLabel "Intensity"@en ;
+    rdfs:comment "Uncalibrated detector signal. No QUDT term exists."@en .
+
+unit:EV     a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "eV"@en .
+unit:K      a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "K"@en .
+unit:DEG_C  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "C"@en .
+unit:MicroM a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "um"@en .
+unit:NanoM  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "nm"@en .
+unit:SEC    a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "s"@en .
+##  QUDT has no standard term for raw detector counts.
+##  Defined here in the representation module as the canonical unit
+##  for uncalibrated signal intensity.
+rep:Counts a owl:NamedIndividual , qudt:Unit ;
+    rdfs:comment "Raw detector counts. Uncalibrated. Paired with tax:Intensity."@en ;
+    skos:prefLabel "counts"@en .
+
+#################################################################
+##  CANONICAL COMPONENT VOCABULARY
+##  Reusable Axis and Signal individuals defined in rep: namespace.
+##  ABoxes NEVER mint ex: component IRIs.
+##  Every dataset uses these IRIs as predicates on observations.
+##
+##  SPARQL across all XAS datasets:
+##    SELECT ?e ?i WHERE { ?obs rep:energy ?e ; rep:intensity ?i }
+##
+##  qb:order and rep:extent are dataset-specific → go on
+##  qb:ComponentSpecification in the DSD, NOT on these canonical IRIs.
+#################################################################
+
+## ── axes ─────────────────────────────────────────────────────
+rep:energy      a owl:NamedIndividual , rep:Axis ;
+    rep:hasQuantityKind qk:Energy ;
+    rdfs:comment "Photon / electron energy axis."@en .
+
+rep:time        a owl:NamedIndividual , rep:Axis ;
+    rep:hasQuantityKind qk:Time ;
+    rdfs:comment "Time axis."@en .
+
+rep:depth       a owl:NamedIndividual , rep:Axis ;
+    rep:hasQuantityKind qk:Length ;
+    rdfs:comment "Depth axis (SIMS, profiling)."@en .
+
+rep:x_length    a owl:NamedIndividual , rep:Axis ;
+    rep:hasQuantityKind qk:Length ;
+    rdfs:comment "Spatial x-axis (fastest dimension by convention)."@en .
+
+rep:y_length    a owl:NamedIndividual , rep:Axis ;
+    rep:hasQuantityKind qk:Length ;
+    rdfs:comment "Spatial y-axis."@en .
+
+rep:z_length    a owl:NamedIndividual , rep:Axis ;
+    rep:hasQuantityKind qk:Length ;
+    rdfs:comment "Spatial z-axis (slowest dimension by convention)."@en .
+
+## ── signals ──────────────────────────────────────────────────
+rep:intensity   a owl:NamedIndividual , rep:Signal ;
+    rep:hasQuantityKind tax:Intensity ;
+    rdfs:comment "Raw detector counts / uncalibrated intensity."@en .
+
+rep:temperature a owl:NamedIndividual , rep:Signal ;
+    rep:hasQuantityKind qk:Temperature ;
+    rdfs:comment "Temperature signal."@en .
+
