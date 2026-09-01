@@ -1,0 +1,45 @@
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+## ==================================================================
+##  SCALAR   rank 0  ->  rep:Scalar
+##  Silicon sample, recorded specimen temperature.
+##
+##  No axis component -- rank 0 means the measurement has no
+##  independent variable. One signal, one observation.
+##
+##  COMPONENT CHAIN
+##    signal  rep:temperature --hasQuantityKind--> qk:Temperature
+##                            --hasUnit---------->  unit:K   (disabled)
+##
+##  value
+##  293.15
+## ==================================================================
+
+ex:Si     a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Silicon"@en ;
+    tax:hasMaterialProperty ex:Si_Temp .
+
+ex:Si_Temp  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "Specimen temperature"@en ;
+    rep:has_scalar_representation ex:r_scalar ;
+    rep:has_dsd                   _:dsd .
+
+ex:r_scalar a rep:Representation , rep:Scalar , owl:NamedIndividual ;
+    rep:rank   "0"^^xsd:nonNegativeInteger ;   ## triggers rep:Scalar
+    rep:extent "1"^^xsd:nonNegativeInteger ;   ## total observations
+    qb:structure _:dsd .
+
+## -- SCHEMA: no dimension, one measure ----------------------------
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:temperature ;
+    qb:component [ qb:measure rep:temperature ] .
+
+## -- DATA ---------------------------------------------------------
+_:o0 a rep:Observation ; qb:dataSet ex:r_scalar ;
+    rep:temperature "293.15"^^xsd:double .

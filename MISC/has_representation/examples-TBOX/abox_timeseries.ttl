@@ -1,0 +1,74 @@
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+## ==================================================================
+##  TIMESERIES   rank 1  ->  rep:Profile , asserted rep:TimeSeries
+##  316L stainless steel, passivation current decay.
+##
+##  COMPONENT CHAIN
+##    axis    rep:time      --hasQuantityKind--> qk:Time
+##                          --hasUnit---------->  unit:SEC    (disabled)
+##    signal  rep:intensity --hasQuantityKind--> tax:Intensity
+##                          --hasUnit---------->  unit:COUNT  (disabled)
+##
+##  idx    time    intensity
+##   0        0      12500
+##   1       60       8400
+##   2      300       5100
+##   3      600       3800
+##   4     1800       2200
+##   5     3600       1520     <- quasi steady state
+## ==================================================================
+
+ex:SS316L         a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "316L stainless steel"@en ;
+    tax:hasMaterialProperty ex:SS316L_Passiv .
+
+ex:SS316L_Passiv  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "Passivation current decay"@en ;
+    rep:has_timeseries_representation ex:r_timeseries ;
+    rep:has_dsd                       _:dsd .
+
+ex:r_timeseries a rep:Representation , rep:TimeSeries , owl:NamedIndividual ;
+    rep:rank   "1"^^xsd:nonNegativeInteger ;
+    rep:extent "6"^^xsd:nonNegativeInteger ;
+    qb:structure _:dsd .
+
+## -- SCHEMA -------------------------------------------------------
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:time , rep:intensity ;
+    qb:component
+        [ qb:dimension rep:time ;
+          qb:order     "0"^^xsd:nonNegativeInteger ;
+          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
+
+## -- DATA ---------------------------------------------------------
+_:t0 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "0"^^xsd:nonNegativeInteger ;
+    rep:time    "0.0"^^xsd:double ; rep:intensity "12500.0"^^xsd:double .
+
+_:t1 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "1"^^xsd:nonNegativeInteger ;
+    rep:time   "60.0"^^xsd:double ; rep:intensity  "8400.0"^^xsd:double .
+
+_:t2 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "2"^^xsd:nonNegativeInteger ;
+    rep:time  "300.0"^^xsd:double ; rep:intensity  "5100.0"^^xsd:double .
+
+_:t3 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "3"^^xsd:nonNegativeInteger ;
+    rep:time  "600.0"^^xsd:double ; rep:intensity  "3800.0"^^xsd:double .
+
+_:t4 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "4"^^xsd:nonNegativeInteger ;
+    rep:time "1800.0"^^xsd:double ; rep:intensity  "2200.0"^^xsd:double .
+
+_:t5 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "5"^^xsd:nonNegativeInteger ;
+    rep:time "3600.0"^^xsd:double ; rep:intensity  "1520.0"^^xsd:double .

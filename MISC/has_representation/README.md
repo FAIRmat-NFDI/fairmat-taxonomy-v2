@@ -1,132 +1,191 @@
 # FAIRmat Representation Ontology — Usage Guide
 ## Writing & Loading Representations
 
-This document shows how to write RDF for every representation type.
-For each type:
-- **Raw data table** — what the data looks like before lifting to RDF
-- **RDF (canonical)** — uses pre-defined `rep:` axis/signal IRIs; no `rep:axis_name` needed
-- **RDF (user-defined)** — user mints a local `ex:` IRI and names it with `rep:axis_name`
-- **RDF (user + skos:closeMatch)** — user-defined but explicitly linked to canonical for federation
+How to write RDF for each representation type, and how to query it back out.
+Every example in this guide is a real file that validates against the TBox:
 
-The two axis strategies are not exclusive — choose per dataset, mix freely across the KG.
-
----
-
-## Axis strategy summary
-
-| Strategy | IRI | `rep:axis_name` | `skos:closeMatch` | Cross-dataset SPARQL |
-|---|---|---|---|---|
-| Canonical | `rep:energy` | absent | — | direct |
-| User-defined | `ex:my_energy` | `"my_energy"` | optional | via `skos:closeMatch` |
-
-```turtle
-## canonical — IRI is the identity, no name property needed
-rep:energy  a rep:Axis ; rep:hasQuantityKind qk:Energy .          ## TBox (pre-existing)
-
-## user-defined — name is the identity, IRI is a local handle
-ex:binding_energy  a rep:Axis ;
-    rep:axis_name       "binding_energy" ;
-    rep:hasQuantityKind qk:Energy ;
-    skos:closeMatch     rep:energy .                              ## optional federation link
-```
-
----
-
-## Prefix block (all examples)
-
-```turtle
-@prefix ex:    <http://fairmat-nfdi.eu/taxonomy/abox#> .
-@prefix rep:   <http://fairmat-nfdi.eu/taxonomy/representation#> .
-@prefix tax:   <http://fairmat-nfdi.eu/taxonomy/> .
-@prefix qb:    <http://purl.org/linked-data/cube#> .
-@prefix qk:    <http://qudt.org/vocab/quantitykind/> .
-@prefix unit:  <http://qudt.org/vocab/unit/> .
-@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
-@prefix owl:   <http://www.w3.org/2002/07/owl#> .
-@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
-```
-
----
-
-## 1. Scalar
-
-**Shape:** `()`  **rank:** 0  **Inferred as:** `rep:Scalar`
-
-### Raw data
-
-| property | value | unit |
+| representation | file | observations |
 |---|---|---|
-| band gap | 1.12 | eV |
+| Scalar | `abox_scalar.ttl` | 1 |
+| Spectrum | `abox_spectrum.ttl` | 5 |
+| TimeSeries | `abox_timeseries.ttl` | 6 |
+| DepthProfile | `abox_depthprofile.ttl` | 6 |
+| Image | `abox_image.ttl` | 25 |
+| VolumeData | `abox_volume.ttl` | 12 |
 
 ---
 
-### RDF — canonical signal (`rep:temperature` / custom signal)
+## The component chain
 
-For scalar the "axis" concept does not apply — there is only one signal component.
-Use a canonical signal IRI when the quantity kind has a TBox entry.
+Every Axis and every Signal declares what it measures. The intended model is a
+two-link chain:
+
+```
+COMPONENT  --hasQuantityKind-->  QUANTITY KIND  --hasUnit-->  UNIT
+```
+
+**The first link is live. The second is disabled.** `rep:hasQuantityKind` is
+untouched — it is the semantic anchor for every query in this guide.
+`rep:hasUnit` and every `qudt:Unit` individual are commented out in the TBox.
+
+| representation | component | role | `rep:hasQuantityKind` | `rep:hasUnit` |
+|---|---|---|---|---|
+| Scalar | `rep:temperature` | signal | `qk:Temperature` | ~~`unit:K`~~ |
+| Spectrum | `rep:energy` | axis | `qk:Energy` | ~~`unit:EV`~~ |
+| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+| TimeSeries | `rep:time` | axis | `qk:Time` | ~~`unit:SEC`~~ |
+| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+| DepthProfile | `rep:depth` | axis | `qk:Length` | ~~`unit:NanoM`~~ |
+| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+| Image | `rep:y` (0) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
+| | `rep:x` (1) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
+| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+| VolumeData | `rep:z` (0) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
+| | `rep:y` (1) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
+| | `rep:x` (2) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
+| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+
+Struck-through cells are the removed link. They are recorded here and in the TBox
+comments so the intended model stays legible, but no such triple exists in any file.
 
 ```turtle
-ex:Si      a tax:Material , owl:NamedIndividual .
-ex:Si_Eg   a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_scalar_representation ex:r_Si_Eg ;
+## live -- every component declares its quantity kind
+rep:energy       rep:hasQuantityKind  qk:Energy .
+rep:intensity    rep:hasQuantityKind  tax:Intensity .
+rep:temperature  rep:hasQuantityKind  qk:Temperature .
+
+## disabled -- the second link and the units it points at
+## rep:energy     rep:hasUnit  unit:EV .
+## rep:intensity  rep:hasUnit  unit:COUNT .
+```
+
+So a query can ask *which datasets measure an energy* — that is a
+`rep:hasQuantityKind` question, and Q16 in `SPARQL_USAGE.md` does exactly that. It
+cannot ask *which datasets are in eV*.
+
+Where this guide writes something like *the instrument logged kelvin*, that is
+editorial context for the reader. The string is not in the graph and no query
+returns it.
+
+---
+
+## The canonical vocabulary
+
+All Axis and Signal IRIs come from this set. ABoxes do not mint `ex:` components.
+
+### Axes — fixed per representation type
+
+| representation | rank | axes (in `qb:order`) |
+|---|---|---|
+| `rep:Scalar` | 0 | none |
+| `rep:Spectrum` | 1 | `rep:energy` |
+| `rep:TimeSeries` | 1 | `rep:time` |
+| `rep:DepthProfile` | 1 | `rep:depth` |
+| `rep:Image` | 2 | `rep:y` (0), `rep:x` (1) |
+| `rep:VolumeData` | 3 | `rep:z` (0), `rep:y` (1), `rep:x` (2) |
+
+`rank` equals the number of axes, and the axis IRIs are determined by the type. A
+rank-2 dataset uses `rep:y` and `rep:x` — no other pair is valid.
+
+| Axis IRI | quantity kind |
+|---|---|
+| `rep:x` | `qk:Length` |
+| `rep:y` | `qk:Length` |
+| `rep:z` | `qk:Length` |
+| `rep:depth` | `qk:Length` |
+| `rep:energy` | `qk:Energy` |
+| `rep:time` | `qk:Time` |
+
+### Signals
+
+| Signal IRI | quantity kind | use |
+|---|---|---|
+| `rep:intensity` | `tax:Intensity` | raw detector counts — the default |
+| `rep:temperature` | `qk:Temperature` | temperature as a measured value |
+
+### Axis and Signal are disjoint
+
+`rep:Axis` and `rep:Signal` are `owl:disjointWith`, so an IRI declared as one cannot
+be used as the other. `rep:energy` is an Axis; putting it in a `qb:measure` slot makes
+the graph inconsistent under HermiT.
+
+```turtle
+## INCONSISTENT — rep:energy is an Axis, not a Signal
+qb:component [ qb:measure rep:energy ] .
+```
+
+A measurement whose quantity kind has no matching Signal in the vocabulary needs one
+added to the TBox — see *Extending the vocabulary* below. Do not reach for the Axis
+IRI that happens to share the quantity kind.
+
+---
+
+## Prefix block
+
+```turtle
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+```
+
+`ex:` is for instance IRIs only — materials, properties, representations. Components
+always come from `rep:`.
+
+---
+
+## 1. Scalar — `abox_scalar.ttl`
+
+**Shape** `()` · **rank** 0 · **inferred** `rep:Scalar` · **axes** none
+
+Silicon sample, recorded specimen temperature. *The instrument logged kelvin.*
+
+| value |
+|---|
+| 293.15 |
+
+```turtle
+ex:Si     a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Silicon"@en ;
+    tax:hasMaterialProperty ex:Si_Temp .
+
+ex:Si_Temp  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "Specimen temperature"@en ;
+    rep:has_scalar_representation ex:r_scalar ;
     rep:has_dsd                   _:dsd .
 
-ex:r_Si_Eg a rep:Representation , rep:Scalar , owl:NamedIndividual ;
-    rep:rank   "0"^^xsd:nonNegativeInteger ;
+ex:r_scalar a rep:Representation , rep:Scalar , owl:NamedIndividual ;
+    rep:rank   "0"^^xsd:nonNegativeInteger ;   ## triggers rep:Scalar
     rep:extent "1"^^xsd:nonNegativeInteger ;
     qb:structure _:dsd .
 
-## signal — canonical IRI from TBox vocabulary
+## no dimension component — rank 0 has no independent variable
 _:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:energy ;
-    qb:component [ qb:measure   rep:energy ;
-                   rep:hasUnit  unit:EV ] .
+    rep:hasComponent rep:temperature ;
+    qb:component [ qb:measure rep:temperature ] .
 
-## observation — rep:energy used as predicate
-_:obs a rep:Observation ; qb:dataSet ex:r_Si_Eg ;
-    rep:energy "1.12"^^xsd:double .
+_:o0 a rep:Observation ; qb:dataSet ex:r_scalar ;
+    rep:temperature "293.15"^^xsd:double .
 ```
+
+`rep:temperature` carries `rep:hasQuantityKind qk:Temperature`, so a query can find
+this dataset by quantity kind without knowing the material or the property name.
 
 ---
 
-### RDF — user-defined signal name (`"band_gap_optical"`)
+## 2. Spectrum — `abox_spectrum.ttl`
 
-Use when the quantity has domain-specific naming or no canonical TBox entry.
+**Shape** `(5,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:Spectrum`
+· **axis** `rep:energy`
 
-```turtle
-ex:GaAs      a tax:Material , owl:NamedIndividual .
-ex:GaAs_OBG  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_scalar_representation ex:r_GaAs_OBG ;
-    rep:has_dsd                   _:dsd2 .
+Fe K-edge absorption scan. *Axis values are eV and signal values are detector counts
+in the source file; neither unit is in the graph.*
 
-ex:r_GaAs_OBG a rep:Representation , rep:Scalar , owl:NamedIndividual ;
-    rep:rank   "0"^^xsd:nonNegativeInteger ;
-    rep:extent "1"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd2 .
-
-## user-defined signal IRI with name
-ex:band_gap_optical  a rep:Signal , owl:NamedIndividual ;
-    rep:hasQuantityKind qk:Energy ;
-    skos:closeMatch     rep:energy .       ## optional: link to canonical for federation
-
-_:dsd2 a rep:DataStructureDefinition ;
-    rep:hasComponent ex:band_gap_optical ;
-    qb:component [ qb:measure   ex:band_gap_optical ;
-                   rep:hasUnit  unit:EV ] .
-
-_:obs2 a rep:Observation ; qb:dataSet ex:r_GaAs_OBG ;
-    ex:band_gap_optical "1.42"^^xsd:double .
-```
-
----
-
-## 2. Spectrum
-
-**Shape:** `(N,)` **rank:** 1 **Inferred as:** `rep:Profile` **Asserted:** `rep:Spectrum`
-
-### Raw data
-
-| index | energy (eV) | intensity (counts) |
+| index | energy | intensity |
 |---|---|---|
 | 0 | 7980.0 | 12 |
 | 1 | 7980.5 | 15 |
@@ -134,19 +193,16 @@ _:obs2 a rep:Observation ; qb:dataSet ex:r_GaAs_OBG ;
 | 3 | 7981.5 | 850 |
 | 4 | 7982.0 | 230 |
 
----
-
-### RDF — canonical axis (`rep:energy`) + canonical signal (`rep:intensity`)
-
-Best choice when the axis quantity kind matches a TBox canonical entry exactly.
-No `rep:axis_name` needed — the IRI is self-describing.
-
 ```turtle
-ex:Sample_Spec  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_spectrum_representation ex:r_spec ;
+ex:FeFoil      a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Iron foil"@en .
+
+ex:FeFoil_XAS  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "Fe K-edge absorption"@en ;
+    rep:has_spectrum_representation ex:r_spectrum ;
     rep:has_dsd                     _:dsd .
 
-ex:r_spec a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
+ex:r_spectrum a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
     rep:rank   "1"^^xsd:nonNegativeInteger ;
     rep:extent "5"^^xsd:nonNegativeInteger ;
     qb:structure _:dsd .
@@ -154,494 +210,307 @@ ex:r_spec a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
 _:dsd a rep:DataStructureDefinition ;
     rep:hasComponent rep:energy , rep:intensity ;
     qb:component
-        [ qb:dimension rep:energy    ;
+        [ qb:dimension rep:energy ;
           qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:EV ] ,
-        [ qb:measure   rep:intensity ;
-          rep:hasUnit  rep:Counts ] .
+          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
 
-## observations — canonical IRIs as predicates
-_:o0 a rep:Observation ; qb:dataSet ex:r_spec ;
-    rep:energy    "7980.0"^^xsd:double ;
-    rep:intensity "12.0"^^xsd:double .
-_:o4 a rep:Observation ; qb:dataSet ex:r_spec ;
-    rep:energy    "7982.0"^^xsd:double ;
-    rep:intensity "230.0"^^xsd:double .
+## component IRIs act as predicates on the observation
+_:o3 a rep:Observation ; qb:dataSet ex:r_spectrum ;
+    rep:index "3"^^xsd:nonNegativeInteger ;
+    rep:energy "7981.5"^^xsd:double ; rep:intensity "850.0"^^xsd:double .
 ```
 
 ---
 
-### RDF — user-defined axis name (`"binding_energy"`) without canonical link
+## 3. TimeSeries — `abox_timeseries.ttl`
 
-Use when the instrument/lab convention differs from the canonical name.
+**Shape** `(6,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:TimeSeries`
+· **axis** `rep:time`
 
-```turtle
-ex:Au_XPS  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_spectrum_representation ex:r_xps ;
-    rep:has_dsd                     _:dsd3 .
+316L stainless steel, passivation current decay. *Times were logged in seconds.*
 
-ex:r_xps a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "200"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd3 .
-
-## user-defined axis — "binding_energy" is the lab convention
-ex:binding_energy  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "binding_energy" ;     ## user name
-    rep:hasQuantityKind qk:Energy .            ## semantic anchor unchanged
-
-_:dsd3 a rep:DataStructureDefinition ;
-    rep:hasComponent ex:binding_energy , rep:intensity ;
-    qb:component
-        [ qb:dimension ex:binding_energy ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "200"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:EV ] ,
-        [ qb:measure   rep:intensity ;
-          rep:hasUnit  rep:Counts ] .
-
-_:o0 a rep:Observation ; qb:dataSet ex:r_xps ;
-    ex:binding_energy "84.0"^^xsd:double ;
-    rep:intensity     "18650.0"^^xsd:double .
-```
-
----
-
-### RDF — user-defined + `skos:closeMatch` (recommended for federation)
-
-Adds one triple to make the user axis discoverable via canonical SPARQL queries.
-
-```turtle
-## everything as above, plus:
-ex:binding_energy  skos:closeMatch  rep:energy .
-```
-
-SPARQL query that finds both `rep:energy` AND `ex:binding_energy` datasets:
-
-```sparql
-SELECT ?material ?e ?i WHERE {
-    ?p   rep:has_spectrum_representation ?repr .
-    ?repr qb:structure / qb:component ?cs .
-    ?cs  qb:dimension ?ax_iri .
-    { ?ax_iri rep:hasQuantityKind qk:Energy }
-    UNION
-    { ?ax_iri skos:closeMatch ?canon . ?canon rep:hasQuantityKind qk:Energy }
-    ?repr qb:structure / qb:component [ qb:measure ?sig ] .
-    ?obs  qb:dataSet ?repr ; ?ax_iri ?e ; ?sig ?i .
-}
-```
-
----
-
-## 3. Depth Profile
-
-**Shape:** `(N,)` **rank:** 1 **Inferred as:** `rep:Profile` **Asserted:** `rep:DepthProfile`
-
-### Raw data
-
-| index | depth (nm) | B concentration (at/cm³) |
+| index | time | intensity |
 |---|---|---|
-| 0 | 0 | 1.20×10²⁰ |
-| 1 | 5 | 8.50×10¹⁹ |
-| 2 | 10 | 3.20×10¹⁹ |
-| 3 | 20 | 5.00×10¹⁸ |
-| 4 | 50 | 2.10×10¹⁷ |
-| 5 | 100 | 4.50×10¹⁶ |
-
----
-
-### RDF — canonical axis (`rep:depth`)
+| 0 | 0 | 12500 |
+| 1 | 60 | 8400 |
+| 2 | 300 | 5100 |
+| 3 | 600 | 3800 |
+| 4 | 1800 | 2200 |
+| 5 | 3600 | 1520 |
 
 ```turtle
-ex:BdopedSi_SIMS  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_depthprofile_representation ex:r_sims ;
-    rep:has_dsd                         _:dsd .
+ex:SS316L         a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "316L stainless steel"@en .
 
-ex:r_sims a rep:Representation , rep:DepthProfile , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "50"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
-
-ex:B_conc  a rep:Signal , owl:NamedIndividual ;
-    rep:hasQuantityKind qk:NumberConcentration .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:depth , ex:B_conc ;
-    qb:component
-        [ qb:dimension rep:depth  ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "50"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:NanoM ] ,
-        [ qb:measure   ex:B_conc ;
-          rep:hasUnit  <http://qudt.org/vocab/unit/PER-CentiM3> ] .
-
-_:o0 a rep:Observation ; qb:dataSet ex:r_sims ;
-    rep:depth "0.0"^^xsd:double ;
-    ex:B_conc "1.20E20"^^xsd:double .
-_:o5 a rep:Observation ; qb:dataSet ex:r_sims ;
-    rep:depth "100.0"^^xsd:double ;
-    ex:B_conc "4.50E16"^^xsd:double .
-```
-
----
-
-### RDF — user-defined axis name (`"z_sputtered"`)
-
-Some SIMS instruments report sputtering time rather than depth.
-
-```turtle
-ex:z_sputtered  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "z_sputtered" ;
-    rep:hasQuantityKind qk:Length ;          ## still Length semantically
-    skos:closeMatch     rep:depth .          ## ← federation link to canonical
-```
-
----
-
-## 4. Time Series
-
-**Shape:** `(N,)` **rank:** 1 **Inferred as:** `rep:Profile` **Asserted:** `rep:TimeSeries`
-
-### Raw data
-
-| index | time (s) | current density (A/m²) |
-|---|---|---|
-| 0 | 0 | 0.01250 |
-| 1 | 60 | 0.00840 |
-| 2 | 300 | 0.00510 |
-| 3 | 600 | 0.00380 |
-| 4 | 1800 | 0.00220 |
-| 5 | 3600 | 0.00152 |
-
----
-
-### RDF — canonical axis (`rep:time`)
-
-```turtle
 ex:SS316L_Passiv  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_timeseries_representation ex:r_ts ;
+    skos:prefLabel "Passivation current decay"@en ;
+    rep:has_timeseries_representation ex:r_timeseries ;
     rep:has_dsd                       _:dsd .
 
-ex:r_ts a rep:Representation , rep:TimeSeries , owl:NamedIndividual ;
+ex:r_timeseries a rep:Representation , rep:TimeSeries , owl:NamedIndividual ;
     rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "1200"^^xsd:nonNegativeInteger ;
+    rep:extent "6"^^xsd:nonNegativeInteger ;
     qb:structure _:dsd .
 
-ex:j_passiv  a rep:Signal , owl:NamedIndividual ;
-    rep:hasQuantityKind qk:ElectricCurrentDensity .
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:time , rep:intensity ;
+    qb:component
+        [ qb:dimension rep:time ;
+          qb:order     "0"^^xsd:nonNegativeInteger ;
+          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
+
+_:t5 a rep:Observation ; qb:dataSet ex:r_timeseries ;
+    rep:index "5"^^xsd:nonNegativeInteger ;
+    rep:time "3600.0"^^xsd:double ; rep:intensity "1520.0"^^xsd:double .
+```
+
+The only structural difference from a Spectrum is the axis IRI. Swapping
+`rep:energy` for `rep:time` and asserting `rep:TimeSeries` instead of `rep:Spectrum`
+is the whole change.
+
+---
+
+## 4. DepthProfile — `abox_depthprofile.ttl`
+
+**Shape** `(6,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:DepthProfile`
+· **axis** `rep:depth`
+
+Boron-implanted silicon, SIMS sputter profile. *Depths were recorded in nm.*
+
+| index | depth | intensity |
+|---|---|---|
+| 0 | 0 | 120000 |
+| 1 | 5 | 85000 |
+| 2 | 10 | 32000 |
+| 3 | 20 | 5000 |
+| 4 | 50 | 210 |
+| 5 | 100 | 45 |
+
+```turtle
+ex:BdopedSi       a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Boron-implanted silicon"@en .
+
+ex:BdopedSi_SIMS  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "SIMS boron depth profile"@en ;
+    rep:has_depthprofile_representation ex:r_depthprofile ;
+    rep:has_dsd                         _:dsd .
+
+ex:r_depthprofile a rep:Representation , rep:DepthProfile , owl:NamedIndividual ;
+    rep:rank   "1"^^xsd:nonNegativeInteger ;
+    rep:extent "6"^^xsd:nonNegativeInteger ;
+    qb:structure _:dsd .
 
 _:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:time , ex:j_passiv ;
+    rep:hasComponent rep:depth , rep:intensity ;
     qb:component
-        [ qb:dimension rep:time   ;
+        [ qb:dimension rep:depth ;
           qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "1200"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:SEC ] ,
-        [ qb:measure   ex:j_passiv ;
-          rep:hasUnit  <http://qudt.org/vocab/unit/A-PER-M2> ] .
+          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
 
-_:o0 a rep:Observation ; qb:dataSet ex:r_ts ;
-    rep:time    "0.0"^^xsd:double ;
-    ex:j_passiv "0.01250"^^xsd:double .
-_:o5 a rep:Observation ; qb:dataSet ex:r_ts ;
-    rep:time    "3600.0"^^xsd:double ;
-    ex:j_passiv "0.00152"^^xsd:double .
+_:d5 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "5"^^xsd:nonNegativeInteger ;
+    rep:depth "100.0"^^xsd:double ; rep:intensity "45.0"^^xsd:double .
 ```
 
 ---
 
-### RDF — user-defined axis name (`"t_elapsed"`) + user-defined signal (`"j_corr"`)
+## 5. Image — `abox_image.ttl`
 
-```turtle
-ex:t_elapsed  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "t_elapsed" ;
-    rep:hasQuantityKind qk:Time ;
-    skos:closeMatch     rep:time .            ## ← federation link
+**Shape** `(5, 5)` · **rank** 2 · **inferred** `rep:Image` · **axes** `rep:y` (0), `rep:x` (1)
 
-ex:j_corr     a rep:Signal , owl:NamedIndividual ;
-    rep:axis_name       "j_corr" ;            ## optional descriptive label
-    rep:hasQuantityKind qk:ElectricCurrentDensity .
-```
+DP780 dual-phase steel, EBSD orientation map. *Step size was 2 µm.*
 
-### RDF — second user (`"time_stamp"`, PL decay in nanoseconds)
-
-```turtle
-ex:time_stamp  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "time_stamp" ;
-    rep:hasQuantityKind qk:Time ;
-    skos:closeMatch     rep:time .            ## same federation link, different unit
-
-## DSD uses unit:NanoSEC instead of unit:SEC — ontology surfaces the difference
-qb:component [ qb:dimension ex:time_stamp ;
-               rep:hasUnit  unit:NanoSEC ] .
-```
-
-SPARQL finds both datasets via `skos:closeMatch`:
-
-```sparql
-SELECT ?material ?t ?i WHERE {
-    ?p   rep:has_timeseries_representation ?repr .
-    ?repr qb:structure / qb:component ?cs_ax .
-    ?cs_ax qb:dimension ?ax_iri .
-    { ?ax_iri rep:hasQuantityKind qk:Time }
-    UNION
-    { ?ax_iri skos:closeMatch ?c . ?c rep:hasQuantityKind qk:Time }
-    ?repr qb:structure / qb:component [ qb:measure ?sig ] .
-    ?obs  qb:dataSet ?repr ; ?ax_iri ?t ; ?sig ?i .
-}
-```
-
----
-
-## 5. Image
-
-**Shape:** `(Ny, Nx)` **rank:** 2 **Inferred as:** `rep:Image`
-
-### Raw data
-
-| y \ x (µm) | 0.0 | 2.0 | 4.0 | 6.0 | 8.0 |
+| y \ x | 0 | 2 | 4 | 6 | 8 |
 |---|---|---|---|---|---|
-| **0.0** | 10 | 12 | 11 | 14 | 10 |
-| **2.0** | 13 | 45 | 120 | 50 | 15 |
-| **4.0** | 11 | 110 | **850** | 115 | 12 |
-| **6.0** | 14 | 55 | 118 | 48 | 11 |
-| **8.0** | 10 | 12 | 14 | 11 | 9 |
+| **0** | 10 | 12 | 11 | 14 | 10 |
+| **2** | 13 | 45 | 120 | 50 | 15 |
+| **4** | 11 | 110 | **850** | 115 | 12 |
+| **6** | 14 | 55 | 118 | 48 | 11 |
+| **8** | 10 | 12 | 14 | 11 | 9 |
 
 Flat index: `idx = j × Nx + i`
 
----
-
-### RDF — canonical axes (`rep:y_length`, `rep:x_length`)
-
 ```turtle
-ex:Sample_Img  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_image_representation ex:r_img ;
+ex:DP780       a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "DP780 dual-phase steel"@en .
+
+ex:DP780_EBSD  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "EBSD orientation map"@en ;
+    rep:has_image_representation ex:r_image ;
     rep:has_dsd                  _:dsd .
 
-ex:r_img a rep:Representation , rep:Image , owl:NamedIndividual ;
+ex:r_image a rep:Representation , rep:Image , owl:NamedIndividual ;
     rep:rank        "2"^^xsd:nonNegativeInteger ;
-    rep:extent      "25"^^xsd:nonNegativeInteger ;    ## 5 × 5
+    rep:extent      "25"^^xsd:nonNegativeInteger ;   ## 5 × 5
     rep:is_separable true ;
     qb:structure    _:dsd .
 
 _:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:y_length , rep:x_length , rep:intensity ;
+    rep:hasComponent rep:y , rep:x , rep:intensity ;
     qb:component
-        [ qb:dimension rep:y_length ;
+        [ qb:dimension rep:y ;                       ## slow axis
           qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:dimension rep:x_length ;
+          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
+        [ qb:dimension rep:x ;                       ## fast axis
           qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:measure   rep:intensity ;
-          rep:hasUnit  rep:Counts ] .
+          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
 
-_:p00 a rep:Observation ; qb:dataSet ex:r_img ;
-    rep:index     "0"^^xsd:nonNegativeInteger ;
-    rep:y_length  "0.0"^^xsd:double ;
-    rep:x_length  "0.0"^^xsd:double ;
-    rep:intensity "10.0"^^xsd:double .
-
-_:p22 a rep:Observation ; qb:dataSet ex:r_img ;
-    rep:index     "12"^^xsd:nonNegativeInteger ;    ## j=2,i=2 → 2×5+2=12
-    rep:y_length  "4.0"^^xsd:double ;
-    rep:x_length  "4.0"^^xsd:double ;
-    rep:intensity "850.0"^^xsd:double .             ## peak
+_:p22 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "12"^^xsd:nonNegativeInteger ;         ## j=2, i=2 → 2×5+2
+    rep:y "4.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
+    rep:intensity "850.0"^^xsd:double .
 ```
+
+Both axes carry `qk:Length`. `qb:order` is the only thing that tells `rep:y` from
+`rep:x` — a query that filters on quantity kind alone gets them in arbitrary order.
 
 ---
 
-### RDF — user-defined axis names (`"alpha"`, `"delta"`) without canonical link
+## 6. VolumeData — `abox_volume.ttl`
 
-```turtle
-ex:Det1_Map  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_image_representation ex:r_det1 ;
-    rep:has_dsd                  _:dsd2 .
+**Shape** `(2, 2, 3)` · **rank** 3 · **inferred** `rep:VolumeData` · **axes** `rep:z` (0),
+`rep:y` (1), `rep:x` (2)
 
-ex:r_det1 a rep:Representation , rep:Image , owl:NamedIndividual ;
-    rep:rank        "2"^^xsd:nonNegativeInteger ;
-    rep:extent      "400"^^xsd:nonNegativeInteger ;   ## 20 × 20
-    rep:is_separable true ;
-    qb:structure    _:dsd2 .
+Porous alumina foam, microCT reconstruction. *Voxel pitch was 2 µm.*
 
-## user-defined axis IRIs
-ex:alpha  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "alpha" ;
-    rep:hasQuantityKind qk:Length .
+**z = 0**
 
-ex:delta  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "delta" ;
-    rep:hasQuantityKind qk:Length .
-
-_:dsd2 a rep:DataStructureDefinition ;
-    rep:hasComponent ex:alpha , ex:delta , rep:intensity ;
-    qb:component
-        [ qb:dimension ex:alpha ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "20"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:dimension ex:delta ;
-          qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "20"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:measure   rep:intensity ;
-          rep:hasUnit  rep:Counts ] .
-
-_:p0 a rep:Observation ; qb:dataSet ex:r_det1 ;
-    ex:alpha "0.0"^^xsd:double ;
-    ex:delta "0.0"^^xsd:double ;
-    rep:intensity "42.0"^^xsd:double .
-```
-
----
-
-### RDF — second user: `"gamma"`, `"epsilon"` in nanometres + `skos:closeMatch`
-
-```turtle
-ex:gamma    a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "gamma" ;
-    rep:hasQuantityKind qk:Length ;
-    skos:closeMatch     rep:y_length .    ## federation: gamma ≡ y_length semantically
-
-ex:epsilon  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "epsilon" ;
-    rep:hasQuantityKind qk:Length ;
-    skos:closeMatch     rep:x_length .    ## federation: epsilon ≡ x_length
-
-## DSD uses NanoM — SPARQL result will show the unit difference explicitly
-qb:component [ qb:dimension ex:gamma   ; rep:hasUnit unit:NanoM ] ,
-             [ qb:dimension ex:epsilon ; rep:hasUnit unit:NanoM ] .
-```
-
----
-
-## 6. Volume
-
-**Shape:** `(Nz, Ny, Nx)` **rank:** 3 **Inferred as:** `rep:VolumeData`
-
-### Raw data
-
-**z[0] — z = 0.0 µm**
-
-| y \ x (µm) | 0.0 | 2.0 | 4.0 |
+| y \ x | 0 | 2 | 4 |
 |---|---|---|---|
-| **0.0** | 10 | 12 | 11 |
-| **2.0** | 13 | 15 | 12 |
+| **0** | 10 | 12 | 11 |
+| **2** | 13 | 15 | 12 |
 
-**z[1] — z = 5.0 µm**
+**z = 5**
 
-| y \ x (µm) | 0.0 | 2.0 | 4.0 |
+| y \ x | 0 | 2 | 4 |
 |---|---|---|---|
-| **0.0** | 11 | 14 | 10 |
-| **2.0** | 12 | **550** | 14 |
+| **0** | 11 | 14 | 10 |
+| **2** | 12 | **550** | 14 |
 
 Flat index: `idx = k × Ny × Nx + j × Nx + i`
 
----
-
-### RDF — canonical axes (`rep:z_length`, `rep:y_length`, `rep:x_length`)
-
 ```turtle
-ex:Sample_Vol  a tax:MaterialProperty , owl:NamedIndividual ;
-    rep:has_volume_representation ex:r_vol ;
+ex:Al2O3foam     a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Porous alumina foam"@en .
+
+ex:Al2O3foam_CT  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "MicroCT reconstruction"@en ;
+    rep:has_volume_representation ex:r_volume ;
     rep:has_dsd                   _:dsd .
 
-ex:r_vol a rep:Representation , rep:VolumeData , owl:NamedIndividual ;
+ex:r_volume a rep:Representation , rep:VolumeData , owl:NamedIndividual ;
     rep:rank        "3"^^xsd:nonNegativeInteger ;
-    rep:extent      "12"^^xsd:nonNegativeInteger ;    ## 2 × 2 × 3
+    rep:extent      "12"^^xsd:nonNegativeInteger ;   ## 2 × 2 × 3
     rep:is_separable true ;
     qb:structure    _:dsd .
 
 _:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:z_length , rep:y_length , rep:x_length , rep:intensity ;
+    rep:hasComponent rep:z , rep:y , rep:x , rep:intensity ;
     qb:component
-        [ qb:dimension rep:z_length ;
+        [ qb:dimension rep:z ;                       ## slowest
           qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "2"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:dimension rep:y_length ;
+          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
+        [ qb:dimension rep:y ;
           qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "2"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:dimension rep:x_length ;
+          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
+        [ qb:dimension rep:x ;                       ## fastest
           qb:order     "2"^^xsd:nonNegativeInteger ;
-          rep:extent   "3"^^xsd:nonNegativeInteger ;
-          rep:hasUnit  unit:MicroM ] ,
-        [ qb:measure   rep:intensity ;
-          rep:hasUnit  rep:Counts ] .
+          rep:extent   "3"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
 
-_:v000 a rep:Observation ; qb:dataSet ex:r_vol ;
-    rep:index     "0"^^xsd:nonNegativeInteger ;
-    rep:z_length  "0.0"^^xsd:double ;
-    rep:y_length  "0.0"^^xsd:double ;
-    rep:x_length  "0.0"^^xsd:double ;
-    rep:intensity "10.0"^^xsd:double .
-
-_:v111 a rep:Observation ; qb:dataSet ex:r_vol ;
-    rep:index     "10"^^xsd:nonNegativeInteger ;      ## k=1,j=1,i=1 → 1×6+1×3+1=10
-    rep:z_length  "5.0"^^xsd:double ;
-    rep:y_length  "2.0"^^xsd:double ;
-    rep:x_length  "2.0"^^xsd:double ;
-    rep:intensity "550.0"^^xsd:double .               ## hotspot
+_:v111 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "10"^^xsd:nonNegativeInteger ;         ## k=1,j=1,i=1 → 1×6+1×3+1
+    rep:z "5.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "2.0"^^xsd:double ; rep:intensity "550.0"^^xsd:double .
 ```
 
 ---
 
-### RDF — user-defined axis names (`"slice"`, `"row"`, `"col"`) + canonical links
+## Authoring checklist
 
-```turtle
-ex:slice  a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "slice" ;
-    rep:hasQuantityKind qk:Length ;
-    skos:closeMatch     rep:z_length .
+```
+1. Pick the representation type and set rep:rank to match
+       rank 0 -> Scalar          rank 2 -> Image
+       rank 1 -> Profile         rank 3 -> VolumeData
+       Spectrum / TimeSeries / DepthProfile also asserted at rank 1
 
-ex:row    a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "row" ;
-    rep:hasQuantityKind qk:Length ;
-    skos:closeMatch     rep:y_length .
+2. Use the axis IRIs fixed for that type
+       Scalar        none
+       Spectrum      rep:energy
+       TimeSeries    rep:time
+       DepthProfile  rep:depth
+       Image         rep:y , rep:x
+       VolumeData    rep:z , rep:y , rep:x
 
-ex:col    a rep:Axis , owl:NamedIndividual ;
-    rep:axis_name       "col" ;
-    rep:hasQuantityKind qk:Length ;
-    skos:closeMatch     rep:x_length .
+3. Pick the signal
+       counts       -> rep:intensity     (the usual case)
+       temperature  -> rep:temperature
+       anything else -> add a Signal to the TBox first;
+                        never reuse an Axis IRI as a measure
 
-_:dsd2 qb:component
-    [ qb:dimension ex:slice ; qb:order 0 ; rep:extent 128 ; rep:hasUnit unit:MicroM ] ,
-    [ qb:dimension ex:row   ; qb:order 1 ; rep:extent 256 ; rep:hasUnit unit:MicroM ] ,
-    [ qb:dimension ex:col   ; qb:order 2 ; rep:extent 256 ; rep:hasUnit unit:MicroM ] ,
-    [ qb:measure   rep:intensity ; rep:hasUnit rep:Counts ] .
+4. Assign qb:order   0 = slowest ... n-1 = fastest
+
+5. rep:extent goes on
+       the Representation             total observations
+       each axis ComponentSpec        that axis's length
+       never on the Signal            it is product(axis extents)
+
+6. Use the component IRIs as predicates on each observation
+
+7. Do not write a unit anywhere
 ```
 
 ---
 
-## Decision guide
+## Extent rules
 
-```
-Axis / signal already in TBox canonical vocabulary?
-    YES → use rep:energy / rep:intensity etc. directly — no axis_name needed
-    NO  → mint ex:my_axis ; rep:axis_name "my_axis" ; rep:hasQuantityKind qk:X
-
-Will this dataset be queried alongside other datasets with different axis names?
-    YES → add skos:closeMatch to canonical IRI
-    NO  → omit skos:closeMatch (internal dataset only)
-
-Is the quantity kind not in QUDT at all?
-    → mint ex:MyQuantity a qudt:QuantityKind and use it as rep:hasQuantityKind
-```
+| subject | meaning | stored? |
+|---|---|---|
+| `rep:Representation` | total observations = product of axis extents | always |
+| `qb:ComponentSpecification` (axis) | that axis's array length | always |
+| `rep:Signal` | always equals product(axis extents) | never — derivable |
 
 ---
 
 ## Flat index convention
 
-`rep:index` is optional — include only when the dataset must reference back to an HDF5 array position.
+`rep:index` is optional. Include it when the dataset must point back to a position in
+the source array.
 
-| rank | formula | example |
+| rank | formula | worked example |
 |---|---|---|
 | 1 | `i` | index 3 → element 3 |
-| 2 | `j × Nx + i` | (2,2), Nx=5 → 12 |
-| 3 | `k × Ny × Nx + j × Nx + i` | (1,1,1), Ny=2,Nx=3 → 10 |
+| 2 | `j × Nx + i` | (2,2) with Nx=5 → 12 |
+| 3 | `k × Ny × Nx + j × Nx + i` | (1,1,1) with Ny=2, Nx=3 → 10 |
 
-If all coordinates are materialised in RDF, the coordinate tuple is the natural key and `rep:index` can be omitted.
+When all coordinates are materialised in RDF the coordinate tuple is the natural key,
+and the index adds nothing.
+
+---
+
+## Extending the vocabulary
+
+If the quantity you need has no canonical component, add the individual to the
+canonical vocabulary block in the TBox:
+
+```turtle
+rep:pressure  a owl:NamedIndividual , rep:Signal ;
+    rep:hasQuantityKind qk:Pressure ;
+    rdfs:comment "Pressure signal."@en ;
+    skos:prefLabel "pressure"@en .
+```
+
+Declare the quantity kind if it is not already present:
+
+```turtle
+qk:Pressure a owl:NamedIndividual , qudt:QuantityKind ;
+    skos:prefLabel "Pressure"@en .
+```
+
+The new component is then available across the whole knowledge graph. The one
+judgement call is Axis versus Signal: an Axis is an independent variable you scan
+over, a Signal is what the detector reports.

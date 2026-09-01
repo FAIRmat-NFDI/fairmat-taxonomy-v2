@@ -1,0 +1,122 @@
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+## ==================================================================
+##  VOLUMEDATA   rank 3  ->  rep:VolumeData
+##  Porous alumina foam, microCT reconstruction, 2 x 2 x 3 voxels.
+##
+##  COMPONENT CHAIN
+##    axis    rep:z  order 0 --hasQuantityKind--> qk:Length
+##                           --hasUnit---------->  unit:MicroM (disabled)
+##    axis    rep:y  order 1 --hasQuantityKind--> qk:Length
+##                           --hasUnit---------->  unit:MicroM (disabled)
+##    axis    rep:x  order 2 --hasQuantityKind--> qk:Length
+##                           --hasUnit---------->  unit:MicroM (disabled)
+##    signal  rep:intensity  --hasQuantityKind--> tax:Intensity
+##                           --hasUnit---------->  unit:COUNT  (disabled)
+##
+##  All three axes carry qk:Length. Only qb:order separates them.
+##
+##    z = 0                        z = 5
+##    y \ x    0    2    4         y \ x    0    2    4
+##      0     10   12   11           0     11   14   10
+##      2     13   15   12           2     12  550   14   <- hotspot
+##
+##  flat index:  idx = k*Ny*Nx + j*Nx + i  =  k*6 + j*3 + i
+## ==================================================================
+
+ex:Al2O3foam     a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Porous alumina foam"@en ;
+    tax:hasMaterialProperty ex:Al2O3foam_CT .
+
+ex:Al2O3foam_CT  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "MicroCT reconstruction"@en ;
+    rep:has_volume_representation ex:r_volume ;
+    rep:has_dsd                   _:dsd .
+
+ex:r_volume a rep:Representation , rep:VolumeData , owl:NamedIndividual ;
+    rep:rank        "3"^^xsd:nonNegativeInteger ;   ## triggers rep:VolumeData
+    rep:extent      "12"^^xsd:nonNegativeInteger ;  ## 2 x 2 x 3
+    rep:is_separable true ;
+    qb:structure    _:dsd .
+
+## -- SCHEMA: three dimensions, one measure ------------------------
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:z , rep:y , rep:x , rep:intensity ;
+    qb:component
+        [ qb:dimension rep:z ;                       ## slowest
+          qb:order     "0"^^xsd:nonNegativeInteger ;
+          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
+        [ qb:dimension rep:y ;
+          qb:order     "1"^^xsd:nonNegativeInteger ;
+          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
+        [ qb:dimension rep:x ;                       ## fastest
+          qb:order     "2"^^xsd:nonNegativeInteger ;
+          rep:extent   "3"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
+
+## -- DATA: 12 observations ----------------------------------------
+_:v000 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "0"^^xsd:nonNegativeInteger ;
+    rep:z "0.0"^^xsd:double ; rep:y "0.0"^^xsd:double ;
+    rep:x "0.0"^^xsd:double ; rep:intensity "10.0"^^xsd:double .
+
+_:v001 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "1"^^xsd:nonNegativeInteger ;
+    rep:z "0.0"^^xsd:double ; rep:y "0.0"^^xsd:double ;
+    rep:x "2.0"^^xsd:double ; rep:intensity "12.0"^^xsd:double .
+
+_:v002 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "2"^^xsd:nonNegativeInteger ;
+    rep:z "0.0"^^xsd:double ; rep:y "0.0"^^xsd:double ;
+    rep:x "4.0"^^xsd:double ; rep:intensity "11.0"^^xsd:double .
+
+_:v010 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "3"^^xsd:nonNegativeInteger ;
+    rep:z "0.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "0.0"^^xsd:double ; rep:intensity "13.0"^^xsd:double .
+
+_:v011 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "4"^^xsd:nonNegativeInteger ;
+    rep:z "0.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "2.0"^^xsd:double ; rep:intensity "15.0"^^xsd:double .
+
+_:v012 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "5"^^xsd:nonNegativeInteger ;
+    rep:z "0.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "4.0"^^xsd:double ; rep:intensity "12.0"^^xsd:double .
+
+_:v100 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "6"^^xsd:nonNegativeInteger ;
+    rep:z "5.0"^^xsd:double ; rep:y "0.0"^^xsd:double ;
+    rep:x "0.0"^^xsd:double ; rep:intensity "11.0"^^xsd:double .
+
+_:v101 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "7"^^xsd:nonNegativeInteger ;
+    rep:z "5.0"^^xsd:double ; rep:y "0.0"^^xsd:double ;
+    rep:x "2.0"^^xsd:double ; rep:intensity "14.0"^^xsd:double .
+
+_:v102 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "8"^^xsd:nonNegativeInteger ;
+    rep:z "5.0"^^xsd:double ; rep:y "0.0"^^xsd:double ;
+    rep:x "4.0"^^xsd:double ; rep:intensity "10.0"^^xsd:double .
+
+_:v110 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "9"^^xsd:nonNegativeInteger ;
+    rep:z "5.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "0.0"^^xsd:double ; rep:intensity "12.0"^^xsd:double .
+
+_:v111 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "10"^^xsd:nonNegativeInteger ;
+    rep:z "5.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "2.0"^^xsd:double ; rep:intensity "550.0"^^xsd:double .   ## <- hotspot
+
+_:v112 a rep:Observation ; qb:dataSet ex:r_volume ;
+    rep:index "11"^^xsd:nonNegativeInteger ;
+    rep:z "5.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
+    rep:x "4.0"^^xsd:double ; rep:intensity "14.0"^^xsd:double .

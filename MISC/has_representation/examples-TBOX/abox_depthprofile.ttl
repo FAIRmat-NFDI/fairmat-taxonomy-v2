@@ -1,0 +1,74 @@
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+## ==================================================================
+##  DEPTHPROFILE  rank 1  ->  rep:Profile , asserted rep:DepthProfile
+##  Boron-implanted silicon, SIMS sputter profile.
+##
+##  COMPONENT CHAIN
+##    axis    rep:depth     --hasQuantityKind--> qk:Length
+##                          --hasUnit---------->  unit:NanoM  (disabled)
+##    signal  rep:intensity --hasQuantityKind--> tax:Intensity
+##                          --hasUnit---------->  unit:COUNT  (disabled)
+##
+##  idx   depth   intensity
+##   0        0      120000
+##   1        5       85000
+##   2       10       32000
+##   3       20        5000
+##   4       50         210
+##   5      100          45   <- background
+## ==================================================================
+
+ex:BdopedSi       a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Boron-implanted silicon"@en ;
+    tax:hasMaterialProperty ex:BdopedSi_SIMS .
+
+ex:BdopedSi_SIMS  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "SIMS boron depth profile"@en ;
+    rep:has_depthprofile_representation ex:r_depthprofile ;
+    rep:has_dsd                         _:dsd .
+
+ex:r_depthprofile a rep:Representation , rep:DepthProfile , owl:NamedIndividual ;
+    rep:rank   "1"^^xsd:nonNegativeInteger ;
+    rep:extent "6"^^xsd:nonNegativeInteger ;
+    qb:structure _:dsd .
+
+## -- SCHEMA -------------------------------------------------------
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:depth , rep:intensity ;
+    qb:component
+        [ qb:dimension rep:depth ;
+          qb:order     "0"^^xsd:nonNegativeInteger ;
+          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
+
+## -- DATA ---------------------------------------------------------
+_:d0 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "0"^^xsd:nonNegativeInteger ;
+    rep:depth   "0.0"^^xsd:double ; rep:intensity "120000.0"^^xsd:double .
+
+_:d1 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "1"^^xsd:nonNegativeInteger ;
+    rep:depth   "5.0"^^xsd:double ; rep:intensity  "85000.0"^^xsd:double .
+
+_:d2 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "2"^^xsd:nonNegativeInteger ;
+    rep:depth  "10.0"^^xsd:double ; rep:intensity  "32000.0"^^xsd:double .
+
+_:d3 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "3"^^xsd:nonNegativeInteger ;
+    rep:depth  "20.0"^^xsd:double ; rep:intensity   "5000.0"^^xsd:double .
+
+_:d4 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "4"^^xsd:nonNegativeInteger ;
+    rep:depth  "50.0"^^xsd:double ; rep:intensity    "210.0"^^xsd:double .
+
+_:d5 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
+    rep:index "5"^^xsd:nonNegativeInteger ;
+    rep:depth "100.0"^^xsd:double ; rep:intensity     "45.0"^^xsd:double .

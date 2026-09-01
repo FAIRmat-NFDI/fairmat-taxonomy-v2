@@ -1,0 +1,69 @@
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+## ==================================================================
+##  SPECTRUM   rank 1  ->  rep:Profile , asserted rep:Spectrum
+##  Fe K-edge absorption scan.
+##
+##  COMPONENT CHAIN
+##    axis    rep:energy    --hasQuantityKind--> qk:Energy
+##                          --hasUnit---------->  unit:EV     (disabled)
+##    signal  rep:intensity --hasQuantityKind--> tax:Intensity
+##                          --hasUnit---------->  unit:COUNT  (disabled)
+##
+##  idx   energy    intensity
+##   0    7980.0        12
+##   1    7980.5        15
+##   2    7981.0       115
+##   3    7981.5       850     <- white line
+##   4    7982.0       230
+## ==================================================================
+
+ex:FeFoil      a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "Iron foil"@en ;
+    tax:hasMaterialProperty ex:FeFoil_XAS .
+
+ex:FeFoil_XAS  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "Fe K-edge absorption"@en ;
+    rep:has_spectrum_representation ex:r_spectrum ;
+    rep:has_dsd                     _:dsd .
+
+ex:r_spectrum a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
+    rep:rank   "1"^^xsd:nonNegativeInteger ;   ## triggers rep:Profile
+    rep:extent "5"^^xsd:nonNegativeInteger ;
+    qb:structure _:dsd .
+
+## -- SCHEMA: one dimension, one measure ---------------------------
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:energy , rep:intensity ;
+    qb:component
+        [ qb:dimension rep:energy ;
+          qb:order     "0"^^xsd:nonNegativeInteger ;
+          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
+
+## -- DATA: component IRIs act as predicates -----------------------
+_:o0 a rep:Observation ; qb:dataSet ex:r_spectrum ;
+    rep:index "0"^^xsd:nonNegativeInteger ;
+    rep:energy "7980.0"^^xsd:double ; rep:intensity  "12.0"^^xsd:double .
+
+_:o1 a rep:Observation ; qb:dataSet ex:r_spectrum ;
+    rep:index "1"^^xsd:nonNegativeInteger ;
+    rep:energy "7980.5"^^xsd:double ; rep:intensity  "15.0"^^xsd:double .
+
+_:o2 a rep:Observation ; qb:dataSet ex:r_spectrum ;
+    rep:index "2"^^xsd:nonNegativeInteger ;
+    rep:energy "7981.0"^^xsd:double ; rep:intensity "115.0"^^xsd:double .
+
+_:o3 a rep:Observation ; qb:dataSet ex:r_spectrum ;
+    rep:index "3"^^xsd:nonNegativeInteger ;
+    rep:energy "7981.5"^^xsd:double ; rep:intensity "850.0"^^xsd:double .
+
+_:o4 a rep:Observation ; qb:dataSet ex:r_spectrum ;
+    rep:index "4"^^xsd:nonNegativeInteger ;
+    rep:energy "7982.0"^^xsd:double ; rep:intensity "230.0"^^xsd:double .

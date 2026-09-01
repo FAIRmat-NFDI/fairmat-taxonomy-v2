@@ -1,0 +1,185 @@
+@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+## ==================================================================
+##  IMAGE   rank 2  ->  rep:Image
+##  DP780 dual-phase steel, EBSD orientation map, 5 x 5 grid.
+##
+##  COMPONENT CHAIN
+##    axis    rep:y  order 0 --hasQuantityKind--> qk:Length
+##                           --hasUnit---------->  unit:MicroM (disabled)
+##    axis    rep:x  order 1 --hasQuantityKind--> qk:Length
+##                           --hasUnit---------->  unit:MicroM (disabled)
+##    signal  rep:intensity  --hasQuantityKind--> tax:Intensity
+##                           --hasUnit---------->  unit:COUNT  (disabled)
+##
+##  Both axes carry qk:Length. qb:order is the ONLY thing that
+##  distinguishes them -- quantity kind alone cannot.
+##
+##    y \ x      0     2     4     6     8
+##      0       10    12    11    14    10
+##      2       13    45   120    50    15
+##      4       11   110   850   115    12    <- peak at (4,4)
+##      6       14    55   118    48    11
+##      8       10    12    14    11     9
+##
+##  flat index:  idx = j*Nx + i  =  j*5 + i
+## ==================================================================
+
+ex:DP780       a tax:Material , owl:NamedIndividual ;
+    skos:prefLabel "DP780 dual-phase steel"@en ;
+    tax:hasMaterialProperty ex:DP780_EBSD .
+
+ex:DP780_EBSD  a tax:MaterialProperty , owl:NamedIndividual ;
+    skos:prefLabel "EBSD orientation map"@en ;
+    rep:has_image_representation ex:r_image ;
+    rep:has_dsd                  _:dsd .
+
+ex:r_image a rep:Representation , rep:Image , owl:NamedIndividual ;
+    rep:rank        "2"^^xsd:nonNegativeInteger ;   ## triggers rep:Image
+    rep:extent      "25"^^xsd:nonNegativeInteger ;  ## 5 x 5
+    rep:is_separable true ;
+    qb:structure    _:dsd .
+
+## -- SCHEMA: two dimensions, one measure --------------------------
+_:dsd a rep:DataStructureDefinition ;
+    rep:hasComponent rep:y , rep:x , rep:intensity ;
+    qb:component
+        [ qb:dimension rep:y ;                       ## slow axis
+          qb:order     "0"^^xsd:nonNegativeInteger ;
+          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
+        [ qb:dimension rep:x ;                       ## fast axis
+          qb:order     "1"^^xsd:nonNegativeInteger ;
+          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
+        [ qb:measure   rep:intensity ] .
+
+## -- DATA: 25 observations ----------------------------------------
+_:p00 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "0"^^xsd:nonNegativeInteger ;
+    rep:y "0.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "10.0"^^xsd:double .
+
+_:p01 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "1"^^xsd:nonNegativeInteger ;
+    rep:y "0.0"^^xsd:double ; rep:x "2.0"^^xsd:double ;
+    rep:intensity "12.0"^^xsd:double .
+
+_:p02 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "2"^^xsd:nonNegativeInteger ;
+    rep:y "0.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
+    rep:intensity "11.0"^^xsd:double .
+
+_:p03 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "3"^^xsd:nonNegativeInteger ;
+    rep:y "0.0"^^xsd:double ; rep:x "6.0"^^xsd:double ;
+    rep:intensity "14.0"^^xsd:double .
+
+_:p04 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "4"^^xsd:nonNegativeInteger ;
+    rep:y "0.0"^^xsd:double ; rep:x "8.0"^^xsd:double ;
+    rep:intensity "10.0"^^xsd:double .
+
+_:p10 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "5"^^xsd:nonNegativeInteger ;
+    rep:y "2.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "13.0"^^xsd:double .
+
+_:p11 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "6"^^xsd:nonNegativeInteger ;
+    rep:y "2.0"^^xsd:double ; rep:x "2.0"^^xsd:double ;
+    rep:intensity "45.0"^^xsd:double .
+
+_:p12 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "7"^^xsd:nonNegativeInteger ;
+    rep:y "2.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
+    rep:intensity "120.0"^^xsd:double .
+
+_:p13 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "8"^^xsd:nonNegativeInteger ;
+    rep:y "2.0"^^xsd:double ; rep:x "6.0"^^xsd:double ;
+    rep:intensity "50.0"^^xsd:double .
+
+_:p14 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "9"^^xsd:nonNegativeInteger ;
+    rep:y "2.0"^^xsd:double ; rep:x "8.0"^^xsd:double ;
+    rep:intensity "15.0"^^xsd:double .
+
+_:p20 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "10"^^xsd:nonNegativeInteger ;
+    rep:y "4.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "11.0"^^xsd:double .
+
+_:p21 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "11"^^xsd:nonNegativeInteger ;
+    rep:y "4.0"^^xsd:double ; rep:x "2.0"^^xsd:double ;
+    rep:intensity "110.0"^^xsd:double .
+
+_:p22 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "12"^^xsd:nonNegativeInteger ;
+    rep:y "4.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
+    rep:intensity "850.0"^^xsd:double .   ## <- peak
+
+_:p23 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "13"^^xsd:nonNegativeInteger ;
+    rep:y "4.0"^^xsd:double ; rep:x "6.0"^^xsd:double ;
+    rep:intensity "115.0"^^xsd:double .
+
+_:p24 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "14"^^xsd:nonNegativeInteger ;
+    rep:y "4.0"^^xsd:double ; rep:x "8.0"^^xsd:double ;
+    rep:intensity "12.0"^^xsd:double .
+
+_:p30 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "15"^^xsd:nonNegativeInteger ;
+    rep:y "6.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "14.0"^^xsd:double .
+
+_:p31 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "16"^^xsd:nonNegativeInteger ;
+    rep:y "6.0"^^xsd:double ; rep:x "2.0"^^xsd:double ;
+    rep:intensity "55.0"^^xsd:double .
+
+_:p32 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "17"^^xsd:nonNegativeInteger ;
+    rep:y "6.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
+    rep:intensity "118.0"^^xsd:double .
+
+_:p33 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "18"^^xsd:nonNegativeInteger ;
+    rep:y "6.0"^^xsd:double ; rep:x "6.0"^^xsd:double ;
+    rep:intensity "48.0"^^xsd:double .
+
+_:p34 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "19"^^xsd:nonNegativeInteger ;
+    rep:y "6.0"^^xsd:double ; rep:x "8.0"^^xsd:double ;
+    rep:intensity "11.0"^^xsd:double .
+
+_:p40 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "20"^^xsd:nonNegativeInteger ;
+    rep:y "8.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "10.0"^^xsd:double .
+
+_:p41 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "21"^^xsd:nonNegativeInteger ;
+    rep:y "8.0"^^xsd:double ; rep:x "2.0"^^xsd:double ;
+    rep:intensity "12.0"^^xsd:double .
+
+_:p42 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "22"^^xsd:nonNegativeInteger ;
+    rep:y "8.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
+    rep:intensity "14.0"^^xsd:double .
+
+_:p43 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "23"^^xsd:nonNegativeInteger ;
+    rep:y "8.0"^^xsd:double ; rep:x "6.0"^^xsd:double ;
+    rep:intensity "11.0"^^xsd:double .
+
+_:p44 a rep:Observation ; qb:dataSet ex:r_image ;
+    rep:index "24"^^xsd:nonNegativeInteger ;
+    rep:y "8.0"^^xsd:double ; rep:x "8.0"^^xsd:double ;
+    rep:intensity "9.0"^^xsd:double .
