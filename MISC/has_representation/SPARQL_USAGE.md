@@ -24,25 +24,22 @@ abox_volume.ttl           # 12
 Every component declares what it measures through a two-link chain:
 
 ```
-COMPONENT  --hasQuantityKind-->  QUANTITY KIND  --hasUnit-->  UNIT
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
-                    LIVE                             DISABLED
+COMPONENT  --hasQuantityKind-->  QUANTITY KIND 
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+                    LIVE                            
 ```
 
 `rep:hasQuantityKind` is fully active and is the semantic anchor for every query
-below — Q01, Q02, Q06 and Q16 all pivot on it. `rep:hasUnit` and every `qudt:Unit`
-individual are commented out in the TBox.
+below — Q01, Q02, Q06 and Q16 all pivot on it. 
 
 | question | answerable? | how |
 |---|---|---|
 | Which datasets measure a length? | yes | `?ax rep:hasQuantityKind qk:Length` (Q16) |
 | Which axis is the slow one? | yes | `?cs qb:order 0` (Q05) |
 | How many points along each axis? | yes | `?cs rep:extent ?n` (Q05, Q18) |
-| Which datasets are in micrometres? | **no** | no unit triple exists |
-| Is 850 here the same as 850 there? | **no** | see the note under Q15 |
 
-Where a result table is annotated *values are eV* or similar, that is editorial
-context for the reader; the string is not in the graph and no query returns it.
+
+
 
 ---
 
@@ -242,7 +239,7 @@ five of the six datasets; only the scalar uses `rep:temperature`.
 
 ### Q07 — Full spectrum
 
-*Axis values are eV and signal values are detector counts in the source file.*
+*Axis values are Enery and signal values are detector counts in the source file.*
 
 ```sparql
 SELECT ?energy ?intensity WHERE {
@@ -312,7 +309,7 @@ fixing the axis per representation type.
 
 ### Q10 — Scalar value
 
-*The instrument logged kelvin.*
+*The instrument logged some temperature data.*
 
 ```sparql
 SELECT ?material ?value WHERE {

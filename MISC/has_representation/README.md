@@ -52,18 +52,8 @@ rep:energy       rep:hasQuantityKind  qk:Energy .
 rep:intensity    rep:hasQuantityKind  tax:Intensity .
 rep:temperature  rep:hasQuantityKind  qk:Temperature .
 
-## disabled -- the second link and the units it points at
-## rep:energy     rep:hasUnit  unit:EV .
-## rep:intensity  rep:hasUnit  unit:COUNT .
 ```
 
-So a query can ask *which datasets measure an energy* — that is a
-`rep:hasQuantityKind` question, and Q16 in `SPARQL_USAGE.md` does exactly that. It
-cannot ask *which datasets are in eV*.
-
-Where this guide writes something like *the instrument logged kelvin*, that is
-editorial context for the reader. The string is not in the graph and no query
-returns it.
 
 ---
 
@@ -180,7 +170,7 @@ this dataset by quantity kind without knowing the material or the property name.
 **Shape** `(5,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:Spectrum`
 · **axis** `rep:energy`
 
-Fe K-edge absorption scan. *Axis values are eV and signal values are detector counts
+Fe K-edge absorption scan. *Axis values are Energy and signal values are detector counts
 in the source file; neither unit is in the graph.*
 
 | index | energy | intensity |
@@ -319,7 +309,7 @@ _:d5 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
 
 **Shape** `(5, 5)` · **rank** 2 · **inferred** `rep:Image` · **axes** `rep:y` (0), `rep:x` (1)
 
-DP780 dual-phase steel, EBSD orientation map. *Step size was 2 µm.*
+DP780 dual-phase steel, EBSD orientation map.
 
 | y \ x | 0 | 2 | 4 | 6 | 8 |
 |---|---|---|---|---|---|
