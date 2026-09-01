@@ -21,16 +21,14 @@ Every Axis and every Signal declares what it measures. The intended model is a
 two-link chain:
 
 ```
-COMPONENT  --hasQuantityKind-->  QUANTITY KIND  --hasUnit-->  UNIT
+COMPONENT  --hasQuantityKind-->  QUANTITY KIND 
 ```
 
-**The first link is live. The second is disabled.** `rep:hasQuantityKind` is
-untouched — it is the semantic anchor for every query in this guide.
-`rep:hasUnit` and every `qudt:Unit` individual are commented out in the TBox.
 
-| representation | component | role | `rep:hasQuantityKind` | `rep:hasUnit` |
-|---|---|---|---|---|
-| Scalar | `rep:temperature` | signal | `qk:Temperature` | ~~`unit:K`~~ |
+
+| representation | component | role | `rep:hasQuantityKind` 
+|---|---|---|---|
+| Scalar | `rep:temperature` | signal | `qk:Temperature` |
 | Spectrum | `rep:energy` | axis | `qk:Energy` | ~~`unit:EV`~~ |
 | | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
 | TimeSeries | `rep:time` | axis | `qk:Time` | ~~`unit:SEC`~~ |
@@ -461,7 +459,6 @@ _:v111 a rep:Observation ; qb:dataSet ex:r_volume ;
 
 6. Use the component IRIs as predicates on each observation
 
-7. Do not write a unit anywhere
 ```
 
 ---
@@ -492,7 +489,7 @@ and the index adds nothing.
 
 ---
 
-## Extending the vocabulary
+## Extending the vocabulary (INTERNAL future updates)
 
 If the quantity you need has no canonical component, add the individual to the
 canonical vocabulary block in the TBox:
