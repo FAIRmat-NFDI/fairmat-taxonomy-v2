@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/2DDefectInterfacialEnergy> a owl:Class ;
+tax:2DDefectInterfacialEnergy a owl:Class ;
     rdfs:comment "Energy required to form a unit area of new interface in a material."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/StructuralProperty> ;
+    rdfs:subClassOf tax:StructuralProperty ;
     skos:altLabel "InterfacialEnergy"@en ;
     skos:prefLabel "2DDefectInterfacialEnergy"@en .
 

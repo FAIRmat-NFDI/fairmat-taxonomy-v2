@@ -1,0 +1,8 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix qb: <http://purl.org/linked-data/cube#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+qb:attribute a owl:ObjectProperty ;
+    rdfs:domain qb:ComponentSpecification ;
+    rdfs:range qb:AttributeProperty .
+

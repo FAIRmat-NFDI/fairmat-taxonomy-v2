@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/CarrierLifetime> a owl:Class ;
+tax:CarrierLifetime a owl:Class ;
     rdfs:comment "Average time for the carriers to recombine. Typically obtained for minority carriers."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicTransportProperty> ;
+    rdfs:subClassOf tax:ElectronicTransportProperty ;
     skos:prefLabel "CarrierLifetime"@en .
 

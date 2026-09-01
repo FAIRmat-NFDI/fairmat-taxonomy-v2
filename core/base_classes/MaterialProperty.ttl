@@ -1,6 +1,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/MaterialProperty> a owl:Class ;
+tax:MaterialProperty a owl:Class ;
     skos:prefLabel "MaterialProperty"@en .
 

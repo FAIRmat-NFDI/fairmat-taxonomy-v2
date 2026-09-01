@@ -3,12 +3,13 @@
 @prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/GibbsEnergy> a owl:Class ;
+tax:GibbsEnergy a owl:Class ;
     rdfs:comment "Thermodynamic potential that measures the maximum amount of work that may be performed by a thermodynamic closed system at constant temperature and pressure. It also provides a necessary condition for processes such as chemical reactions to occur under these conditions."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:Energy ;
             owl:onProperty qudt:hasQuantityKind ],
-        <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+        tax:ThermodynamicProperty ;
     skos:prefLabel "GibbsEnergy"@en .
 

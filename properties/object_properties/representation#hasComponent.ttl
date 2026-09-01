@@ -1,0 +1,11 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rep: <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+rep:hasComponent a owl:ObjectProperty ;
+    rdfs:comment "Shortcut: direct link DSD -> ComponentProperty. Mirrors qb:component/qb:dimension|measure|attribute. SHACL validates both agree."@en ;
+    rdfs:domain rep:DataStructureDefinition ;
+    rdfs:range rep:ComponentProperty ;
+    skos:prefLabel "hasComponent"@en .
+

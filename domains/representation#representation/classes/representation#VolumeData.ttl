@@ -1,0 +1,18 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix qb: <http://purl.org/linked-data/cube#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rep: <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+rep:VolumeData a owl:Class ;
+    rdfs:subClassOf rep:Representation,
+        qb:DataSet ;
+    owl:equivalentClass [ a owl:Class ;
+            owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
+                        owl:hasValue "3"^^xsd:nonNegativeInteger ;
+                        owl:onProperty rep:rank ] ) ] ;
+    skos:closeMatch qb:DataSet ;
+    skos:prefLabel "VolumeData"@en .
+

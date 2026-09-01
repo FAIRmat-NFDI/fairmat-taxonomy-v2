@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/ElectricHysteresis> a owl:Class ;
+tax:ElectricHysteresis a owl:Class ;
     rdfs:comment "Polarization history of a material in terms of the applied electric field."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/FerroelectricProperty> ;
+    rdfs:subClassOf tax:FerroelectricProperty ;
     skos:prefLabel "ElectricHysteresis"@en .
 

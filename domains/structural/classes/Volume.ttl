@@ -3,13 +3,14 @@
 @prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/Volume> a owl:Class ;
+tax:Volume a owl:Class ;
     rdfs:comment "Volume of the material."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:Volume ;
             owl:onProperty qudt:hasQuantityKind ],
-        <http://fairmat-nfdi.eu/taxonomy/StructuralProperty> ;
+        tax:StructuralProperty ;
     skos:altLabel "EffectiveVolume"@en ;
     skos:prefLabel "Volume"@en .
 

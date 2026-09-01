@@ -1,0 +1,12 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix qb: <http://purl.org/linked-data/cube#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rep: <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+rep:Observation a owl:Class ;
+    rdfs:subClassOf rep:Representation,
+        qb:Observation ;
+    skos:closeMatch qb:Observation ;
+    skos:prefLabel "Observation"@en .
+

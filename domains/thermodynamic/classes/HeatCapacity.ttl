@@ -3,12 +3,13 @@
 @prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/HeatCapacity> a owl:Class ;
+tax:HeatCapacity a owl:Class ;
     rdfs:comment "Amount of heat to be supplied to a material to produce a unit change in its temperature."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:HeatCapacity ;
             owl:onProperty qudt:hasQuantityKind ],
-        <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+        tax:ThermodynamicProperty ;
     skos:prefLabel "HeatCapacity"@en .
 

@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/SuperconductingCoherenceLength> a owl:Class ;
+tax:SuperconductingCoherenceLength a owl:Class ;
     rdfs:comment "Length scale at which the superconducting behaviour is maintained. It also represents the real space size of the Cooper pairs."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/SuperconductingProperty> ;
+    rdfs:subClassOf tax:SuperconductingProperty ;
     skos:prefLabel "SuperconductingCoherenceLength"@en .
 

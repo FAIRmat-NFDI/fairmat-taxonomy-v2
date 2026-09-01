@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/HeatOfFusion> a owl:Class ;
+tax:HeatOfFusion a owl:Class ;
     rdfs:comment "Enthalpy change by unit mass resulting from providing energy (typically heat) to a specific quantity of the substance to change its state from solid to liquid at constant pressure."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+    rdfs:subClassOf tax:ThermodynamicProperty ;
     skos:altLabel "SpecificHeatOfFusion"@en ;
     skos:prefLabel "HeatOfFusion"@en .
 

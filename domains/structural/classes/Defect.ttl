@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/Defect> a owl:Class ;
+tax:Defect a owl:Class ;
     rdfs:comment "Defect of different dimensions (from 0D point defects to 2D interfaces) in a given material."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/StructuralProperty> ;
+    rdfs:subClassOf tax:StructuralProperty ;
     skos:prefLabel "Defect"@en .
 

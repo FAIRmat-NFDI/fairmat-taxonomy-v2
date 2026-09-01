@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/1DDefectDensity> a owl:Class ;
+tax:1DDefectDensity a owl:Class ;
     rdfs:comment "Number of dislocations in a unit volume of a material."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/StructuralProperty> ;
+    rdfs:subClassOf tax:StructuralProperty ;
     skos:prefLabel "1DDefectDensity"@en .
 

@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/EffectiveHoleMass> a owl:Class ;
+tax:EffectiveHoleMass a owl:Class ;
     rdfs:comment "Mass that holes have in the presence of interactions. In semiconductors, it is the curvature of the bottom of the conduction band. In strongly correlated materials, it is related with the Green's function slope with the frequency near zero."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    rdfs:subClassOf tax:ElectronicProperty ;
     skos:altLabel "EffectiveMassHole"@en ;
     skos:prefLabel "EffectiveHoleMass"@en .
 

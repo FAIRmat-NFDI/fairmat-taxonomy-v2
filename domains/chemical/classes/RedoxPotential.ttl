@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/RedoxPotential> a owl:Class ;
+tax:RedoxPotential a owl:Class ;
     rdfs:comment "Potential needed for chemical species to gain electrons from or lose electrons to an electrode. The sign of the potential determines if the electrons are gained or lost."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ChemicalProperty> ;
+    rdfs:subClassOf tax:ChemicalProperty ;
     skos:prefLabel "RedoxPotential"@en .
 

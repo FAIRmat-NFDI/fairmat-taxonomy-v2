@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/AbsorptionCoefficient> a owl:Class ;
+tax:AbsorptionCoefficient a owl:Class ;
     rdfs:comment "Distance that light of a specific wavelength can travel into a material before being absorbed."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/OpticalProperty> ;
+    rdfs:subClassOf tax:OpticalProperty ;
     skos:prefLabel "AbsorptionCoefficient"@en .
 

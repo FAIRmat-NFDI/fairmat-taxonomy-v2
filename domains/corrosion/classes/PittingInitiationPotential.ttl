@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/PittingInitiationPotential> a owl:Class ;
+tax:PittingInitiationPotential a owl:Class ;
     rdfs:comment "Lowest value of the corrosion potential at which pitting starts on a passive surface in a given corrosive environment."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/CorrosionProperty> ;
+    rdfs:subClassOf tax:CorrosionProperty ;
     skos:prefLabel "PittingInitiationPotential"@en .
 

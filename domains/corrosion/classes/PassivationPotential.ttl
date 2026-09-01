@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/PassivationPotential> a owl:Class ;
+tax:PassivationPotential a owl:Class ;
     rdfs:comment "Electrode potential at which the material undergoes a transition to a passive state, forming an oxide layer on its surface."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/CorrosionProperty> ;
+    rdfs:subClassOf tax:CorrosionProperty ;
     skos:prefLabel "PassivationPotential"@en .
 

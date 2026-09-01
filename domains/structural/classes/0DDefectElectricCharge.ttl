@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/0DDefectElectricCharge> a owl:Class ;
+tax:0DDefectElectricCharge a owl:Class ;
     rdfs:comment "Charge state of point defects in electron charge units (+1, +2, -1, -2, etc.)."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/StructuralProperty> ;
+    rdfs:subClassOf tax:StructuralProperty ;
     skos:altLabel "ElectricCharge"@en ;
     skos:prefLabel "0DDefectElectricCharge"@en .
 

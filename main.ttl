@@ -12,6 +12,8 @@
 
 <http://fairmat-nfdi.eu/taxonomy> a owl:Ontology .
 
+<http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology .
+
 tax:0DDefectDensity a owl:Class ;
     rdfs:comment "Number of defects per unit volume in a material."@en ;
     rdfs:subClassOf tax:StructuralProperty ;
@@ -102,24 +104,6 @@ tax:BoilingTemperature a owl:Class ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:Temperature ;
             owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
     skos:altLabel "BoilingPoint"@en ;
     skos:prefLabel "BoilingTemperature"@en .
@@ -158,24 +142,6 @@ tax:CharpyImpactEnergy a owl:Class ;
 tax:ChemicalPotential a owl:Class ;
     rdfs:comment "Free energy cost of adding or extracting a particle from a thermodynamic system."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:hasValue qk:ChemicalPotential ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ChemicalPotential ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ChemicalPotential ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ChemicalPotential ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ChemicalPotential ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ChemicalPotential ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
             owl:hasValue qk:ChemicalPotential ;
             owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
@@ -226,24 +192,6 @@ tax:CryoscopicConstant a owl:Class ;
 tax:DebyeTemperature a owl:Class ;
     rdfs:comment "Temperature at which all possible phonic states are currently occupied. It is also a measure of the size of the phonon frequencies occurring in a material."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
             owl:hasValue qk:Temperature ;
             owl:onProperty qudt:hasQuantityKind ],
         tax:VibrationalProperty ;
@@ -423,48 +371,12 @@ tax:Fugacity a owl:Class ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:Fugacity ;
             owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Fugacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Fugacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Fugacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Fugacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Fugacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Fugacity ;
-            owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
     skos:prefLabel "Fugacity"@en .
 
 tax:GibbsEnergy a owl:Class ;
     rdfs:comment "Thermodynamic potential that measures the maximum amount of work that may be performed by a thermodynamic closed system at constant temperature and pressure. It also provides a necessary condition for processes such as chemical reactions to occur under these conditions."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
             owl:hasValue qk:Energy ;
             owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
@@ -500,24 +412,6 @@ tax:HallVoltage a owl:Class ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:Voltage ;
             owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Voltage ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Voltage ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Voltage ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Voltage ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Voltage ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Voltage ;
-            owl:onProperty qudt:hasQuantityKind ],
         tax:ElectronicTransportProperty ;
     skos:prefLabel "HallVoltage"@en .
 
@@ -529,24 +423,6 @@ tax:Hardness a owl:Class ;
 tax:HeatCapacity a owl:Class ;
     rdfs:comment "Amount of heat to be supplied to a material to produce a unit change in its temperature."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:hasValue qk:HeatCapacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:HeatCapacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:HeatCapacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:HeatCapacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:HeatCapacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:HeatCapacity ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
             owl:hasValue qk:HeatCapacity ;
             owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
@@ -567,24 +443,6 @@ tax:HeatOfFusion a owl:Class ;
 tax:HelmholtzEnergy a owl:Class ;
     rdfs:comment "Thermodynamic potential that measures the useful work obtainable from a closed thermodynamic system at a constant temperature."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Energy ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
             owl:hasValue qk:Energy ;
             owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
@@ -690,24 +548,6 @@ tax:MeltingRange a owl:Class ;
 tax:MeltingTemperature a owl:Class ;
     rdfs:comment "Temperature at which a substance changes from solid to liquid."@en ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Temperature ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
             owl:hasValue qk:Temperature ;
             owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
@@ -1055,24 +895,6 @@ tax:ThermalExpansionCoefficient a owl:Class ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:ThermalExpansionCoefficient ;
             owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ThermalExpansionCoefficient ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ThermalExpansionCoefficient ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ThermalExpansionCoefficient ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ThermalExpansionCoefficient ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ThermalExpansionCoefficient ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:ThermalExpansionCoefficient ;
-            owl:onProperty qudt:hasQuantityKind ],
         tax:ThermodynamicProperty ;
     skos:prefLabel "ThermalExpansionCoefficient"@en .
 
@@ -1116,24 +938,6 @@ tax:Volume a owl:Class ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:hasValue qk:Volume ;
             owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Volume ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Volume ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Volume ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Volume ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Volume ;
-            owl:onProperty qudt:hasQuantityKind ],
-        [ a owl:Restriction ;
-            owl:hasValue qk:Volume ;
-            owl:onProperty qudt:hasQuantityKind ],
         tax:StructuralProperty ;
     skos:altLabel "EffectiveVolume"@en ;
     skos:prefLabel "Volume"@en .
@@ -1163,7 +967,8 @@ rep:Counts a qudt:Unit,
     skos:prefLabel "counts"@en .
 
 rep:Observation a owl:Class ;
-    rdfs:subClassOf rep:Representation ;
+    rdfs:subClassOf rep:Representation,
+        qb:Observation ;
     skos:closeMatch qb:Observation ;
     skos:prefLabel "Observation"@en .
 
@@ -1177,12 +982,14 @@ rep:axis_name a owl:DatatypeProperty,
 rep:depth a rep:Axis,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Length ;
-    rdfs:comment "Depth axis (SIMS, profiling)."@en .
+    rdfs:comment "Depth into the sample surface. The sole axis of rep:DepthProfile."@en ;
+    skos:prefLabel "depth"@en .
 
 rep:energy a rep:Axis,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Energy ;
-    rdfs:comment "Photon / electron energy axis."@en .
+    rdfs:comment "Photon or electron energy. The sole axis of rep:Spectrum."@en ;
+    skos:prefLabel "energy"@en .
 
 rep:extent a owl:DatatypeProperty,
         owl:FunctionalProperty ;
@@ -1270,7 +1077,8 @@ rep:has_volume_representation a owl:FunctionalProperty,
 rep:intensity a rep:Signal,
         owl:NamedIndividual ;
     rep:hasQuantityKind tax:Intensity ;
-    rdfs:comment "Raw detector counts / uncalibrated intensity."@en .
+    rdfs:comment "Raw detector counts / uncalibrated intensity."@en ;
+    skos:prefLabel "intensity"@en .
 
 rep:order a owl:DatatypeProperty,
         owl:FunctionalProperty ;
@@ -1282,27 +1090,32 @@ rep:order a owl:DatatypeProperty,
 rep:temperature a rep:Signal,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Temperature ;
-    rdfs:comment "Temperature signal."@en .
+    rdfs:comment "Temperature signal."@en ;
+    skos:prefLabel "temperature"@en .
 
 rep:time a rep:Axis,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Time ;
-    rdfs:comment "Time axis."@en .
+    rdfs:comment "Elapsed time. The sole axis of rep:TimeSeries."@en ;
+    skos:prefLabel "time"@en .
 
-rep:x_length a rep:Axis,
+rep:x a rep:Axis,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Length ;
-    rdfs:comment "Spatial x-axis (fastest dimension by convention)."@en .
+    rdfs:comment "Spatial x-axis. Image order 1, Volume order 2. Fastest-varying."@en ;
+    skos:prefLabel "x"@en .
 
-rep:y_length a rep:Axis,
+rep:y a rep:Axis,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Length ;
-    rdfs:comment "Spatial y-axis."@en .
+    rdfs:comment "Spatial y-axis. Image order 0, Volume order 1."@en ;
+    skos:prefLabel "y"@en .
 
-rep:z_length a rep:Axis,
+rep:z a rep:Axis,
         owl:NamedIndividual ;
     rep:hasQuantityKind qk:Length ;
-    rdfs:comment "Spatial z-axis (slowest dimension by convention)."@en .
+    rdfs:comment "Spatial z-axis. Volume order 0. Slowest-varying."@en ;
+    skos:prefLabel "z"@en .
 
 qb:attribute a owl:ObjectProperty ;
     rdfs:domain qb:ComponentSpecification ;
@@ -1385,12 +1198,9 @@ rep:DepthProfile a owl:Class ;
     skos:prefLabel "DepthProfile"@en .
 
 rep:Image a owl:Class ;
-    rdfs:subClassOf rep:Representation ;
+    rdfs:subClassOf rep:Representation,
+        qb:DataSet ;
     owl:equivalentClass [ a owl:Class ;
-            owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
-                        owl:hasValue "2"^^xsd:nonNegativeInteger ;
-                        owl:onProperty rep:rank ] ) ],
-        [ a owl:Class ;
             owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
                         owl:hasValue "2"^^xsd:nonNegativeInteger ;
                         owl:onProperty rep:rank ] ) ] ;
@@ -1398,12 +1208,9 @@ rep:Image a owl:Class ;
     skos:prefLabel "Image"@en .
 
 rep:Scalar a owl:Class ;
-    rdfs:subClassOf rep:Representation ;
+    rdfs:subClassOf rep:Representation,
+        qb:DataSet ;
     owl:equivalentClass [ a owl:Class ;
-            owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
-                        owl:hasValue "0"^^xsd:nonNegativeInteger ;
-                        owl:onProperty rep:rank ] ) ],
-        [ a owl:Class ;
             owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
                         owl:hasValue "0"^^xsd:nonNegativeInteger ;
                         owl:onProperty rep:rank ] ) ] ;
@@ -1419,12 +1226,9 @@ rep:TimeSeries a owl:Class ;
     skos:prefLabel "TimeSeries"@en .
 
 rep:VolumeData a owl:Class ;
-    rdfs:subClassOf rep:Representation ;
+    rdfs:subClassOf rep:Representation,
+        qb:DataSet ;
     owl:equivalentClass [ a owl:Class ;
-            owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
-                        owl:hasValue "3"^^xsd:nonNegativeInteger ;
-                        owl:onProperty rep:rank ] ) ],
-        [ a owl:Class ;
             owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
                         owl:hasValue "3"^^xsd:nonNegativeInteger ;
                         owl:onProperty rep:rank ] ) ] ;
@@ -1446,7 +1250,8 @@ tax:ThermalTransportProperty a owl:Class ;
     skos:prefLabel "ThermalTransportProperty"@en .
 
 rep:DataStructureDefinition a owl:Class ;
-    rdfs:subClassOf rep:Representation ;
+    rdfs:subClassOf rep:Representation,
+        qb:DataStructureDefinition ;
     skos:closeMatch qb:DataStructureDefinition ;
     skos:prefLabel "DataStructureDefinition"@en .
 
@@ -1458,12 +1263,9 @@ tax:TransportProperty a owl:Class ;
     skos:prefLabel "TransportProperty"@en .
 
 rep:Profile a owl:Class ;
-    rdfs:subClassOf rep:Representation ;
+    rdfs:subClassOf rep:Representation,
+        qb:DataSet ;
     owl:equivalentClass [ a owl:Class ;
-            owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
-                        owl:hasValue "1"^^xsd:nonNegativeInteger ;
-                        owl:onProperty rep:rank ] ) ],
-        [ a owl:Class ;
             owl:intersectionOf ( rep:Representation [ a owl:Restriction ;
                         owl:hasValue "1"^^xsd:nonNegativeInteger ;
                         owl:onProperty rep:rank ] ) ] ;
@@ -1476,8 +1278,7 @@ rep:UnitAttribute a owl:Class ;
     skos:prefLabel "UnitAttribute"@en .
 
 qb:ComponentProperty a owl:Class ;
-    owl:disjointUnionOf ( qb:DimensionProperty qb:MeasureProperty qb:AttributeProperty ),
-        ( qb:DimensionProperty qb:MeasureProperty qb:AttributeProperty ) ;
+    owl:disjointUnionOf ( qb:DimensionProperty qb:MeasureProperty qb:AttributeProperty ) ;
     skos:prefLabel "ComponentProperty"@en .
 
 qb:DataStructureDefinition a owl:Class .
@@ -1532,8 +1333,7 @@ tax:PiezoelectricProperty a owl:Class ;
 
 rep:ComponentProperty a owl:Class ;
     rdfs:subClassOf rep:Representation ;
-    owl:disjointUnionOf ( rep:Axis rep:Signal rep:UnitAttribute ),
-        ( rep:Axis rep:Signal rep:UnitAttribute ) ;
+    owl:disjointUnionOf ( rep:Axis rep:Signal rep:UnitAttribute ) ;
     skos:prefLabel "ComponentProperty"@en .
 
 tax:FracturesProperty a owl:Class ;
@@ -1651,4 +1451,3 @@ tax:StructuralProperty a owl:Class ;
 
 qudt:hasQuantityKind a owl:ObjectProperty ;
     rdfs:range qudt:QuantityKind .
-

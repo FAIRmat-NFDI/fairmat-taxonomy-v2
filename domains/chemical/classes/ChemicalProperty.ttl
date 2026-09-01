@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/ChemicalProperty> a owl:Class ;
+tax:ChemicalProperty a owl:Class ;
     rdfs:comment "Property that describes the reactivity and transformation of a material based on its chemical composition, detailing how it undergoes alterations in its molecular structure when subjected to chemical reactions."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/MaterialProperty> ;
+    rdfs:subClassOf tax:MaterialProperty ;
     skos:prefLabel "ChemicalProperty"@en .
 

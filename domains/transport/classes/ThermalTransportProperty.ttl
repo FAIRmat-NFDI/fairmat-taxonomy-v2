@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/ThermalTransportProperty> a owl:Class ;
+tax:ThermalTransportProperty a owl:Class ;
     rdfs:comment "Property that describes the movement of heat in a given material."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/TransportProperty> ;
+    rdfs:subClassOf tax:TransportProperty ;
     skos:prefLabel "ThermalTransportProperty"@en .
 

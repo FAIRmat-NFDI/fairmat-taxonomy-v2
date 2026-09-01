@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/CarrierDensity> a owl:Class ;
+tax:CarrierDensity a owl:Class ;
     rdfs:comment "Number of charge carriers per volume."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    rdfs:subClassOf tax:ElectronicProperty ;
     skos:altLabel "CarrierConcentration"@en ;
     skos:prefLabel "CarrierDensity"@en .
 

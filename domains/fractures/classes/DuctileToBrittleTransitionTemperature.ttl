@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/DuctileToBrittleTransitionTemperature> a owl:Class ;
+tax:DuctileToBrittleTransitionTemperature a owl:Class ;
     rdfs:comment "Temperature at which there is a pronounced decrease in a material’s ability to absorb force without fracturing, transitioning from a ductile to a brittle state."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/FracturesProperty> ;
+    rdfs:subClassOf tax:FracturesProperty ;
     skos:altLabel "DBTT"@en,
         "DBTransTemp"@en ;
     skos:prefLabel "DuctileToBrittleTransitionTemperature"@en .

@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/PoralizedPotential> a owl:Class ;
+tax:PoralizedPotential a owl:Class ;
     rdfs:comment "Potential across the electrode-electrolyte interface which results as the sum of the corrosion potential and the applied electrical polarization."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/CorrosionProperty> ;
+    rdfs:subClassOf tax:CorrosionProperty ;
     skos:prefLabel "PoralizedPotential"@en .
 

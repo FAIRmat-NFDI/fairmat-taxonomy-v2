@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/CryoscopicConstant> a owl:Class ;
+tax:CryoscopicConstant a owl:Class ;
     rdfs:comment "Decrease in the freezing point per unit molality of solute in a solution."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+    rdfs:subClassOf tax:ThermodynamicProperty ;
     skos:prefLabel "CryoscopicConstant"@en .
 

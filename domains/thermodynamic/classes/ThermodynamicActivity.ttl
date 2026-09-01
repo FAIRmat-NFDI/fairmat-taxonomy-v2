@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/ThermodynamicActivity> a owl:Class ;
+tax:ThermodynamicActivity a owl:Class ;
     rdfs:comment "Effective concentration of a species in a mixture. Here, it means that the species chemical potential depends on the activity of a real solution in the same way that it would depend on concentration for an ideal solution."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ThermodynamicProperty> ;
+    rdfs:subClassOf tax:ThermodynamicProperty ;
     skos:prefLabel "ThermodynamicActivity"@en .
 

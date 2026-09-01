@@ -1,10 +1,11 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/hasMaterialProperty> a owl:ObjectProperty ;
-    rdfs:domain <http://fairmat-nfdi.eu/taxonomy/Material> ;
-    rdfs:range <http://fairmat-nfdi.eu/taxonomy/MaterialProperty> ;
+tax:hasMaterialProperty a owl:ObjectProperty ;
+    rdfs:domain tax:Material ;
+    rdfs:range tax:MaterialProperty ;
     rdfs:subPropertyOf owl:topObjectProperty ;
     skos:prefLabel "hasMaterialProperty"@en .
 

@@ -1,0 +1,12 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rep: <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
+
+rep:has_dsd a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range rep:DataStructureDefinition ;
+    skos:prefLabel "has_dsd"@en .
+

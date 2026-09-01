@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/PoreLimitingDiameter> a owl:Class ;
+tax:PoreLimitingDiameter a owl:Class ;
     rdfs:comment "Diameter of the largest pore that can traverse through the material."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/StructuralProperty> ;
+    rdfs:subClassOf tax:StructuralProperty ;
     skos:prefLabel "PoreLimitingDiameter"@en .
 

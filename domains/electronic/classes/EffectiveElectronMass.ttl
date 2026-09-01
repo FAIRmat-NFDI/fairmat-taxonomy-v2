@@ -1,9 +1,10 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix tax: <http://fairmat-nfdi.eu/taxonomy/> .
 
-<http://fairmat-nfdi.eu/taxonomy/EffectiveElectronMass> a owl:Class ;
+tax:EffectiveElectronMass a owl:Class ;
     rdfs:comment "Mass that electrons have in the presence of interactions. In semiconductors, it is the curvature of the top of the valence band. In strongly correlated materials, it is related with the Green's function slope with the frequency near zero."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/ElectronicProperty> ;
+    rdfs:subClassOf tax:ElectronicProperty ;
     skos:prefLabel "EffectiveElectronMass"@en .
 
