@@ -43,8 +43,7 @@ COMPONENT  --hasQuantityKind-->  QUANTITY KIND
 | | `rep:x` (2) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
 | | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
 
-Struck-through cells are the removed link. They are recorded here and in the TBox
-comments so the intended model stays legible, but no such triple exists in any file.
+
 
 ```turtle
 ## live -- every component declares its quantity kind
