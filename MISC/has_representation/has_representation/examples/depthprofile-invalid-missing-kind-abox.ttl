@@ -1,0 +1,34 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: REP-UNIT-004, REP-UNIT-005
+## case: DepthProfile / invalid missing quantity kind
+
+ex:depthprofile-missing-dataset a rep:DepthProfile ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    rep:extent "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:depthprofile-missing-dsd .
+
+ex:depthprofile-missing-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:depthprofile-missing-axis-depth,
+        ex:depthprofile-missing-signal .
+
+ex:depthprofile-missing-axis-depth a qb:ComponentSpecification ;
+    qb:dimension rep:depth .
+
+ex:depthprofile-missing-signal a qb:ComponentSpecification ;
+    qb:measure ex:depthprofile-untyped-signal ; rep:hasUnit unit:COUNT .
+
+ex:depthprofile-untyped-signal a rep:Signal .
+
+ex:depthprofile-missing-observation a rep:Observation ;
+    qb:dataSet ex:depthprofile-missing-dataset ;
+    rep:depth "25.0"^^xsd:double ;
+    ex:depthprofile-untyped-signal "125"^^xsd:nonNegativeInteger .
+

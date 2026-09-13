@@ -1,0 +1,44 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: REP-UNIT-004, REP-UNIT-005
+## case: VolumeData / invalid missing quantity kind
+
+ex:volume-missing-dataset a rep:VolumeData ;
+    rep:rank "3"^^xsd:nonNegativeInteger ;
+    rep:extent "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:volume-missing-dsd .
+
+ex:volume-missing-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:volume-missing-axis-z,
+        ex:volume-missing-axis-y,
+        ex:volume-missing-axis-x,
+        ex:volume-missing-signal .
+
+ex:volume-missing-axis-z a qb:ComponentSpecification ;
+    qb:dimension rep:z .
+
+ex:volume-missing-axis-y a qb:ComponentSpecification ;
+    qb:dimension rep:y .
+
+ex:volume-missing-axis-x a qb:ComponentSpecification ;
+    qb:dimension rep:x .
+
+ex:volume-missing-signal a qb:ComponentSpecification ;
+    qb:measure ex:volume-untyped-signal ; rep:hasUnit unit:COUNT .
+
+ex:volume-untyped-signal a rep:Signal .
+
+ex:volume-missing-observation a rep:Observation ;
+    qb:dataSet ex:volume-missing-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    ex:volume-untyped-signal "125"^^xsd:nonNegativeInteger .
+

@@ -1,0 +1,32 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: Spectrum / valid optional unit
+
+ex:spectrum-valid-dataset a rep:Spectrum ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    rep:extent "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:spectrum-valid-dsd .
+
+ex:spectrum-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:spectrum-valid-axis-energy,
+        ex:spectrum-valid-signal .
+
+ex:spectrum-valid-axis-energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ; rep:hasUnit unit:EV .
+
+ex:spectrum-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:spectrum-valid-observation a rep:Observation ;
+    qb:dataSet ex:spectrum-valid-dataset ;
+    rep:energy "10.0"^^xsd:double ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
