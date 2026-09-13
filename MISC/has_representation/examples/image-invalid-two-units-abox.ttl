@@ -1,0 +1,59 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  image-invalid-two-units-abox.ttl
+##  expect: REP-UNIT-003
+##
+## Two units on one specification.
+##
+## rep:hasUnit is owl:FunctionalProperty, which does NOT reject this:
+## OWL infers unit:MicroM owl:sameAs unit:NanoM and carries on. That
+## inference is silently wrong and would propagate. sh:maxCount 1
+## catches it. (HermiT rejects it only if the units are additionally
+## declared owl:AllDifferent, which the TBox deliberately does not do.)
+##
+## Both units are individually permitted for qk:Length and both are in
+## the Image profile, so this file isolates the cardinality error with
+## nothing else firing alongside it.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:image_twounits a rep:Image , qb:DataSet ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_12 .
+
+ex:dsd_12 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_12_y , ex:cs_12_x , ex:cs_12_intensity .
+
+ex:cs_12_y a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_12_x a qb:ComponentSpecification ;
+    qb:dimension rep:x ;
+    qb:order "1"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM , unit:NanoM .   #### WRONG: two units on one slot
+
+ex:cs_12_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- values are real; only the x specification cardinality is invalid
+ex:obs_12_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:image_twounits ; rep:y "0.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+ex:obs_12_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:image_twounits ; rep:y "0.0"^^xsd:double ; rep:x "0.5"^^xsd:double ;
+    rep:intensity "118"^^xsd:nonNegativeInteger .

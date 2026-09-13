@@ -24,7 +24,7 @@
 ##      │     ├── rep:Axis
 ##      │     ├── rep:Signal
 ##      │     └── rep:UnitAttribute       (disjointUnion member; unused --
-##      │                                  rep:hasUnit is disabled)
+##      │                                  rep:hasUnit attaches directly)
 ##      ├── rep:Observation               one data point (qb:Observation)
 ##      ├── rep:Scalar                    rank-based data containers
 ##      ├── rep:Profile
@@ -34,10 +34,16 @@
 ##      ├── rep:Image
 ##      └── rep:VolumeData
 ##
-##  Two qb bridges:
-##    DataStructureDefinition  rdfs:subClassOf  qb:DataStructureDefinition
-##    Scalar/Profile/Image/VolumeData  rdfs:subClassOf  qb:DataSet
-##    Observation              rdfs:subClassOf  qb:Observation
+##  RDF Data Cube bridges used by this module:
+##    DataStructureDefinition  skos:closeMatch  qb:DataStructureDefinition
+##    Scalar/Profile/Image/VolumeData  skos:closeMatch  qb:DataSet
+##    Observation              skos:closeMatch  qb:Observation
+##    Axis                     rdfs:subClassOf  qb:DimensionProperty
+##    Signal                   rdfs:subClassOf  qb:MeasureProperty
+##
+##  The first three are deliberately loose alignments, not class
+##  equivalences or subclass axioms. ABoxes therefore assert both the
+##  rep: and qb: type where direct, no-reasoner interoperability matters.
 ##
 ##  Axis set is fixed per representation type -- see the CANONICAL
 ##  COMPONENT VOCABULARY block at the foot of this file:
@@ -45,18 +51,33 @@
 ##    Scalar  none   Spectrum  energy   TimeSeries  time
 ##    Image   y,x    DepthProfile depth  VolumeData  z,y,x
 ##
-##  Two properties are disabled in this build, commented out in
-##  place rather than deleted:
+##  UNIT LAYER
 ##
-##    rep:hasUnit    all unit individuals go with it
+##    rep:hasUnit and the qudt:Unit individuals are live.
+##    Every component carries two independent edges:
+##
+##        COMPONENT --rep:hasQuantityKind--> qudt:QuantityKind
+##        COMPONENT --rep:hasUnit---------> qudt:Unit
+##
+##    They are independent, not chained. A kind->unit edge was
+##    evaluated and rejected: functional + AllDifferent makes any
+##    second unit for the same kind an inconsistency, and the
+##    inverse direction is non-functional and answers silently
+##    wrong. Two edges off the component keep both facts local.
+##
+##    OWL cannot say "a Length axis may not be measured in
+##    seconds" -- that is a closed-world statement. It lives in
+##    representation.shacl.ttl (SHACL), which is the only
+##    place the permitted unit sets are enumerated. This file
+##    declares exactly the six canonical defaults and nothing
+##    more.
+##
+##  Still disabled, commented out in place rather than deleted:
+##
 ##    rep:axis_name  the canonical IRI local name is the axis name
 ##
 ##  rep:hasQuantityKind is UNCHANGED and fully active -- it is the
-##  semantic anchor for every component and is not affected by the
-##  unit removal.
-##
-##  The module is modular by design; uncomment either block to
-##  restore the behaviour without touching anything else.
+##  semantic anchor for every component.
 ##
 #################################################################
 
@@ -134,27 +155,26 @@ rep:Axis a owl:Class ;
     rdfs:subClassOf rep:ComponentProperty , qb:DimensionProperty ;
     rdfs:comment """A dimension -- the independent variable a measurement is scanned over.
 
-Every Axis carries rep:hasQuantityKind. The full chain is:
+Every Axis carries both component edges:
 
     rep:x  rep:hasQuantityKind  qk:Length
-           rep:hasUnit          unit:MicroM     <- DISABLED in this build
+           rep:hasUnit          unit:MicroM
 
-Only the hasUnit link is removed. hasQuantityKind is untouched and
-remains the semantic anchor for every query."""@en ;
+The unit on the canonical individual is the module default. A
+dataset that differs states its own rep:hasUnit on the relevant
+qb:ComponentSpecification; SHACL validates either placement."""@en ;
     skos:prefLabel "Axis"@en .
 
 rep:Signal a owl:Class ;
     rdfs:subClassOf rep:ComponentProperty , qb:MeasureProperty ;
     rdfs:comment """A measure -- what the detector reports.
 
-Every Signal carries rep:hasQuantityKind. The full chain is:
+Every Signal carries both component edges:
 
     rep:temperature  rep:hasQuantityKind  qk:Temperature
-                     rep:hasUnit          unit:K          <- DISABLED
+                     rep:hasUnit          unit:K
     rep:intensity    rep:hasQuantityKind  tax:Intensity
-                     rep:hasUnit          unit:COUNT      <- DISABLED
-
-Only the hasUnit link is removed."""@en ;
+                     rep:hasUnit          unit:COUNT"""@en ;
     skos:prefLabel "Signal"@en .
 
 rep:UnitAttribute a owl:Class ;
@@ -169,59 +189,82 @@ rep:hasQuantityKind a owl:ObjectProperty , owl:FunctionalProperty ;
     skos:prefLabel "hasQuantityKind"@en .
 
 ##  ==============================================================
-##   rep:hasUnit  --  DISABLED
+##   rep:hasUnit
 ##
-##   The intended model is a two-link chain from every component:
+##   Two independent edges hang off every component:
 ##
-##       COMPONENT  --hasQuantityKind-->  KIND  --hasUnit-->  UNIT
+##       COMPONENT --hasQuantityKind--> KIND
+##       COMPONENT --hasUnit---------> UNIT
 ##
-##   Worked out per representation type:
+##   Canonical defaults per representation type:
 ##
 ##     SCALAR
-##       signal  rep:temperature  -> qk:Temperature  -> unit:K
+##       signal  rep:temperature  qk:Temperature   unit:K
 ##
 ##     SPECTRUM
-##       axis    rep:energy       -> qk:Energy       -> unit:EV
-##       signal  rep:intensity    -> tax:Intensity   -> unit:COUNT
+##       axis    rep:energy       qk:Energy        unit:EV
+##       signal  rep:intensity    tax:Intensity    unit:COUNT
 ##
 ##     TIMESERIES
-##       axis    rep:time         -> qk:Time         -> unit:SEC
-##       signal  rep:intensity    -> tax:Intensity   -> unit:COUNT
+##       axis    rep:time         qk:Time          unit:SEC
+##       signal  rep:intensity    tax:Intensity    unit:COUNT
 ##
 ##     DEPTHPROFILE
-##       axis    rep:depth        -> qk:Length       -> unit:NanoM
-##       signal  rep:intensity    -> tax:Intensity   -> unit:COUNT
+##       axis    rep:depth        qk:Length        unit:NanoM
+##       signal  rep:intensity    tax:Intensity    unit:COUNT
 ##
 ##     IMAGE
-##       axis    rep:y            -> qk:Length       -> unit:MicroM
-##       axis    rep:x            -> qk:Length       -> unit:MicroM
-##       signal  rep:intensity    -> tax:Intensity   -> unit:COUNT
+##       axis    rep:y            qk:Length        unit:MicroM
+##       axis    rep:x            qk:Length        unit:MicroM
+##       signal  rep:intensity    tax:Intensity    unit:COUNT
 ##
 ##     VOLUMEDATA
-##       axis    rep:z            -> qk:Length       -> unit:MicroM
-##       axis    rep:y            -> qk:Length       -> unit:MicroM
-##       axis    rep:x            -> qk:Length       -> unit:MicroM
-##       signal  rep:intensity    -> tax:Intensity   -> unit:COUNT
+##       axis    rep:z            qk:Length        unit:MicroM
+##       axis    rep:y            qk:Length        unit:MicroM
+##       axis    rep:x            qk:Length        unit:MicroM
+##       signal  rep:intensity    tax:Intensity    unit:COUNT
 ##
-##   THE FIRST LINK IS LIVE. THE SECOND IS DISABLED.
+##   PLACEMENT. Two subjects are legal, and the domain below is the
+##   union of exactly those two:
 ##
-##   hasQuantityKind is untouched -- every axis and signal still
-##   declares what it measures, and every query in SPARQL_USAGE.md
-##   relies on it. Only the trailing --hasUnit--> UNIT step and the
-##   qudt:Unit individuals it points at are commented out.
+##     rep:ComponentProperty       module default, stated once on
+##                                 the canonical IRI (see the
+##                                 CANONICAL COMPONENT VOCABULARY
+##                                 block at the foot of this file)
 ##
-##   rep:UnitAttribute (the class) stays declared: it is a member of
-##   the owl:disjointUnionOf that defines rep:ComponentProperty, so
-##   deleting it would break that axiom. It is simply unused here.
+##     qb:ComponentSpecification   dataset-scoped actual unit,
+##                                 alongside qb:order and
+##                                 rep:extent, which are already
+##                                 dataset-scoped for the same
+##                                 reason: the canonical IRI is a
+##                                 shared singleton and must not
+##                                 carry per-dataset facts
 ##
-##   Uncomment this block together with the qudt:Unit individuals
-##   further down to restore the second link.
+##   A dataset working in millimetres states unit:MilliM on its
+##   own ComponentSpecification; rep:x keeps unit:MicroM. SHACL
+##   validates both placements against the same permitted set.
+##
+##   NOTE ON DOMAIN. An earlier draft of this property declared
+##   rdfs:domain rep:UnitAttribute. That form is unusable:
+##   rep:ComponentProperty is an owl:disjointUnionOf
+##   ( rep:Axis rep:Signal rep:UnitAttribute ), so a unit on
+##   rep:energy would have entailed rep:energy a rep:UnitAttribute
+##   and collided with rep:Axis. Verified inconsistent under
+##   HermiT. The union domain below is the corrected form.
+##
+##   rep:UnitAttribute stays declared -- it is a member of the
+##   owl:disjointUnionOf that defines rep:ComponentProperty, so
+##   deleting it would break that axiom. It is the qb-idiomatic
+##   slot for an attribute-carried unit and remains available, but
+##   this module attaches units directly and does not use it.
 ##  ==============================================================
-##
-## rep:hasUnit a owl:ObjectProperty , owl:FunctionalProperty ;
-##     rdfs:domain rep:UnitAttribute ;
-##     rdfs:range  qudt:Unit ;
-##     skos:prefLabel "hasUnit"@en .
+
+rep:hasUnit a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ;
+                  owl:unionOf ( rep:ComponentProperty qb:ComponentSpecification ) ] ;
+    rdfs:range  qudt:Unit ;
+    rdfs:comment "Unit of the component. Functional: one unit per subject. Permitted unit sets per quantity kind are NOT stated here -- see representation.shacl.ttl."@en ;
+    skos:prefLabel "hasUnit"@en .
 
 ##  ┌──────────────────────────────────────────────────────────────┐
 ##  │  rep:axis_name  --  DISABLED                                  │
@@ -270,7 +313,8 @@ rep:extent a owl:DatatypeProperty , owl:FunctionalProperty ;
 
 #################################################################
 ##  3. DATA LAYER -- rank-based data containers
-##     Each is a subclass of rep:Representation AND qb:DataSet.
+##     Each is a subclass of rep:Representation and close-matched to
+##     qb:DataSet. ABoxes type concrete datasets as qb:DataSet too.
 ##     Links to its DSD via qb:structure.
 ##     rep:rank = number of Axis components (SHACL validates).
 #################################################################
@@ -347,7 +391,8 @@ rep:DepthProfile a owl:Class ; rdfs:subClassOf rep:Profile ; skos:prefLabel "Dep
 
 #################################################################
 ##  4. OBSERVATION LAYER -- one point in the cube
-##     Subclass of rep:Representation AND qb:Observation.
+##     Subclass of rep:Representation and close-matched to
+##     qb:Observation. ABoxes type concrete rows as both classes.
 #################################################################
 
 qb:Observation a owl:Class .
@@ -432,40 +477,47 @@ tax:Intensity a owl:NamedIndividual , qudt:QuantityKind ;
     rdfs:comment "Uncalibrated detector signal. No QUDT term exists."@en .
 
 ##  ==============================================================
-##   qudt:Unit individuals  --  DISABLED
+##   qudt:Unit individuals
 ##
-##   These are the objects of the second link in the chain
-##
-##       COMPONENT --hasQuantityKind--> KIND --hasUnit--> UNIT
-##                                                        ^^^^
-##   Nothing references them while rep:hasUnit is disabled. The
-##   qudt:Unit CLASS declaration above is retained so the range of
-##   a restored rep:hasUnit still resolves.
-##
-##   Which quantity kind each one pairs with:
+##   The objects of the rep:hasUnit edge. Exactly six: the
+##   canonical default for each canonical component. Which
+##   quantity kind each one pairs with:
 ##
 ##     unit:EV      qk:Energy
 ##     unit:K       qk:Temperature
-##     unit:DEG_C   qk:Temperature
 ##     unit:MicroM  qk:Length
 ##     unit:NanoM   qk:Length
 ##     unit:SEC     qk:Time
 ##     unit:COUNT   tax:Intensity
 ##
+##   THIS IS NOT THE LIST THAT GROWS. A dataset in millimetres or
+##   keV is legal, and the set of units a dataset may use is
+##   expected to widen over time -- but that set is a closed-world
+##   statement and OWL cannot hold it. It is enumerated once, in
+##   representation.shacl.ttl, and that is the file to extend.
+##   Adding unit:MilliM here would declare it exists without
+##   saying what it may pair with, which is the weaker half of the
+##   fact.
+##
+##   One unit per canonical component, no alternatives. A dataset
+##   that works in other units states them on its own
+##   qb:ComponentSpecification; see the PLACEMENT note on
+##   rep:hasUnit above.
+##
+##   The pairings above are documentation only. The machine-
+##   readable form is shp:permitsUnit in the shapes graph.
+##
 ##   Note on counts: QUDT publishes unit:COUNT, so the earlier
 ##   locally-minted rep:Counts is unnecessary and is not carried
-##   forward. If this block is ever restored, use unit:COUNT.
-##
-##   Uncomment together with rep:hasUnit above.
+##   forward.
 ##  ==============================================================
-##
-## unit:EV     a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "eV"@en .
-## unit:K      a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "K"@en .
-## unit:DEG_C  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "C"@en .
-## unit:MicroM a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "um"@en .
-## unit:NanoM  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "nm"@en .
-## unit:SEC    a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "s"@en .
-## unit:COUNT  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "count"@en .
+
+unit:EV     a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "eV"@en .
+unit:K      a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "K"@en .
+unit:MicroM a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "um"@en .
+unit:NanoM  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "nm"@en .
+unit:SEC    a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "s"@en .
+unit:COUNT  a owl:NamedIndividual , qudt:Unit ; skos:prefLabel "count"@en .
 
 #################################################################
 ##  CANONICAL COMPONENT VOCABULARY
@@ -498,57 +550,64 @@ tax:Intensity a owl:NamedIndividual , qudt:QuantityKind ;
 ## -- axes -----------------------------------------------------
 
 rep:x  a owl:NamedIndividual , rep:Axis ;
-    rep:hasQuantityKind qk:Length ;          ## --hasUnit--> unit:MicroM  (disabled)
+    rep:hasQuantityKind qk:Length ;
+    rep:hasUnit         unit:MicroM ;
     rdfs:comment "Spatial x-axis. Image order 1, Volume order 2. Fastest-varying."@en ;
     skos:prefLabel "x"@en .
 
 rep:y  a owl:NamedIndividual , rep:Axis ;
-    rep:hasQuantityKind qk:Length ;          ## --hasUnit--> unit:MicroM  (disabled)
+    rep:hasQuantityKind qk:Length ;
+    rep:hasUnit         unit:MicroM ;
     rdfs:comment "Spatial y-axis. Image order 0, Volume order 1."@en ;
     skos:prefLabel "y"@en .
 
 rep:z  a owl:NamedIndividual , rep:Axis ;
-    rep:hasQuantityKind qk:Length ;          ## --hasUnit--> unit:MicroM  (disabled)
+    rep:hasQuantityKind qk:Length ;
+    rep:hasUnit         unit:MicroM ;
     rdfs:comment "Spatial z-axis. Volume order 0. Slowest-varying."@en ;
     skos:prefLabel "z"@en .
 
 rep:depth  a owl:NamedIndividual , rep:Axis ;
-    rep:hasQuantityKind qk:Length ;          ## --hasUnit--> unit:NanoM   (disabled)
+    rep:hasQuantityKind qk:Length ;
+    rep:hasUnit         unit:NanoM ;
     rdfs:comment "Depth into the sample surface. The sole axis of rep:DepthProfile."@en ;
     skos:prefLabel "depth"@en .
 
 rep:energy  a owl:NamedIndividual , rep:Axis ;
-    rep:hasQuantityKind qk:Energy ;          ## --hasUnit--> unit:EV      (disabled)
+    rep:hasQuantityKind qk:Energy ;
+    rep:hasUnit         unit:EV ;
     rdfs:comment "Photon or electron energy. The sole axis of rep:Spectrum."@en ;
     skos:prefLabel "energy"@en .
 
 rep:time  a owl:NamedIndividual , rep:Axis ;
-    rep:hasQuantityKind qk:Time ;            ## --hasUnit--> unit:SEC     (disabled)
+    rep:hasQuantityKind qk:Time ;
+    rep:hasUnit         unit:SEC ;
     rdfs:comment "Elapsed time. The sole axis of rep:TimeSeries."@en ;
     skos:prefLabel "time"@en .
 
 ## -- signals --------------------------------------------------
 
 rep:intensity  a owl:NamedIndividual , rep:Signal ;
-    rep:hasQuantityKind tax:Intensity ;      ## --hasUnit--> unit:COUNT   (disabled)
+    rep:hasQuantityKind tax:Intensity ;
+    rep:hasUnit         unit:COUNT ;
     rdfs:comment "Raw detector counts / uncalibrated intensity."@en ;
     skos:prefLabel "intensity"@en .
 
 rep:temperature  a owl:NamedIndividual , rep:Signal ;
-    rep:hasQuantityKind qk:Temperature ;     ## --hasUnit--> unit:K       (disabled)
+    rep:hasQuantityKind qk:Temperature ;
+    rep:hasUnit         unit:K ;
     rdfs:comment "Temperature signal."@en ;
     skos:prefLabel "temperature"@en .
 
 #################################################################
 ##  ENFORCEMENT NOTE
 ##
-##  Commenting out rep:hasUnit and rep:axis_name removes them from
-##  the vocabulary, but OWL operates under the open-world
-##  assumption: an undeclared predicate is still legal RDF. A
-##  reasoner will NOT reject an ABox that uses them, nor one that
-##  mints its own ex: axis IRI. Verified with HermiT:
+##  OWL operates under the open-world assumption, so absence of an
+##  axiom is never a rejection. A reasoner will NOT reject an ABox
+##  that mints its own ex: axis IRI, nor one that states a unit
+##  that makes no dimensional sense. Verified with HermiT:
 ##
-##    rep:hasUnit on a ComponentSpec      -> CONSISTENT
+##    unit:SEC on a qk:Length axis        -> CONSISTENT
 ##    rep:axis_name on an axis            -> CONSISTENT
 ##    user-minted ex: axis                -> CONSISTENT
 ##    rep:energy used as a qb:measure     -> INCONSISTENT
@@ -557,18 +616,26 @@ rep:temperature  a owl:NamedIndividual , rep:Signal ;
 ##  rep:Signal are owl:disjointWith -- a genuine logical axiom
 ##  rather than an absence.
 ##
-##  So the canonical restriction is a CONVENTION at this layer.
-##  Making it a CONSTRAINT requires SHACL, which is closed-world:
+##  That first line is the whole reason the unit layer needs a
+##  companion shapes graph. Restoring rep:hasUnit restores the
+##  ABILITY to state a unit; it does not constrain WHICH unit. The
+##  constraint is closed-world and lives in
+##  representation.shacl.ttl:
+##
+##    Layer 1  sh:Violation   unit must be permitted for the
+##                            component's quantity kind
+##                            (seconds on a Length axis)
+##    Layer 2  sh:Warning     unit must sit inside the profile for
+##                            the representation type
+##                            (metres on a DepthProfile depth axis
+##                            -- dimensionally fine, off-profile)
+##
+##  plus the canonical axis restriction:
 ##
 ##    rep:CanonicalAxisShape a sh:NodeShape ;
 ##        sh:targetObjectsOf qb:dimension ;
 ##        sh:in ( rep:x rep:y rep:z rep:depth rep:energy rep:time ) ;
 ##        sh:message "Axis must come from the canonical vocabulary." .
-##
-##    rep:NoUnitShape a sh:NodeShape ;
-##        sh:targetSubjectsOf qb:component ;
-##        sh:property [ sh:path rep:hasUnit ; sh:maxCount 0 ;
-##                      sh:message "rep:hasUnit is disabled in this build." ] .
 ##
 ##  Shapes belong in a separate shapes graph, not here -- this file
 ##  stays a pure OWL 2 DL TBox.

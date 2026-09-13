@@ -1,0 +1,56 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-timeseries-valid-second-abox.ttl
+##  expect: conforms
+##
+## TimeSeries in seconds. A photoluminescence decay curve.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+### the taxonomy bridge -- which material property this data represents
+ex:carrier_lifetime a tax:CarrierLifetime ;
+    rep:has_timeseries_representation ex:decay_curve .
+
+ex:decay_curve a rep:TimeSeries , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_14 .
+
+ex:dsd_14 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_14_time , ex:cs_14_intensity .
+
+ex:cs_14_time a qb:ComponentSpecification ;
+    qb:dimension rep:time ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:SEC .
+
+ex:cs_14_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- elapsed time and detector counts
+ex:obs_14_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:decay_curve ;
+    rep:time "0.0"^^xsd:double ;
+    rep:intensity "4820"^^xsd:nonNegativeInteger .
+
+ex:obs_14_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:decay_curve ;
+    rep:time "0.1"^^xsd:double ;
+    rep:intensity "3910"^^xsd:nonNegativeInteger .
+
+ex:obs_14_002 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:decay_curve ;
+    rep:time "0.2"^^xsd:double ;
+    rep:intensity "3170"^^xsd:nonNegativeInteger .

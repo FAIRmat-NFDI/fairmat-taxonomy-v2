@@ -1,0 +1,56 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-depth-warn-micrometre-abox.ttl
+##  expect: REP-UNIT-013 (warning only)
+##
+## DepthProfile in micrometres.
+##
+## THE CASE THAT JUSTIFIES THE SEVERITY SPLIT. unit:MicroM is a
+## permitted length unit, so Layer 1 passes -- there is no dimensional
+## error to report. But a depth profile stepped in micrometres is three
+## orders of magnitude off the usual scale and is almost certainly a
+## units-of-convenience mistake. qk:Length cannot say so, because the
+## same kind covers the um-scale image axes where MicroM is exactly
+## right. Only the representation type separates the two. Result: no
+## violation, one warning, and the graph still validates overall.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:sims_microns a rep:DepthProfile , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_09 .
+
+ex:dsd_09 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_09_depth , ex:cs_09_intensity .
+
+ex:cs_09_depth a qb:ComponentSpecification ;
+    qb:dimension rep:depth ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .       #### OFF-PROFILE: dimensionally valid, wrong scale
+
+ex:cs_09_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- the micrometre values make the off-profile scale concrete
+ex:obs_09_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sims_microns ;
+    rep:depth "0.0"^^xsd:double ;
+    rep:intensity "9120"^^xsd:nonNegativeInteger .
+
+ex:obs_09_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sims_microns ;
+    rep:depth "2.5"^^xsd:double ;
+    rep:intensity "8740"^^xsd:nonNegativeInteger .

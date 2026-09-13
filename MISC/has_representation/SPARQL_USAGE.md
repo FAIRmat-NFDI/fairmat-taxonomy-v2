@@ -1,616 +1,348 @@
-# FAIRmat Representation Ontology
-## SPARQL Query Reference
+# SPARQL usage
 
-Every query below was run against the six example ABoxes shipped with this guide,
-and every result table is the actual output — not an illustration.
+What you can ask this module, and what comes back.
 
-Load the graph:
+Every query below was run against `representation.ttl` +
+`representation.shacl.ttl` + the six `*-valid-*-abox.ttl` files in
+`examples/`, plus `examples/profile-depth-warn-micrometre-abox.ttl`, and every
+result table is the actual output — not an illustration of one. To reproduce:
 
-```bash
-representation.ttl        # TBox
-abox_scalar.ttl           # 1 observation
-abox_spectrum.ttl         # 5
-abox_timeseries.ttl       # 6
-abox_depthprofile.ttl     # 6
-abox_image.ttl            # 25
-abox_volume.ttl           # 12
-                          # 822 triples after rdfs closure
+```python
+from pathlib import Path
+from rdflib import Graph
+
+g = Graph()
+g.parse("representation.ttl", format="turtle")
+g.parse("representation.shacl.ttl", format="turtle")   # brings in the unit map
+for f in sorted(Path("examples").glob("*-valid-*.ttl")):
+    g.parse(f, format="turtle")
+g.parse("examples/profile-depth-warn-micrometre-abox.ttl", format="turtle")
+
+for row in g.query(QUERY):
+    print(row)
 ```
 
----
+No reasoner is involved. Everything here runs on the asserted triples,
+which is the point of the design: the canonical component IRIs are
+shared across every dataset, so one query pattern serves the whole
+knowledge graph.
 
-## What is and is not queryable
-
-Every component declares what it measures through a two-link chain:
-
-```
-COMPONENT  --hasQuantityKind-->  QUANTITY KIND 
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-                    LIVE                            
-```
-
-`rep:hasQuantityKind` is fully active and is the semantic anchor for every query
-below — Q01, Q02, Q06 and Q16 all pivot on it. 
-
-| question | answerable? | how |
-|---|---|---|
-| Which datasets measure a length? | yes | `?ax rep:hasQuantityKind qk:Length` (Q16) |
-| Which axis is the slow one? | yes | `?cs qb:order 0` (Q05) |
-| How many points along each axis? | yes | `?cs rep:extent ?n` (Q05, Q18) |
-
-
-
-
----
-
-## Prefixes
-
-All queries assume:
+Prefixes, assumed by every query below:
 
 ```sparql
+PREFIX ex:   <http://example.org/data#>
 PREFIX rep:  <http://fairmat-nfdi.eu/taxonomy/representation#>
 PREFIX tax:  <http://fairmat-nfdi.eu/taxonomy/>
-PREFIX ex:   <http://fairmat-nfdi.eu/taxonomy/abox#>
+PREFIX shp:  <http://fairmat-nfdi.eu/taxonomy/shapes/units#>
 PREFIX qb:   <http://purl.org/linked-data/cube#>
 PREFIX qk:   <http://qudt.org/vocab/quantitykind/>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX unit: <http://qudt.org/vocab/unit/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 ```
-
-Queries that traverse `rep:has_representation` need `rdfs:subPropertyOf` closure,
-since the ABoxes assert the typed subproperties (`rep:has_image_representation` and
-friends). Any RDFS-capable store does this automatically; with plain rdflib,
-materialise first.
 
 ---
 
-## Group 1 — Schema
+## Q1 — What is the canonical vocabulary?
 
-### Q01 — Canonical axes
+The starting point for anyone new to the module: every axis and signal
+the module defines, with what it measures and its default unit.
 
 ```sparql
-SELECT ?axis ?quantityKind WHERE {
-    ?axis a rep:Axis ;
-          rep:hasQuantityKind ?quantityKind .
+SELECT ?component ?role ?kind ?unit WHERE {
+  ?component rep:hasQuantityKind ?kind ;
+             rep:hasUnit         ?unit ;
+             a                   ?role .
+  FILTER(?role IN (rep:Axis, rep:Signal))
 }
-ORDER BY ?axis
+ORDER BY ?role ?component
 ```
 
-| `?axis` | `?quantityKind` |
-|---|---|
-| `rep:depth` | `qk:Length` |
-| `rep:energy` | `qk:Energy` |
-| `rep:time` | `qk:Time` |
-| `rep:x` | `qk:Length` |
-| `rep:y` | `qk:Length` |
-| `rep:z` | `qk:Length` |
+| component | role | kind | unit |
+|---|---|---|---|
+| `rep:depth` | `rep:Axis` | `qk:Length` | `unit:NanoM` |
+| `rep:energy` | `rep:Axis` | `qk:Energy` | `unit:EV` |
+| `rep:time` | `rep:Axis` | `qk:Time` | `unit:SEC` |
+| `rep:x` | `rep:Axis` | `qk:Length` | `unit:MicroM` |
+| `rep:y` | `rep:Axis` | `qk:Length` | `unit:MicroM` |
+| `rep:z` | `rep:Axis` | `qk:Length` | `unit:MicroM` |
+| `rep:intensity` | `rep:Signal` | `tax:Intensity` | `unit:COUNT` |
+| `rep:temperature` | `rep:Signal` | `qk:Temperature` | `unit:K` |
 
-Six axes, and four of them share `qk:Length`. Quantity kind alone cannot tell `rep:x`
-from `rep:y` from `rep:z` — that is what `qb:order` is for.
+Eight components, six axes and two signals. That is the whole
+vocabulary — an ABox never mints its own.
 
 ---
 
-### Q02 — Canonical signals
+## Q2 — What units may I write for this quantity kind?
+
+Answered without a validator. The permitted-unit table is ordinary RDF
+in `representation.shacl.ttl`, so it is queryable like anything else.
+This is the query to run before writing a converter.
 
 ```sparql
-SELECT ?signal ?quantityKind WHERE {
-    ?signal a rep:Signal ;
-            rep:hasQuantityKind ?quantityKind .
-}
-ORDER BY ?signal
+SELECT ?unit WHERE { qk:Length shp:permitsUnit ?unit }
+ORDER BY ?unit
 ```
 
-| `?signal` | `?quantityKind` |
-|---|---|
-| `rep:intensity` | `tax:Intensity` |
-| `rep:temperature` | `qk:Temperature` |
-
-Two signals against six axes. `rep:intensity` covers every counting detector; a
-measurement with a different quantity kind needs a new Signal added to the TBox, since
-`rep:Axis` and `rep:Signal` are disjoint and an Axis IRI cannot stand in.
-
----
-
-### Q03 — Representation classes
-
-```sparql
-SELECT ?class WHERE {
-    ?class rdfs:subClassOf+ rep:Representation .
-}
-ORDER BY ?class
-```
-
-| `?class` |
+| unit |
 |---|
-| `rep:Axis` |
-| `rep:ComponentProperty` |
-| `rep:DataStructureDefinition` |
-| `rep:DepthProfile` |
-| `rep:Image` |
-| `rep:Observation` |
-| `rep:Profile` |
-| `rep:Scalar` |
-| `rep:Signal` |
-| `rep:Spectrum` |
-| `rep:TimeSeries` |
-| `rep:UnitAttribute` |
-| `rep:VolumeData` |
+| `unit:MicroM` |
+| `unit:NanoM` |
 
-The `+` matters. `rep:Spectrum`, `rep:TimeSeries` and `rep:DepthProfile` are subclasses
-of `rep:Profile`, not direct subclasses of `rep:Representation`; `rep:Axis` and
-`rep:Signal` sit under `rep:ComponentProperty`. A single-step `rdfs:subClassOf` returns
-seven classes and silently drops the rest.
+Drop the `qk:Length` binding to get the whole table:
+
+```sparql
+SELECT ?kind ?unit WHERE { ?kind shp:permitsUnit ?unit } ORDER BY ?kind ?unit
+```
+
+| kind | unit |
+|---|---|
+| `qk:Energy` | `unit:EV` |
+| `qk:Length` | `unit:MicroM` |
+| `qk:Length` | `unit:NanoM` |
+| `qk:Temperature` | `unit:K` |
+| `qk:Time` | `unit:SEC` |
+| `tax:Intensity` | `unit:COUNT` |
+
+Six rows. Length is the only kind with two units, because a depth axis
+works in nanometres and an image axis in micrometres.
+
+> **This table will grow, without notice.** It lists only what the
+> module's six representation types use today; it is not a survey of
+> QUDT. If the unit you need is missing, adding it is one triple in
+> `representation.shacl.ttl` — no shape edit, no TBox change. Which is
+> exactly why this is a query and not a hard-coded list: run it, don't
+> memorise it.
 
 ---
 
-## Group 2 — Inventory
-
-### Q04 — What is in the knowledge graph
+## Q3 — What datasets exist, and what shape are they?
 
 ```sparql
-SELECT ?material ?type ?extent WHERE {
-    ?material tax:hasMaterialProperty ?prop .
-    ?prop     rep:has_representation  ?repr .
-    ?repr     a          ?type ;
-              rep:extent ?extent .
-    FILTER(STRSTARTS(STR(?type), STR(rep:)))
-    FILTER(?type NOT IN (rep:Representation, rep:Profile, owl:NamedIndividual))
+SELECT ?dataset ?type ?rank WHERE {
+  ?dataset rep:rank ?rank ; a ?type .
+  FILTER(STRSTARTS(STR(?type), STR(rep:)))
 }
-ORDER BY ?material
+ORDER BY ?rank ?dataset
 ```
 
-| `?material` | `?type` | `?extent` |
+| dataset | type | rank |
 |---|---|---|
-| `ex:Al2O3foam` | `rep:VolumeData` | 12 |
-| `ex:BdopedSi` | `rep:DepthProfile` | 6 |
-| `ex:DP780` | `rep:Image` | 25 |
-| `ex:FeFoil` | `rep:Spectrum` | 5 |
-| `ex:SS316L` | `rep:TimeSeries` | 6 |
-| `ex:Si` | `rep:Scalar` | 1 |
+| `ex:tc_reading` | `rep:Scalar` | 0 |
+| `ex:decay_curve` | `rep:TimeSeries` | 1 |
+| `ex:sims_depth` | `rep:DepthProfile` | 1 |
+| `ex:sims_microns` | `rep:DepthProfile` | 1 |
+| `ex:xps_survey` | `rep:Spectrum` | 1 |
+| `ex:sem_map` | `rep:Image` | 2 |
+| `ex:tomo` | `rep:VolumeData` | 3 |
 
-`rep:Profile` is filtered out because it is inferred for every rank-1 dataset
-alongside the more specific `rep:Spectrum` / `rep:TimeSeries` / `rep:DepthProfile`.
+`rep:rank` is asserted by the producer. The `owl:equivalentClass`
+definitions in the TBox mean a reasoner derives the type from the rank
+independently — if the two disagree, HermiT flags it. Without a
+reasoner, as here, both are simply read off the data.
 
 ---
 
-### Q05 — Axis schema for every dataset
+## Q4 — What are the axes of each dataset, in array order?
+
+The query you need to index into the underlying array correctly.
+`qb:order` is slowest-first, matching NumPy C-order.
 
 ```sparql
-SELECT ?material ?axis ?order ?extent WHERE {
-    ?material tax:hasMaterialProperty ?prop .
-    ?prop     rep:has_representation  ?repr .
-    ?repr     qb:structure / qb:component ?cs .
-    ?cs       qb:dimension ?axis ;
-              qb:order     ?order ;
-              rep:extent   ?extent .
+SELECT ?dataset ?order ?axis ?unit WHERE {
+  ?dataset qb:structure ?dsd .
+  ?dsd     qb:component ?cs .
+  ?cs      qb:dimension ?axis ;
+           qb:order     ?order ;
+           rep:hasUnit  ?unit .
 }
-ORDER BY ?material ?order
+ORDER BY ?dataset ?order
 ```
 
-| `?material` | `?axis` | `?order` | `?extent` |
+| dataset | order | axis | unit |
 |---|---|---|---|
-| `ex:Al2O3foam` | `rep:z` | 0 | 2 |
-| `ex:Al2O3foam` | `rep:y` | 1 | 2 |
-| `ex:Al2O3foam` | `rep:x` | 2 | 3 |
-| `ex:BdopedSi` | `rep:depth` | 0 | 6 |
-| `ex:DP780` | `rep:y` | 0 | 5 |
-| `ex:DP780` | `rep:x` | 1 | 5 |
-| `ex:FeFoil` | `rep:energy` | 0 | 5 |
-| `ex:SS316L` | `rep:time` | 0 | 6 |
+| `ex:decay_curve` | 0 | `rep:time` | `unit:SEC` |
+| `ex:sem_map` | 0 | `rep:y` | `unit:MicroM` |
+| `ex:sem_map` | 1 | `rep:x` | `unit:MicroM` |
+| `ex:sims_depth` | 0 | `rep:depth` | `unit:NanoM` |
+| `ex:sims_microns` | 0 | `rep:depth` | `unit:MicroM` |
+| `ex:tomo` | 0 | `rep:z` | `unit:MicroM` |
+| `ex:tomo` | 1 | `rep:y` | `unit:MicroM` |
+| `ex:tomo` | 2 | `rep:x` | `unit:MicroM` |
+| `ex:xps_survey` | 0 | `rep:energy` | `unit:EV` |
 
-Eight rows for six datasets: the scalar contributes none, the volume contributes
-three. Row count equals the sum of all ranks.
+`ex:tc_reading` is absent: a Scalar is rank 0 and has no axes at all.
 
 ---
 
-### Q06 — Component usage across the graph
+## Q5 — Which material property does this data represent?
+
+The bridge into the FAIRmat taxonomy. The `rdfs:subPropertyOf*` path is
+what makes this work without a reasoner: the data states the specific
+property (`rep:has_image_representation`), and the path walks up to the
+general one.
 
 ```sparql
-SELECT ?component ?role ?quantityKind (COUNT(DISTINCT ?repr) AS ?n_datasets) WHERE {
-    ?repr qb:structure / qb:component ?cs .
-    { ?cs qb:dimension ?component . BIND("axis"   AS ?role) }
-    UNION
-    { ?cs qb:measure   ?component . BIND("signal" AS ?role) }
-    ?component rep:hasQuantityKind ?quantityKind .
+SELECT ?property ?dataset ?type ?rank WHERE {
+  ?link     rdfs:subPropertyOf* rep:has_representation .
+  ?property ?link               ?dataset .
+  ?dataset  a                   ?type ;
+            rep:rank            ?rank .
+  FILTER(STRSTARTS(STR(?type), STR(rep:)))
 }
-GROUP BY ?component ?role ?quantityKind
-ORDER BY DESC(?n_datasets) ?component
+ORDER BY ?rank ?property
 ```
 
-| `?component` | `?role` | `?quantityKind` | `?n_datasets` |
+| property | dataset | type | rank |
 |---|---|---|---|
-| `rep:intensity` | signal | `tax:Intensity` | 5 |
-| `rep:x` | axis | `qk:Length` | 2 |
-| `rep:y` | axis | `qk:Length` | 2 |
-| `rep:depth` | axis | `qk:Length` | 1 |
-| `rep:energy` | axis | `qk:Energy` | 1 |
-| `rep:temperature` | signal | `qk:Temperature` | 1 |
-| `rep:time` | axis | `qk:Time` | 1 |
-| `rep:z` | axis | `qk:Length` | 1 |
+| `ex:melting_point` | `ex:tc_reading` | `rep:Scalar` | 0 |
+| `ex:carrier_lifetime` | `ex:decay_curve` | `rep:TimeSeries` | 1 |
+| `ex:core_level_spectrum` | `ex:xps_survey` | `rep:Spectrum` | 1 |
+| `ex:depth_composition` | `ex:sims_depth` | `rep:DepthProfile` | 1 |
+| `ex:surface_morphology` | `ex:sem_map` | `rep:Image` | 2 |
+| `ex:pore_structure` | `ex:tomo` | `rep:VolumeData` | 3 |
 
-All eight components in the vocabulary are used by this graph. `rep:intensity` carries
-five of the six datasets; only the scalar uses `rep:temperature`.
+Going the other way — *find every dataset representing a morphology* —
+is the same pattern with `?property a tax:Morphology` bound.
 
 ---
 
-## Group 3 — Reading data
+## Q6 — What values were lifted for this spectrum?
 
-### Q07 — Full spectrum
-
-*Axis values are Enery and signal values are detector counts in the source file.*
+The observation layer uses the canonical component IRIs as predicates.
+No join table or per-dataset column vocabulary is needed.
 
 ```sparql
-SELECT ?energy ?intensity WHERE {
-    ?obs rep:energy    ?energy ;
-         rep:intensity ?intensity .
+SELECT ?observation ?energy ?intensity WHERE {
+  ?observation a rep:Observation , qb:Observation ;
+               qb:dataSet    ex:xps_survey ;
+               rep:energy    ?energy ;
+               rep:intensity ?intensity .
 }
 ORDER BY ?energy
 ```
 
-| `?energy` | `?intensity` |
-|---|---|
-| 7980.0 | 12.0 |
-| 7980.5 | 15.0 |
-| 7981.0 | 115.0 |
-| 7981.5 | 850.0 |
-| 7982.0 | 230.0 |
+| observation | energy | intensity |
+|---|---:|---:|
+| `ex:obs_01_000` | 0.0 | 120 |
+| `ex:obs_01_001` | 0.5 | 134 |
+| `ex:obs_01_002` | 1.0 | 129 |
 
-Two triple patterns, no DSD traversal. This works because `rep:energy` is the same
-IRI in every spectrum in the graph.
-
----
-
-### Q08 — Full time series
-
-```sparql
-SELECT ?time ?intensity WHERE {
-    ?obs rep:time      ?time ;
-         rep:intensity ?intensity .
-}
-ORDER BY ?time
-```
-
-| `?time` | `?intensity` |
-|---|---|
-| 0.0 | 12500.0 |
-| 60.0 | 8400.0 |
-| 300.0 | 5100.0 |
-| 600.0 | 3800.0 |
-| 1800.0 | 2200.0 |
-| 3600.0 | 1520.0 |
+The same pattern works for every representation: omit the dimension
+predicate for a Scalar, use `rep:y` and `rep:x` for an Image, and add
+`rep:z` for a VolumeData observation.
 
 ---
 
-### Q09 — Full depth profile
+## Q7 — Which datasets deviate from the canonical default unit?
+
+A data-quality sweep. Not an error: a dataset is entitled to work in
+its own unit, provided it says so on its own `qb:ComponentSpecification`
+and the unit is permitted for the kind. This query surfaces those
+deviations so a curator can eyeball them.
 
 ```sparql
-SELECT ?depth ?intensity WHERE {
-    ?obs rep:depth     ?depth ;
-         rep:intensity ?intensity .
-}
-ORDER BY ?depth
-```
-
-| `?depth` | `?intensity` |
-|---|---|
-| 0.0 | 120000.0 |
-| 5.0 | 85000.0 |
-| 10.0 | 32000.0 |
-| 20.0 | 5000.0 |
-| 50.0 | 210.0 |
-| 100.0 | 45.0 |
-
-Q07, Q08 and Q09 are the same query with a different axis IRI. That is the payoff of
-fixing the axis per representation type.
-
----
-
-### Q10 — Scalar value
-
-*The instrument logged some temperature data.*
-
-```sparql
-SELECT ?material ?value WHERE {
-    ?material tax:hasMaterialProperty ?prop .
-    ?prop     rep:has_representation  ?repr .
-    ?obs      qb:dataSet       ?repr ;
-              rep:temperature  ?value .
+SELECT ?dataset ?component ?datasetUnit ?canonicalUnit WHERE {
+  ?dataset qb:structure ?dsd .
+  ?dsd     qb:component ?cs .
+  { ?cs qb:dimension ?component } UNION { ?cs qb:measure ?component }
+  ?cs        rep:hasUnit ?datasetUnit .
+  ?component rep:hasUnit ?canonicalUnit .
+  FILTER(?datasetUnit != ?canonicalUnit)
 }
 ```
 
-| `?material` | `?value` |
-|---|---|
-| `ex:Si` | 293.15 |
-
-A rank-0 representation has no axis, so there is no coordinate to bind — the signal
-predicate alone identifies the value.
-
----
-
-## Group 4 — Slicing
-
-### Q11 — Image row at fixed y
-
-```sparql
-SELECT ?x ?intensity WHERE {
-    ?obs qb:dataSet     ex:r_image ;
-         rep:y          "4.0"^^xsd:double ;
-         rep:x          ?x ;
-         rep:intensity  ?intensity .
-}
-ORDER BY ?x
-```
-
-| `?x` | `?intensity` |
-|---|---|
-| 0.0 | 11.0 |
-| 2.0 | 110.0 |
-| 4.0 | 850.0 |
-| 6.0 | 115.0 |
-| 8.0 | 12.0 |
-
-The peak row of the 5×5 map.
-
----
-
-### Q12 — Image subregion
-
-```sparql
-SELECT ?y ?x ?intensity WHERE {
-    ?obs qb:dataSet     ex:r_image ;
-         rep:y          ?y ;
-         rep:x          ?x ;
-         rep:intensity  ?intensity .
-    FILTER(?y <= 2.0 && ?x <= 2.0)
-}
-ORDER BY ?y ?x
-```
-
-| `?y` | `?x` | `?intensity` |
-|---|---|---|
-| 0.0 | 0.0 | 10.0 |
-| 0.0 | 2.0 | 12.0 |
-| 2.0 | 0.0 | 13.0 |
-| 2.0 | 2.0 | 45.0 |
-
-The NumPy equivalent is `img[0:2, 0:2]`.
-
-The `qb:dataSet` binding is doing real work here. Volume observations also carry
-`rep:y` and `rep:x`, so without it the query returns twelve rows spanning two
-datasets — and since the volume also has a `(2.0, 2.0)` cell, the result would silently
-mix a 45 from the image with a 550 from the volume. Any query that constrains only a
-subset of a dataset's axes needs to pin the dataset explicitly.
-
----
-
-### Q13 — Volume z-slice
-
-```sparql
-SELECT ?y ?x ?intensity WHERE {
-    ?obs qb:dataSet     ex:r_volume ;
-         rep:z          "5.0"^^xsd:double ;
-         rep:y ?y ; rep:x ?x ; rep:intensity ?intensity .
-}
-ORDER BY ?y ?x
-```
-
-| `?y` | `?x` | `?intensity` |
-|---|---|---|
-| 0.0 | 0.0 | 11.0 |
-| 0.0 | 2.0 | 14.0 |
-| 0.0 | 4.0 | 10.0 |
-| 2.0 | 0.0 | 12.0 |
-| 2.0 | 2.0 | 550.0 |
-| 2.0 | 4.0 | 14.0 |
-
-`vol[1, :, :]` — the slice containing the hotspot.
-
----
-
-### Q14 — Global hotspot
-
-```sparql
-SELECT ?z ?y ?x ?intensity WHERE {
-    ?obs rep:z ?z ; rep:y ?y ; rep:x ?x ; rep:intensity ?intensity .
-}
-ORDER BY DESC(?intensity)
-LIMIT 3
-```
-
-| `?z` | `?y` | `?x` | `?intensity` |
+| dataset | component | dataset unit | canonical unit |
 |---|---|---|---|
-| 5.0 | 2.0 | 2.0 | 550.0 |
-| 0.0 | 2.0 | 2.0 | 15.0 |
-| 5.0 | 2.0 | 4.0 | 14.0 |
+| `ex:sims_microns` | `rep:depth` | `unit:MicroM` | `unit:NanoM` |
 
-Binding all three axis predicates restricts this to rank-3 datasets. The image
-observations have no `rep:z` and drop out.
+One hit: a depth profile stepped in micrometres while `rep:depth`
+defaults to nanometres. Permitted for `qk:Length`, so Layer 1 has
+nothing to say — but three orders of magnitude off the usual scale, and
+worth a curator's eye. This is the same dataset that Layer 2 flags as
+`REP-UNIT-013`.
 
 ---
 
-### Q15 — Peak per dataset
+## Q8 — Give me every slot with its kind and unit
+
+The general-purpose introspection query. One row per component
+specification across the whole graph.
 
 ```sparql
-SELECT ?repr (MAX(?intensity) AS ?peak) WHERE {
-    ?obs qb:dataSet     ?repr ;
-         rep:intensity  ?intensity .
+SELECT ?dataset ?slot ?component ?kind ?unit WHERE {
+  ?dataset qb:structure ?dsd .
+  ?dsd     qb:component ?cs .
+  { ?cs qb:dimension ?component  BIND("dimension" AS ?slot) }
+  UNION
+  { ?cs qb:measure   ?component  BIND("measure"   AS ?slot) }
+  ?cs        rep:hasUnit         ?unit .
+  ?component rep:hasQuantityKind ?kind .
 }
-GROUP BY ?repr
-ORDER BY DESC(?peak)
+ORDER BY ?dataset ?slot
 ```
 
-| `?repr` | `?peak` |
-|---|---|
-| `ex:r_depthprofile` | 120000.0 |
-| `ex:r_timeseries` | 12500.0 |
-| `ex:r_spectrum` | 850.0 |
-| `ex:r_image` | 850.0 |
-| `ex:r_volume` | 550.0 |
-
-Five rows, not six — the scalar has no `rep:intensity`.
-
-**These magnitudes are not comparable.** The depth profile counts and the image
-counts came off different instruments with different integration times, and the
-ontology records no unit or normalisation that would let a consumer reconcile them.
-Ranking by raw magnitude across datasets is meaningless unless you already know the
-acquisition conditions.
+| dataset | slot | component | kind | unit |
+|---|---|---|---|---|
+| `ex:decay_curve` | dimension | `rep:time` | `qk:Time` | `unit:SEC` |
+| `ex:decay_curve` | measure | `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
+| `ex:sem_map` | dimension | `rep:y` | `qk:Length` | `unit:MicroM` |
+| `ex:sem_map` | dimension | `rep:x` | `qk:Length` | `unit:MicroM` |
+| `ex:sem_map` | measure | `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
+| `ex:sims_depth` | dimension | `rep:depth` | `qk:Length` | `unit:NanoM` |
+| `ex:sims_depth` | measure | `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
+| `ex:sims_microns` | dimension | `rep:depth` | `qk:Length` | `unit:MicroM` |
+| `ex:sims_microns` | measure | `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
+| `ex:tc_reading` | measure | `rep:temperature` | `qk:Temperature` | `unit:K` |
+| `ex:tomo` | dimension | `rep:z` | `qk:Length` | `unit:MicroM` |
+| `ex:tomo` | dimension | `rep:y` | `qk:Length` | `unit:MicroM` |
+| `ex:tomo` | dimension | `rep:x` | `qk:Length` | `unit:MicroM` |
+| `ex:tomo` | measure | `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
+| `ex:xps_survey` | dimension | `rep:energy` | `qk:Energy` | `unit:EV` |
+| `ex:xps_survey` | measure | `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
 
 ---
 
-## Group 5 — Cross-cutting
+## Q9 — Find unit errors with SPARQL alone
 
-### Q16 — Datasets with a length axis
-
-```sparql
-SELECT DISTINCT ?material ?axis WHERE {
-    ?material tax:hasMaterialProperty ?prop .
-    ?prop     rep:has_representation  ?repr .
-    ?repr     qb:structure / qb:component ?cs .
-    ?cs       qb:dimension ?axis .
-    ?axis     rep:hasQuantityKind qk:Length .
-}
-ORDER BY ?material ?axis
-```
-
-| `?material` | `?axis` |
-|---|---|
-| `ex:Al2O3foam` | `rep:x` |
-| `ex:Al2O3foam` | `rep:y` |
-| `ex:Al2O3foam` | `rep:z` |
-| `ex:BdopedSi` | `rep:depth` |
-| `ex:DP780` | `rep:x` |
-| `ex:DP780` | `rep:y` |
-
-Catches the depth profile alongside the spatial datasets, because `rep:depth` is also
-`qk:Length`. Filter on the specific axis IRI to exclude it.
-
----
-
-### Q17 — Datasets missing a measurement
+You can express the dimensional check as a plain query. It is worth
+seeing, because it shows exactly what SHACL adds and what it does not.
 
 ```sparql
-SELECT ?material WHERE {
-    ?material a tax:Material .
-    FILTER NOT EXISTS {
-        ?material tax:hasMaterialProperty ?p .
-        ?p        rep:has_scalar_representation ?r .
-    }
-}
-ORDER BY ?material
-```
-
-| `?material` |
-|---|
-| `ex:Al2O3foam` |
-| `ex:BdopedSi` |
-| `ex:DP780` |
-| `ex:FeFoil` |
-| `ex:SS316L` |
-
-Everything except `ex:Si`, the only scalar in the graph.
-
----
-
-### Q18 — Shape of every dataset
-
-```sparql
-SELECT ?material ?rank ?total
-       (GROUP_CONCAT(?ext ; separator=" x ") AS ?shape) WHERE {
-    ?material tax:hasMaterialProperty ?prop .
-    ?prop     rep:has_representation  ?repr .
-    ?repr     rep:rank   ?rank ;
-              rep:extent ?total .
-    OPTIONAL {
-        ?repr qb:structure / qb:component ?cs .
-        ?cs   qb:order ?ord ; rep:extent ?ext .
-    }
-}
-GROUP BY ?material ?rank ?total
-ORDER BY ?rank ?material
-```
-
-| `?material` | `?rank` | `?total` | `?shape` |
-|---|---|---|---|
-| `ex:Si` | 0 | 1 | |
-| `ex:BdopedSi` | 1 | 6 | 6 |
-| `ex:FeFoil` | 1 | 5 | 5 |
-| `ex:SS316L` | 1 | 6 | 6 |
-| `ex:DP780` | 2 | 25 | 5 x 5 |
-| `ex:Al2O3foam` | 3 | 12 | 2 x 2 x 3 |
-
-`?total` always equals the product of the per-axis extents. Nothing enforces that —
-it is a SHACL concern, not an OWL one.
-
----
-
-## Query patterns
-
-Three shapes cover nearly everything.
-
-**A — direct predicate match.** The component is known ahead of time, so name it.
-No DSD traversal, fastest, and the right default (Q07–Q09, Q11–Q15).
-
-```sparql
-SELECT ?e ?i WHERE { ?obs rep:energy ?e ; rep:intensity ?i }
-```
-
-**B — schema traversal.** The question is about structure rather than values (Q05, Q18).
-
-```sparql
-?repr qb:structure / qb:component ?cs .
-?cs   qb:dimension ?axis ; qb:order ?order ; rep:extent ?extent .
-```
-
-**C — variable as predicate.** The component is discovered from the schema and then
-used to read values. This is what the OWL 2 pun buys: one IRI is an individual in the
-DSD and a property on the observation.
-
-```sparql
-SELECT ?axis ?value ?signal ?measurement WHERE {
-    ?repr   qb:structure / qb:component ?cs_ax .
-    ?cs_ax  qb:dimension ?axis .
-    ?repr   qb:structure / qb:component ?cs_sig .
-    ?cs_sig qb:measure ?signal .
-    ?obs    qb:dataSet ?repr ;
-            ?axis   ?value ;          ## variable in predicate position
-            ?signal ?measurement .
+SELECT ?cs ?kind ?unit WHERE {
+  { ?cs qb:dimension ?component } UNION { ?cs qb:measure ?component }
+  ?cs        rep:hasUnit         ?unit .
+  ?component rep:hasQuantityKind ?kind .
+  FILTER NOT EXISTS { ?kind shp:permitsUnit ?unit }
 }
 ```
 
-Use C when a query must work across representation types without knowing the axis
-names in advance.
+Run against the valid examples this returns nothing. Run against
+`examples/profile-spectrum-invalid-seconds-abox.ttl`:
+
+| cs | kind | unit |
+|---|---|---|
+| `ex:cs_02_energy` | `qk:Energy` | `unit:SEC` |
+
+So SPARQL *can* find the problem. What it cannot do is tell you this is
+an error rather than a result, attach a severity, attach a stable code,
+or run as part of a gate — that is what the shapes graph is for. The
+`FILTER NOT EXISTS` line above is literally the body of `REP-UNIT-001`;
+the shape wraps it in a target, a message, a severity and a code. See
+[README.md](README.md#shacl-validation) and `test/reports.md`.
 
 ---
 
-## Common mistakes
+## Queries that need a reasoner
 
-**Using an Axis IRI as a measure.** `rep:Axis` and `rep:Signal` are
-`owl:disjointWith`, so `rep:energy` cannot fill a `qb:measure` slot even though its
-quantity kind is right.
+Everything above is asserted-triple SPARQL. Two things genuinely need
+HermiT, and no query will substitute:
 
-```turtle
-qb:component [ qb:measure rep:energy ] .   ## INCONSISTENT — rep:energy is an Axis
-```
+- **Type from rank.** `rep:Spectrum` and friends are defined by
+  `owl:equivalentClass` on the `rep:rank` value. Asking "what type is
+  this dataset, given only its rank" is a classification, not a lookup.
+- **Contradiction between asserted type and rank.** A dataset typed
+  `rep:Image` with `rep:rank 1` is inconsistent. No SPARQL query
+  reports that; a reasoner does.
 
-If no Signal in the vocabulary matches your quantity kind, add one to the TBox.
-
-**Comparing magnitudes across datasets.** No unit is stored, so `850` in the spectrum
-and `850` in the image are not the same physical quantity and cannot be ranked
-against each other (see Q15).
-
-**Telling axes apart by quantity kind.** Four canonical axes share `qk:Length`. Filter
-on `qb:order`, or name the axis IRI directly.
-
-**Forgetting subproperty closure.** ABoxes assert `rep:has_image_representation`, not
-`rep:has_representation`. Queries on the parent property need RDFS closure, which most
-stores do automatically and plain rdflib does not.
-
-**Putting `rep:extent` on the Signal.** It is always the product of the axis extents.
-Storing it invites the two to disagree.
-
-**Slicing without pinning the dataset.** `rep:y` and `rep:x` appear in both images and
-volumes. A filter on those two alone silently spans every rank-2 and rank-3 dataset in
-the graph. Bind `qb:dataSet` whenever you constrain fewer axes than the dataset has
-(see Q12).
+Both are exercised in the workbench notebook rather than here.

@@ -1,0 +1,53 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-spectrum-invalid-intensity-ev-abox.ttl
+##  expect: REP-UNIT-001, REP-UNIT-016
+##
+## Intensity reported in eV.
+##
+## tax:Intensity is the locally-minted kind for uncalibrated detector
+## signal; qk: has no term for it. The map permits COUNT only, so eV
+## fails Layer 1 as well as Layer 2 -- both codes fire.
+## Shows shp:permitsUnit handling a non-QUDT quantity kind on exactly
+## the same footing as the QUDT ones.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:spectrum_evintensity a rep:Spectrum , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_15 .
+
+ex:dsd_15 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_15_energy , ex:cs_15_intensity .
+
+ex:cs_15_energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:EV .
+
+ex:cs_15_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:EV .           #### WRONG: tax:Intensity permits COUNT only
+
+### lifted observations -- data values remain usable while the signal unit is rejected
+ex:obs_15_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:spectrum_evintensity ;
+    rep:energy "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+
+ex:obs_15_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:spectrum_evintensity ;
+    rep:energy "0.5"^^xsd:double ;
+    rep:intensity "134"^^xsd:nonNegativeInteger .

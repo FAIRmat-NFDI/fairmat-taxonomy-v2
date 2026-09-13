@@ -1,0 +1,64 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  volume-valid-micrometre-abox.ttl
+##  expect: conforms
+##
+## VolumeData, three axes z/y/x in micrometres.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+### the taxonomy bridge -- which material property this data represents
+ex:pore_structure a tax:Porosity ;
+    rep:has_volume_representation ex:tomo .
+
+ex:tomo a rep:VolumeData , qb:DataSet ;
+    rep:rank "3"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_10 .
+
+ex:dsd_10 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_10_z , ex:cs_10_y , ex:cs_10_x , ex:cs_10_intensity .
+
+ex:cs_10_z a qb:ComponentSpecification ;
+    qb:dimension rep:z ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_10_y a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    qb:order "1"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_10_x a qb:ComponentSpecification ;
+    qb:dimension rep:x ;
+    qb:order "2"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_10_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- a complete 2 x 2 x 3 tomography volume
+ex:obs_10_z0_y0_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "0.0"^^xsd:double ; rep:y "0.0"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "120"^^xsd:nonNegativeInteger .
+ex:obs_10_z0_y0_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "0.0"^^xsd:double ; rep:y "0.0"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "118"^^xsd:nonNegativeInteger .
+ex:obs_10_z0_y0_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "0.0"^^xsd:double ; rep:y "0.0"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "131"^^xsd:nonNegativeInteger .
+ex:obs_10_z0_y1_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "0.0"^^xsd:double ; rep:y "0.5"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "119"^^xsd:nonNegativeInteger .
+ex:obs_10_z0_y1_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "0.0"^^xsd:double ; rep:y "0.5"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "145"^^xsd:nonNegativeInteger .
+ex:obs_10_z0_y1_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "0.0"^^xsd:double ; rep:y "0.5"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "162"^^xsd:nonNegativeInteger .
+ex:obs_10_z1_y0_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "1.0"^^xsd:double ; rep:y "0.0"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "122"^^xsd:nonNegativeInteger .
+ex:obs_10_z1_y0_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "1.0"^^xsd:double ; rep:y "0.0"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "117"^^xsd:nonNegativeInteger .
+ex:obs_10_z1_y0_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "1.0"^^xsd:double ; rep:y "0.0"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "129"^^xsd:nonNegativeInteger .
+ex:obs_10_z1_y1_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "1.0"^^xsd:double ; rep:y "0.5"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "118"^^xsd:nonNegativeInteger .
+ex:obs_10_z1_y1_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "1.0"^^xsd:double ; rep:y "0.5"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "140"^^xsd:nonNegativeInteger .
+ex:obs_10_z1_y1_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:tomo ; rep:z "1.0"^^xsd:double ; rep:y "0.5"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "158"^^xsd:nonNegativeInteger .

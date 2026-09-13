@@ -1,0 +1,123 @@
+CHANGELOG  --  representation.ttl
+=================================
+Unit layer re-enabled. Previous build had it commented out.
+Scope of this file: changes to the OWL 2 DL TBox only.
+Shapes:      see shacl.txt
+Files/docs:  see structure-and-docs.txt
+Not applied: see suggestions.txt
+
+
+INTENT
+------
+This is a semantic REVERT, not a redesign. The unit layer was commented
+out in the previous build and is switched back on. No new modelling
+concept was introduced into the TBox. rep:hasQuantityKind, rep:rank, the qb
+bridges, the rank-derived class definitions and the canonical axis
+sets are all untouched.
+
+
+RE-ENABLED  (uncommented, no semantic change)
+---------------------------------------------
+[R1] rep:hasUnit
+     Object property, owl:FunctionalProperty, range qudt:Unit.
+     Was commented out in the block headed "rep:hasUnit -- DISABLED".
+     Domain differs from the commented draft; see [D1].
+
+[R2] qudt:Unit individuals
+     unit:EV, unit:K, unit:MicroM, unit:NanoM, unit:SEC, unit:COUNT.
+     Were commented out in the block headed "qudt:Unit individuals --
+     DISABLED". Six, not the seven listed there; see [D2].
+
+[R3] rep:hasUnit on the eight canonical components
+     Previously these were trailing comments on each individual, e.g.
+         rep:x rep:hasQuantityKind qk:Length ;  ## --hasUnit--> unit:MicroM  (disabled)
+     Now live triples with exactly the units those comments named:
+         rep:energy       unit:EV
+         rep:time         unit:SEC
+         rep:depth        unit:NanoM
+         rep:x/y/z        unit:MicroM
+         rep:intensity    unit:COUNT
+         rep:temperature  unit:K
+
+
+DEVIATIONS FROM A VERBATIM UNCOMMENT
+------------------------------------
+[D1] rep:hasUnit domain
+     previous draft:  rdfs:domain rep:UnitAttribute
+     now:             rdfs:domain [ owl:unionOf ( rep:ComponentProperty
+                                                  qb:ComponentSpecification ) ]
+
+     REASON -- the verbatim domain makes the ontology inconsistent the
+     moment any canonical component carries a unit. rep:ComponentProperty
+     is an owl:disjointUnionOf ( rep:Axis rep:Signal rep:UnitAttribute ),
+     so
+
+         rep:energy rep:hasUnit unit:EV
+
+     entails rep:energy a rep:UnitAttribute, which collides with the
+     asserted rep:Axis.
+
+     VERIFIED, not argued. Built the verbatim variant and ran HermiT:
+         domain = rep:UnitAttribute                -> INCONSISTENT
+         domain = union as above                   -> CONSISTENT
+     The shipped TBox is consistent under HermiT.
+
+     The union is the minimal correction that keeps [R3] working. The
+     qb:ComponentSpecification arm is a real addition and is called out
+     separately as [D3].
+
+[D2] unit:DEG_C removed
+     The old comment block listed seven units including unit:DEG_C
+     (Celsius). Removed entirely at request: the class declaration, the
+     kind-pairing comment, the permitted-unit entry, the Scalar
+     temperature profile list, and the worked example that used it.
+     Six units are declared. qk:Temperature permits unit:K alone.
+     See suggestions.txt [S1] before adding any non-absolute scale back.
+
+[D3] rep:hasUnit legal on qb:ComponentSpecification
+     ADDITION, not present in the old comments. Flagged for consent.
+
+     REASON -- a canonical component IRI is a shared singleton across
+     the whole knowledge graph. If the unit lives only there, every
+     dataset in the store is forced into the same unit, and the
+     requested per-type "list of possible units" has nothing to range
+     over. The specification node already carries the other two
+     dataset-scoped facts (qb:order, rep:extent), so units joining them
+     is consistent with the existing division.
+
+     Effect: the canonical component carries the module DEFAULT; a
+     dataset that differs states its own on its specification. Both
+     placements validate against the same permitted set.
+
+     TO REVERT: narrow the domain to rep:ComponentProperty, drop
+     rep:hasUnit from every qb:ComponentSpecification in examples/, and
+     delete the sh:targetSubjectsOf qb:dimension / qb:measure arms of
+     REP-UNIT-003. Every dataset then inherits the six defaults.
+
+
+UNCHANGED
+---------
+[U1] rep:axis_name stays commented out. Only the unit chain was in
+     scope. Axis identity remains the canonical IRI local name.
+
+[U2] rep:UnitAttribute stays declared and stays unused. It cannot be
+     deleted -- it is a member of the owl:disjointUnionOf that defines
+     rep:ComponentProperty. This module attaches units directly rather
+     than through a qb attribute slot.
+
+[U3] Prose in the header block, the rep:Axis and rep:Signal comments
+     and the closing ENFORCEMENT NOTE was rewritten to describe a live
+     unit layer instead of a disabled one. No axiom changed. The
+     ENFORCEMENT NOTE now points at representation.shacl.ttl and drops
+     the rep:NoUnitShape sketch, which asserted maxCount 0 on
+     rep:hasUnit and is obsolete.
+
+
+VERIFICATION
+------------
+  HermiT, TBox alone                        CONSISTENT
+  HermiT, TBox + each valid ABox            CONSISTENT
+  HermiT, TBox + each invalid ABox          CONSISTENT  (the point of
+                                            the shapes graph existing)
+  HermiT, probe with domain=rep:UnitAttribute   INCONSISTENT
+  rdflib parse, all files                   OK

@@ -1,0 +1,56 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-depth-valid-nanometre-abox.ttl
+##  expect: conforms
+##
+## DepthProfile in nanometres. The module default for rep:depth.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+### the taxonomy bridge -- which material property this data represents
+ex:depth_composition a tax:ElementalComposition ;
+    rep:has_depthprofile_representation ex:sims_depth .
+
+ex:sims_depth a rep:DepthProfile , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_08 .
+
+ex:dsd_08 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_08_depth , ex:cs_08_intensity .
+
+ex:cs_08_depth a qb:ComponentSpecification ;
+    qb:dimension rep:depth ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:NanoM .
+
+ex:cs_08_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- depth into the surface and SIMS counts
+ex:obs_08_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sims_depth ;
+    rep:depth "0.0"^^xsd:double ;
+    rep:intensity "9120"^^xsd:nonNegativeInteger .
+
+ex:obs_08_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sims_depth ;
+    rep:depth "2.5"^^xsd:double ;
+    rep:intensity "8740"^^xsd:nonNegativeInteger .
+
+ex:obs_08_002 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sims_depth ;
+    rep:depth "5.0"^^xsd:double ;
+    rep:intensity "6210"^^xsd:nonNegativeInteger .

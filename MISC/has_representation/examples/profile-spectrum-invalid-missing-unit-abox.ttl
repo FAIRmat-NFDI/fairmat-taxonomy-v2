@@ -1,0 +1,51 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-spectrum-invalid-missing-unit-abox.ttl
+##  expect: REP-UNIT-003
+##
+## A component specification with no unit at all.
+##
+## The open-world case in its purest form. OWL cannot require the
+## triple to be present -- an absent statement is unknown, not false.
+## SHACL sh:minCount 1 is closed-world and rejects it.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:spectrum_nounit a rep:Spectrum , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_11 .
+
+ex:dsd_11 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_11_energy , ex:cs_11_intensity .
+
+ex:cs_11_energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ;
+    qb:order "0"^^xsd:nonNegativeInteger .
+                                    #### MISSING: no rep:hasUnit
+
+ex:cs_11_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- data values remain usable while SHACL reports the missing unit
+ex:obs_11_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:spectrum_nounit ;
+    rep:energy "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+
+ex:obs_11_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:spectrum_nounit ;
+    rep:energy "0.5"^^xsd:double ;
+    rep:intensity "134"^^xsd:nonNegativeInteger .

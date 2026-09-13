@@ -1,0 +1,93 @@
+CHANGELOG  --  representation.shacl.ttl  --  NEW FILE
+=====================================================
+No predecessor. The previous build carried two SHACL sketches in a
+comment at the foot of representation.ttl; neither was a file and
+neither concerned units.
+
+
+WHAT IT CONTAINS
+----------------
+[1] shp:permitsUnit -- the permitted-unit table
+    Reference data, not shape logic:
+        qk:Temperature shp:permitsUnit unit:K .
+        qk:Length      shp:permitsUnit unit:NanoM , unit:MicroM .
+        qk:Time        shp:permitsUnit unit:SEC .
+        qk:Energy      shp:permitsUnit unit:EV .
+        tax:Intensity  shp:permitsUnit unit:COUNT .
+
+    Narrowed to exactly what the module's six representation types use
+    today. Length is the only kind with two units, because a depth axis
+    works in nm and an image axis in um. The table is documented as a
+    snapshot that will grow without notice.
+    Extending the vocabulary is one triple; no shape is edited. Also
+    queryable on its own -- "what may I write for a length axis" needs
+    no validator. See SPARQL_USAGE.md Q2.
+
+    NEW VOCABULARY. shp:permitsUnit did not exist before. It is
+    deliberately in the shapes namespace, not rep:, because it states a
+    closed-world fact and does not belong in an OWL TBox.
+
+[2] Layer 1 -- dimensional agreement, sh:Violation
+    REP-UNIT-001  unit must be permitted for the component's kind
+    REP-UNIT-002  object of rep:hasUnit must not be a qudt:QuantityKind
+    REP-UNIT-003  a specification carries exactly one unit
+
+[3] Layer 2 -- per-type profile, sh:Warning
+    REP-UNIT-010  Scalar temperature       K
+    REP-UNIT-011  Spectrum axis            EV
+    REP-UNIT-012  TimeSeries axis          SEC
+    REP-UNIT-013  DepthProfile axis        NanoM
+    REP-UNIT-014  Image axis               MicroM, NanoM
+    REP-UNIT-015  VolumeData axis          MicroM, NanoM
+    REP-UNIT-016  intensity signal         COUNT
+
+    These are the per-type conditions as requested. The severity split
+    is not decoration: qk:Length covers both the nm-scale depth axis
+    and the um-scale image axes, so the quantity kind cannot separate
+    them and Layer 1 has nothing to say about a depth profile recorded
+    in metres. Layer 2 can. Wrong data fails; unusual data warns.
+
+[4] Structured error mechanism
+    Every shape carries shp:code, shp:category, shp:layer, shp:remedy.
+    A result points at its shape via sh:sourceShape, so a consumer
+    joins result -> shape -> metadata and reads a stable code. No
+    consumer parses sh:resultMessage.
+
+
+IMPLEMENTATION NOTES worth keeping
+----------------------------------
+[N1] This file must be loaded into the DATA graph as well as being the
+     shapes graph. The FILTER NOT EXISTS in REP-UNIT-001 is evaluated
+     against the data graph, and pyshacl's ont_graph= parameter does
+     not reliably mix it in -- passed that way, REP-UNIT-001 fires on
+     every well-formed component. test/representation_test.py loads it
+     twice. The shapes are inert as data; nothing targets them.
+
+[N2] sh:severity must sit on the PROPERTY shape, not on the enclosing
+     NodeShape. Declared at node level, Layer 2 results came back as
+     sh:Violation while pyshacl still returned conforms=True -- the
+     worst of both. Now on the property shapes; severities are correct.
+
+[N3] REP-UNIT-001 is SPARQL-based because SHACL Core cannot compare the
+     values of two different paths, and the unit and the kind are
+     reached by different paths. Layer 2 uses sh:SPARQLTarget because
+     the constraint is keyed on the type of the DATASET while the unit
+     sits on a specification two hops away. Both need advanced=True.
+
+[N4] The REP-UNIT-001 SELECT binds ?value deliberately. SHACL-SPARQL
+     lifts a bound ?value into sh:value, so reports name the offending
+     unit instead of repeating the focus node.
+
+[N5] REP-UNIT-003 is not redundant with owl:FunctionalProperty.
+     Functional means "any two values are the same individual", so OWL
+     responds to two units by inferring unit:EV owl:sameAs unit:KiloEV
+     and carrying on -- silently wrong, and it propagates. HermiT would
+     reject it only if the units were additionally owl:AllDifferent,
+     which the TBox deliberately does not assert.
+
+
+DELIBERATELY OUT OF SCOPE
+-------------------------
+Canonical axis membership, rep:extent arithmetic, index contiguity and
+rank-vs-axis-count all belong in representation_shapes.ttl, the
+structural shapes file. This file is unit-scoped, as requested.

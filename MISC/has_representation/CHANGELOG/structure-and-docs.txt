@@ -1,0 +1,117 @@
+CHANGELOG  --  folder structure, examples, tests, docs
+======================================================
+
+STRUCTURE
+---------
+    representation.ttl              the TBox
+    representation.shacl.ttl        shapes + the permitted-unit table,
+                                    previously two separate files
+    README.md                       new
+    SPARQL_USAGE.md                 new
+    examples/*-abox.ttl             was one unit_examples.ttl, split
+    test/representation_test.py     was validate_units.py, simplified
+    test/reports.md                 generated
+    tbox-illustration/*.md          new
+    CHANGELOG/*.txt                 new
+
+unit_map.ttl was folded back into representation.shacl.ttl to keep the
+top level at two files. The loading requirement is unchanged and is
+documented in the file header and in shacl.txt [N1].
+
+
+EXAMPLES
+--------
+One standalone data graph per file; each declares its expectation in a
+header comment the test runner reads:
+    ##  expect: conforms
+    ##  expect: REP-UNIT-001, REP-UNIT-011
+
+14 files: 6 valid, 7 invalid, 1 warning-only.
+
+Every ABox now contains concrete lifted observations. Datasets are
+explicitly typed as both their rep: subtype and qb:DataSet; rows are
+typed as both rep:Observation and qb:Observation, linked with
+qb:dataSet, and use the canonical component IRIs as value predicates.
+The valid Image and VolumeData examples contain the complete 3 x 4 and
+2 x 2 x 3 grids shown in the documentation. Invalid metadata examples
+also carry usable data rows so each case isolates validation from data
+presence.
+
+Three were reworked when the permitted-unit table was narrowed:
+  profile-timeseries-valid-millisecond-abox.ttl
+      -> profile-timeseries-valid-second-abox.ttl
+      MilliSEC is no longer permitted for qk:Time.
+  profile-depth-warn-metre-abox.ttl
+      -> profile-depth-warn-micrometre-abox.ttl
+      unit:M is no longer permitted for qk:Length, so the pure Layer 2
+      warning demo moved to micrometres -- permitted, right on an image
+      axis, three orders of magnitude off on a depth axis. A better
+      illustration than metres was.
+  profile-spectrum-invalid-two-units-abox.ttl
+      -> image-invalid-two-units-abox.ttl
+      EV + KiloEV would now also trip Layer 1, muddying a cardinality
+      demo. Moved to an image axis carrying MicroM + NanoM, both
+      permitted and both in profile, so REP-UNIT-003 fires alone. Several contradict each
+other on purpose and are never loaded together.
+
+The Celsius example (scalar-valid-celsius-abox.ttl) was deleted along
+with unit:DEG_C. See representation.txt [D2].
+
+ADDITION, flagged for consent: the six valid examples now carry a
+taxonomy bridge triple, e.g.
+
+    ex:surface_morphology a tax:Morphology ;
+        rep:has_image_representation ex:sem_map .
+
+This uses rep:has_*_representation, which has been declared in section
+5 of the TBox from the start and was simply never exercised. No
+new property. It exists so SPARQL_USAGE.md Q5 can demonstrate the
+MaterialProperty -> Representation hop against real data. The classes
+used -- tax:MeltingTemperature, tax:Spectra, tax:CarrierLifetime,
+tax:ElementalComposition, tax:Morphology, tax:Porosity -- are all real
+classes in the base taxonomy. Instances are minted in ex:, so no class
+is used as an individual and no punning is introduced.
+
+TO REVERT: delete the three-line block from each valid example and drop
+Q5 from SPARQL_USAGE.md.
+
+
+TEST
+----
+test/representation_test.py: load -> check -> write reports.md. Kept
+deliberately plain. Globs examples/*-abox.ttl, so adding a case is
+adding a file. Exit 0 when every file matches its declared expectation
+and each dataset has complete, explicitly typed observations for all
+DSD components.
+
+Current: 14/14.
+
+Dropped from the earlier throwaway runner: the optional HermiT
+cross-check. It needed owlready2 and a JRE, which is a heavy dependency
+for a script whose job is three steps. Its finding is recorded in
+README.md under "Why OWL is not enough" and in representation.txt
+under VERIFICATION.
+
+
+DOCS
+----
+README.md      per-representation sections, each with an example data
+               table and the exact RDF from the corresponding example
+               file. Units are a section near the end, with the
+               permitted-unit table current as of September 2026 and
+               noted as expected to grow. SHACL has its own section.
+
+SPARQL_USAGE.md  independent of the README. Nine queries, each with
+               its actual result table -- every one was executed against
+               representation.ttl + representation.shacl.ttl + the six
+               valid ABoxes, and the tables are the real output. Also
+               states the two things that genuinely need a reasoner and
+               cannot be queried.
+
+tbox-illustration/  overview.md, scalar.md, profile.md, image.md,
+               volume.md, class-hierarchy.md. Mermaid walks from
+               the top-level class/external-vocabulary map through a
+               complete RDF Data Cube implementation, including real
+               observations, kinds, and units. Intended for showing
+               developers and scientists both the ontology and its
+               concrete use without reading TTL.

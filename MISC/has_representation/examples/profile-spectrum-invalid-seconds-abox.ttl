@@ -1,0 +1,50 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-spectrum-invalid-seconds-abox.ttl
+##  expect: REP-UNIT-001, REP-UNIT-011
+##
+## Spectrum whose energy axis is stated in seconds.
+## THE CASE THAT MOTIVATES THE WHOLE FILE. HermiT accepts this ABox
+## without complaint -- nothing in OWL says a qk:Energy component may
+## not point at a time unit. Only SHACL rejects it.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:xps_broken a rep:Spectrum , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_02 .
+
+ex:dsd_02 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_02_energy , ex:cs_02_intensity .
+
+ex:cs_02_energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:SEC .          #### WRONG: qk:Energy does not permit a time unit
+
+ex:cs_02_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- values are real; the declared axis unit is intentionally wrong
+ex:obs_02_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:xps_broken ;
+    rep:energy "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+
+ex:obs_02_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:xps_broken ;
+    rep:energy "0.5"^^xsd:double ;
+    rep:intensity "134"^^xsd:nonNegativeInteger .

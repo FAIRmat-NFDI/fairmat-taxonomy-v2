@@ -1,0 +1,415 @@
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix shp:  <http://fairmat-nfdi.eu/taxonomy/shapes/units#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/shapes/units> a owl:Ontology ;
+    rdfs:comment """Shapes graph for the rep:hasUnit layer of the representation module.
+
+Scope: units only. Rank, axis cardinality and canonical-axis membership
+are not validated by this graph; they belong in a future structural
+shapes graph.
+
+WHY THIS FILE EXISTS. representation.ttl gives every component a
+rep:hasUnit edge, so a unit can be STATED. It cannot constrain WHICH:
+"a Length axis is never measured in seconds" is a closed-world statement
+and OWL has no closed world. HermiT accepts unit:SEC on rep:depth without
+complaint. Every permitted-unit set therefore lives here and only here --
+the TBox declares six unit individuals and says nothing about pairing.
+
+TWO LAYERS.
+
+  Layer 1  DIMENSIONAL    sh:Violation
+           The unit must be a permitted unit for the component's own
+           quantity kind. Driven by the shp:permitsUnit map below, not
+           hard-coded into a shape. Adding a unit to the vocabulary is
+           one triple.
+
+  Layer 2  PROFILE        sh:Warning
+           The unit must sit inside the narrower set conventional for
+           this representation type. unit:MicroM on a DepthProfile depth axis
+           is dimensionally correct and off-profile -- it passes Layer 1
+           and warns at Layer 2. This is the distinction that makes a
+           severity split worth having: Layer 1 means the data is wrong,
+           Layer 2 means the data is unusual.
+
+           Layer 2 is needed because qk:Length covers both the nm-scale
+           depth axis and the um-scale image axes. The quantity kind
+           alone cannot separate them; the representation type can.
+
+STRUCTURED ERRORS. Every shape carries shp:code, shp:category,
+shp:layer and shp:remedy. A validation report references its shape
+through sh:sourceShape, so a consumer joins report -> shape -> metadata
+and gets a stable machine-readable code instead of parsing prose out of
+sh:resultMessage. See test/representation_test.py, which does exactly
+that join.
+
+PLACEMENT. rep:hasUnit is legal on two subjects (see the TBox domain):
+the canonical rep:ComponentProperty individual, carrying the module
+default, and the qb:ComponentSpecification, carrying the dataset-scoped
+actual. Layer 1 targets sh:targetSubjectsOf rep:hasUnit and so covers
+both without a second shape. Layer 2 is dataset-scoped by nature and
+targets ComponentSpecifications reached from a typed dataset."""@en .
+
+#################################################################
+##  0. ERROR METADATA VOCABULARY
+##
+##  Annotation properties on shapes. They carry no SHACL semantics
+##  -- the engine ignores them -- and exist so a report consumer
+##  can resolve sh:sourceShape to a stable code.
+#################################################################
+
+shp:code     a owl:AnnotationProperty ; rdfs:comment "Stable error code, e.g. REP-UNIT-001."@en .
+shp:category a owl:AnnotationProperty ; rdfs:comment "dimensional | profile | cardinality | typing."@en .
+shp:layer    a owl:AnnotationProperty ; rdfs:comment "1 = dimensional (hard), 2 = profile (advisory)."@en .
+shp:remedy   a owl:AnnotationProperty ; rdfs:comment "What the producer should do about it."@en .
+
+#################################################################
+##  1. THE UNIT MAP  --  shp:permitsUnit
+##
+##  Layer 1 is driven by a table, not by shape logic. Extending the
+##  permitted vocabulary is adding one triple here; no shape is edited.
+##
+##  THIS TABLE IS A SNAPSHOT AND WILL GROW WITHOUT NOTICE. The sets
+##  below are current as of September 2026 and list only what the
+##  module's own six representation types use today -- one unit per
+##  quantity kind, except length, which needs two because a depth
+##  axis works in nanometres and an image axis in micrometres.
+##
+##  They are not a claim about which units exist, nor a closed
+##  statement about what QUDT offers for these kinds. Kinds will gain
+##  units and new kinds will be added as more instrument classes come
+##  in, and that will happen without an announcement. Growth is the
+##  normal operating mode of this table, not an exception. Each
+##  addition is one triple: no shape edit, no TBox change.
+##
+##  Note the table currently matches the six unit individuals declared
+##  in representation.ttl exactly. That is a coincidence of the
+##  starting point, not an invariant -- the moment a dataset needs
+##  millimetres, this table grows and the TBox does not.
+##
+##  IMPORTANT -- THIS FILE MUST BE LOADED INTO THE DATA GRAPH TOO.
+##  The FILTER NOT EXISTS in REP-UNIT-001 is evaluated against the
+##  data graph. pyshacl's ont_graph parameter does not reliably mix
+##  it in; passed that way the constraint fires on every well-formed
+##  component. test/representation_test.py loads this file twice --
+##  once as the shapes graph, once alongside the TBox as data. The
+##  shapes themselves are inert as data: nothing targets them.
+##
+##  The table is also useful outside validation:
+##
+##      SELECT ?u WHERE { qk:Length shp:permitsUnit ?u }
+##
+##  answers "what may I write for a length axis" with no validator.
+##
+##  These unit IRIs are deliberately NOT in representation.ttl. The
+##  TBox holds the six canonical defaults; the wider set a dataset
+##  may legitimately use is a closed-world fact and belongs here.
+#################################################################
+
+shp:permitsUnit a owl:ObjectProperty ;
+    rdfs:domain qudt:QuantityKind ;
+    rdfs:range  qudt:Unit ;
+    rdfs:comment "Unit U is dimensionally admissible for quantity kind K."@en .
+
+qk:Temperature shp:permitsUnit unit:K .
+
+qk:Length      shp:permitsUnit unit:NanoM , unit:MicroM .
+
+qk:Time        shp:permitsUnit unit:SEC .
+
+qk:Energy      shp:permitsUnit unit:EV .
+
+tax:Intensity  shp:permitsUnit unit:COUNT .
+
+### typing for the units named above, so sh:class qudt:Unit resolves
+unit:K a qudt:Unit .  unit:NanoM a qudt:Unit .  unit:MicroM a qudt:Unit .
+unit:SEC a qudt:Unit .  unit:EV a qudt:Unit .  unit:COUNT a qudt:Unit .
+
+#################################################################
+##  2. LAYER 1  --  DIMENSIONAL AGREEMENT   (sh:Violation)
+#################################################################
+
+###  REP-UNIT-001
+###  The unit must be permitted for the subject's quantity kind.
+###
+###  One shape covers both placements. The kind is reached either
+###  directly (canonical individual: it carries hasQuantityKind
+###  itself) or by one hop through qb:dimension / qb:measure
+###  (ComponentSpecification: the kind lives on the component it
+###  points at). SPARQL is required because SHACL Core cannot
+###  compare the values of two different paths.
+###
+###  The SELECT binds ?value deliberately: SHACL-SPARQL lifts a bound
+###  ?value into sh:value on the result, so the report names the
+###  offending unit rather than repeating the focus node.
+
+shp:UnitKindAgreementShape a sh:NodeShape ;
+    shp:code "REP-UNIT-001" ;
+    shp:category "dimensional" ;
+    shp:layer 1 ;
+    shp:remedy "Use a unit listed by shp:permitsUnit for this quantity kind, or correct rep:hasQuantityKind." ;
+    sh:severity sh:Violation ;
+    sh:targetSubjectsOf rep:hasUnit ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "REP-UNIT-001 dimensional: unit {?value} is not admissible for quantity kind {?kind}." ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT $this ?value ?kind
+            WHERE {
+                $this rep:hasUnit ?value .
+                {
+                    $this rep:hasQuantityKind ?kind .
+                } UNION {
+                    $this qb:dimension ?comp .
+                    ?comp rep:hasQuantityKind ?kind .
+                } UNION {
+                    $this qb:measure ?comp .
+                    ?comp rep:hasQuantityKind ?kind .
+                }
+                FILTER NOT EXISTS { ?kind shp:permitsUnit ?value }
+            }
+        """ ] .
+
+###  REP-UNIT-002
+###  The object of rep:hasUnit must be a unit, not a quantity kind.
+###  Swapping the two is the single most common authoring slip,
+###  and Layer 1 alone would report it as a confusing "not
+###  admissible for kind" rather than naming the real mistake.
+
+shp:UnitIsNotAKindShape a sh:NodeShape ;
+    shp:code "REP-UNIT-002" ;
+    shp:category "typing" ;
+    shp:layer 1 ;
+    shp:remedy "Replace the qudt:QuantityKind with the corresponding qudt:Unit individual." ;
+    sh:severity sh:Violation ;
+    sh:targetObjectsOf rep:hasUnit ;
+    sh:not [ sh:class qudt:QuantityKind ] ;
+    sh:message "REP-UNIT-002 typing: object of rep:hasUnit is a qudt:QuantityKind. A unit was expected." .
+
+#################################################################
+##  3. LAYER 1  --  CARDINALITY   (sh:Violation)
+##
+##  Scoped to ComponentSpecifications inside a DSD. Every slot a
+##  dataset declares must state exactly one unit. rep:hasUnit is
+##  owl:FunctionalProperty, but functional means "any two values
+##  are the same individual", which under OWL infers owl:sameAs
+##  rather than rejecting -- so maxCount is not redundant here.
+#################################################################
+
+shp:ComponentSpecUnitCardinalityShape a sh:NodeShape ;
+    shp:code "REP-UNIT-003" ;
+    shp:category "cardinality" ;
+    shp:layer 1 ;
+    shp:remedy "State exactly one rep:hasUnit on every qb:ComponentSpecification." ;
+    sh:severity sh:Violation ;
+    sh:targetSubjectsOf qb:dimension ;
+    sh:targetSubjectsOf qb:measure ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Violation ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "REP-UNIT-003 cardinality: a qb:ComponentSpecification must carry exactly one rep:hasUnit." ] .
+
+#################################################################
+##  4. LAYER 2  --  PER-TYPE PROFILES   (sh:Warning)
+##
+##  SPARQL targets, because the constraint is keyed on the
+##  representation type of the DATASET while the unit sits on a
+##  ComponentSpecification two hops away. A Core sequence path
+##  would reach the unit but could not restrict to axis slots
+##  versus signal slots.
+##
+##  Profiles, from the canonical vocabulary:
+##
+##    Scalar        signal temperature   K
+##    Spectrum      axis   energy        EV
+##    TimeSeries    axis   time          SEC
+##    DepthProfile  axis   depth         NanoM
+##    Image         axis   y, x          MicroM, NanoM
+##    VolumeData    axis   z, y, x       MicroM, NanoM
+##    any           signal intensity     COUNT
+#################################################################
+
+shp:ScalarTemperatureUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-010" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "Scalar temperature is reported in unit:K." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?ds a rep:Scalar ; qb:structure ?dsd .
+                ?dsd qb:component ?this .
+                ?this qb:measure ?c .
+                ?c rep:hasQuantityKind qk:Temperature .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:K ) ;
+        sh:message "REP-UNIT-010 profile: Scalar temperature outside the K profile." ] .
+
+shp:SpectrumEnergyAxisUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-011" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "Spectrum energy axes are reported in unit:EV." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?ds a rep:Spectrum ; qb:structure ?dsd .
+                ?dsd qb:component ?this .
+                ?this qb:dimension ?c .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:EV ) ;
+        sh:message "REP-UNIT-011 profile: Spectrum axis outside the eV profile." ] .
+
+shp:TimeSeriesAxisUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-012" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "TimeSeries axes are reported in unit:SEC." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?ds a rep:TimeSeries ; qb:structure ?dsd .
+                ?dsd qb:component ?this .
+                ?this qb:dimension ?c .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:SEC ) ;
+        sh:message "REP-UNIT-012 profile: TimeSeries axis outside the s profile." ] .
+
+shp:DepthProfileAxisUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-013" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "Depth axes are reported in unit:NanoM. Micrometres are a valid length unit but far off the scale of a depth profile -- check for a units-of-convenience error." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?ds a rep:DepthProfile ; qb:structure ?dsd .
+                ?dsd qb:component ?this .
+                ?this qb:dimension ?c .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:NanoM ) ;
+        sh:message "REP-UNIT-013 profile: DepthProfile axis outside the nm profile." ] .
+
+shp:ImageAxisUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-014" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "Image axes are reported in unit:MicroM or unit:NanoM." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?ds a rep:Image ; qb:structure ?dsd .
+                ?dsd qb:component ?this .
+                ?this qb:dimension ?c .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:MicroM unit:NanoM ) ;
+        sh:message "REP-UNIT-014 profile: Image axis outside the um / nm profile." ] .
+
+shp:VolumeAxisUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-015" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "VolumeData axes are reported in unit:MicroM or unit:NanoM." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?ds a rep:VolumeData ; qb:structure ?dsd .
+                ?dsd qb:component ?this .
+                ?this qb:dimension ?c .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:MicroM unit:NanoM ) ;
+        sh:message "REP-UNIT-015 profile: VolumeData axis outside the um / nm profile." ] .
+
+shp:IntensitySignalUnitShape a sh:NodeShape ;
+    shp:code "REP-UNIT-016" ;
+    shp:category "profile" ;
+    shp:layer 2 ;
+    shp:remedy "Uncalibrated intensity is reported in unit:COUNT." ;
+    sh:severity sh:Warning ;
+    sh:target [
+        a sh:SPARQLTarget ;
+        sh:prefixes <http://fairmat-nfdi.eu/taxonomy/shapes/units> ;
+        sh:select """
+            SELECT ?this WHERE {
+                ?dsd qb:component ?this .
+                ?this qb:measure ?c .
+                ?c rep:hasQuantityKind tax:Intensity .
+            }
+        """ ] ;
+    sh:property [
+        sh:path rep:hasUnit ;
+        sh:severity sh:Warning ;
+        sh:in ( unit:COUNT ) ;
+        sh:message "REP-UNIT-016 profile: intensity signal outside the count profile." ] .
+
+#################################################################
+##  5. PREFIX DECLARATIONS FOR sh:prefixes
+##
+##  SHACL-SPARQL does not inherit Turtle prefixes. Every
+##  sh:select above references this node.
+#################################################################
+
+<http://fairmat-nfdi.eu/taxonomy/shapes/units>
+    sh:declare [ sh:prefix "rep"  ; sh:namespace "http://fairmat-nfdi.eu/taxonomy/representation#"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "tax"  ; sh:namespace "http://fairmat-nfdi.eu/taxonomy/"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "shp"  ; sh:namespace "http://fairmat-nfdi.eu/taxonomy/shapes/units#"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "qb"   ; sh:namespace "http://purl.org/linked-data/cube#"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "qudt" ; sh:namespace "http://qudt.org/2.1/schema/qudt/"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "qk"   ; sh:namespace "http://qudt.org/vocab/quantitykind/"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "unit" ; sh:namespace "http://qudt.org/vocab/unit/"^^xsd:anyURI ] .

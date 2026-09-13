@@ -1,502 +1,850 @@
-# FAIRmat Representation Ontology — Usage Guide
-## Writing & Loading Representations
+# representation — FAIRmat taxonomy module
 
-How to write RDF for each representation type, and how to query it back out.
-Every example in this guide is a real file that validates against the TBox:
+How material-science measurement data is *shaped*, as OWL 2 DL.
 
-| representation | file | observations |
-|---|---|---|
-| Scalar | `abox_scalar.ttl` | 1 |
-| Spectrum | `abox_spectrum.ttl` | 5 |
-| TimeSeries | `abox_timeseries.ttl` | 6 |
-| DepthProfile | `abox_depthprofile.ttl` | 6 |
-| Image | `abox_image.ttl` | 25 |
-| VolumeData | `abox_volume.ttl` | 12 |
+The FAIRmat taxonomy says **what** a material property is —
+`tax:ElectronicBandGap`, `tax:Morphology`, `tax:Porosity`. It says
+nothing about the form the measurement arrives in. A band gap can be a
+single number, a spectrum, or a map across a wafer. This module supplies
+that missing half: six shapes a measurement can take, aligned with W3C
+RDF Data Cube and QUDT.
+
+```
+tax:Morphology ──has_image_representation──▶ rep:Image ──▶ DSD ──▶ axes + signal ──▶ kinds + units
+```
 
 ---
 
-## The component chain
-
-Every Axis and every Signal declares what it measures. The intended model is a
-two-link chain:
+## Contents
 
 ```
-COMPONENT  --hasQuantityKind-->  QUANTITY KIND 
+representation.ttl            the OWL 2 DL TBox        — what exists
+representation.shacl.ttl      SHACL shapes + unit map  — what is allowed
+README.md                     this file
+SPARQL_USAGE.md               queries, with real output
+
+examples/                     one standalone ABox per case, valid and invalid
+  scalar-valid-kelvin-abox.ttl
+  scalar-invalid-metre-abox.ttl
+  profile-spectrum-valid-abox.ttl
+  profile-spectrum-invalid-seconds-abox.ttl
+  profile-spectrum-invalid-missing-unit-abox.ttl
+  profile-spectrum-invalid-kind-as-unit-abox.ttl
+  profile-spectrum-invalid-intensity-ev-abox.ttl
+  profile-timeseries-valid-second-abox.ttl
+  profile-depth-valid-nanometre-abox.ttl
+  profile-depth-warn-micrometre-abox.ttl
+  image-valid-micrometre-abox.ttl
+  image-invalid-seconds-abox.ttl
+  image-invalid-two-units-abox.ttl
+  volume-valid-micrometre-abox.ttl
+
+test/
+  representation_test.py      load → check → write reports.md
+  reports.md                  generated
+
+tbox-illustration/            Mermaid walks through the TBox
+  overview.md                 read first
+  scalar.md  profile.md  image.md  volume.md
+  class-hierarchy.md          the class tree and the qb bridges
+
+CHANGELOG/                    what changed, and why
 ```
 
+## Quick start
 
+```bash
+pip install rdflib pyshacl
+python test/representation_test.py
+```
 
-| representation | component | role | `rep:hasQuantityKind` 
+```
+PASS  image-invalid-seconds-abox.ttl          conforms=False REP-UNIT-001, REP-UNIT-014  observations=ok
+PASS  image-valid-micrometre-abox.ttl         conforms=True  -  observations=ok
+...
+14/14 matched. Report written to test/reports.md
+```
+
+---
+
+## The model
+
+Five layers. Each exists because something must not be repeated.
+
+| layer | class | holds | scope |
 |---|---|---|---|
-| Scalar | `rep:temperature` | signal | `qk:Temperature` |
-| Spectrum | `rep:energy` | axis | `qk:Energy` | ~~`unit:EV`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| TimeSeries | `rep:time` | axis | `qk:Time` | ~~`unit:SEC`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| DepthProfile | `rep:depth` | axis | `qk:Length` | ~~`unit:NanoM`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| Image | `rep:y` (0) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:x` (1) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| VolumeData | `rep:z` (0) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:y` (1) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:x` (2) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+| taxonomy | `tax:MaterialProperty` | what is being measured | the science |
+| data | `rep:Scalar` … `rep:VolumeData` | `rep:rank`, pointer to schema | one dataset |
+| schema | `rep:DataStructureDefinition` | which components, in what order | shared by all datasets of the same shape |
+| component | `rep:Axis`, `rep:Signal` | quantity kind, default unit | global, one IRI per concept |
+| observation | `rep:Observation`, `qb:Observation` | axis coordinates and measured signal values | one point in a dataset |
 
+Between schema and component sits `qb:ComponentSpecification` — a
+per-dataset node carrying `qb:order`, `rep:extent` and `rep:hasUnit`.
+Those are facts about *this* dataset, and the canonical component is a
+shared singleton that must not carry them.
 
+**Example values are lifted into RDF observations.** Each example now
+contains concrete rows linked to its dataset with `qb:dataSet`; the
+canonical component IRIs (`rep:energy`, `rep:x`, `rep:intensity`, and
+so on) are used as predicates. Production arrays may still remain in
+HDF5 when lifting every cell would be impractical.
 
-```turtle
-## live -- every component declares its quantity kind
-rep:energy       rep:hasQuantityKind  qk:Energy .
-rep:intensity    rep:hasQuantityKind  tax:Intensity .
-rep:temperature  rep:hasQuantityKind  qk:Temperature .
+### Rank determines type
 
-```
+`rep:Scalar`, `rep:Profile`, `rep:Image` and `rep:VolumeData` are
+defined by `owl:equivalentClass` on the `rep:rank` value, so a reasoner
+derives the type. `rep:Spectrum`, `rep:TimeSeries` and `rep:DepthProfile`
+are primitive — rank 1 cannot tell a spectrum from a time series, so the
+producer asserts which.
 
+| type | rank | axes, slowest first | signal |
+|---|---|---|---|
+| `rep:Scalar` | 0 | — | `rep:temperature` |
+| `rep:Spectrum` | 1 | `rep:energy` | `rep:intensity` |
+| `rep:TimeSeries` | 1 | `rep:time` | `rep:intensity` |
+| `rep:DepthProfile` | 1 | `rep:depth` | `rep:intensity` |
+| `rep:Image` | 2 | `rep:y`, `rep:x` | `rep:intensity` |
+| `rep:VolumeData` | 3 | `rep:z`, `rep:y`, `rep:x` | `rep:intensity` |
 
----
+The axis set is fixed per type. A rank-2 dataset uses `rep:y` and
+`rep:x` — no other pair is valid. Ordering is slowest-first, matching
+NumPy C-order and the NeXus `<axis>_indices` convention.
 
-## The canonical vocabulary
+### The canonical vocabulary
 
-All Axis and Signal IRIs come from this set. ABoxes do not mint `ex:` components.
+Eight IRIs, and an ABox never mints its own. `rep:energy` is the same
+IRI in every spectrum in the store, which is what lets one query serve
+the whole knowledge graph.
 
-### Axes — fixed per representation type
+| component | role | quantity kind | default unit |
+|---|---|---|---|
+| `rep:energy` | Axis | `qk:Energy` | `unit:EV` |
+| `rep:time` | Axis | `qk:Time` | `unit:SEC` |
+| `rep:depth` | Axis | `qk:Length` | `unit:NanoM` |
+| `rep:x` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:y` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:z` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:intensity` | Signal | `tax:Intensity` | `unit:COUNT` |
+| `rep:temperature` | Signal | `qk:Temperature` | `unit:K` |
 
-| representation | rank | axes (in `qb:order`) |
-|---|---|---|
-| `rep:Scalar` | 0 | none |
-| `rep:Spectrum` | 1 | `rep:energy` |
-| `rep:TimeSeries` | 1 | `rep:time` |
-| `rep:DepthProfile` | 1 | `rep:depth` |
-| `rep:Image` | 2 | `rep:y` (0), `rep:x` (1) |
-| `rep:VolumeData` | 3 | `rep:z` (0), `rep:y` (1), `rep:x` (2) |
-
-`rank` equals the number of axes, and the axis IRIs are determined by the type. A
-rank-2 dataset uses `rep:y` and `rep:x` — no other pair is valid.
-
-| Axis IRI | quantity kind |
-|---|---|
-| `rep:x` | `qk:Length` |
-| `rep:y` | `qk:Length` |
-| `rep:z` | `qk:Length` |
-| `rep:depth` | `qk:Length` |
-| `rep:energy` | `qk:Energy` |
-| `rep:time` | `qk:Time` |
-
-### Signals
-
-| Signal IRI | quantity kind | use |
-|---|---|---|
-| `rep:intensity` | `tax:Intensity` | raw detector counts — the default |
-| `rep:temperature` | `qk:Temperature` | temperature as a measured value |
-
-### Axis and Signal are disjoint
-
-`rep:Axis` and `rep:Signal` are `owl:disjointWith`, so an IRI declared as one cannot
-be used as the other. `rep:energy` is an Axis; putting it in a `qb:measure` slot makes
-the graph inconsistent under HermiT.
-
-```turtle
-## INCONSISTENT — rep:energy is an Axis, not a Signal
-qb:component [ qb:measure rep:energy ] .
-```
-
-A measurement whose quantity kind has no matching Signal in the vocabulary needs one
-added to the TBox — see *Extending the vocabulary* below. Do not reach for the Axis
-IRI that happens to share the quantity kind.
+`tax:Intensity` is locally minted — QUDT has no term for uncalibrated
+detector signal.
 
 ---
 
-## Prefix block
+# The six representations
 
-```turtle
-@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
-@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
-@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
-@prefix qb:   <http://purl.org/linked-data/cube#> .
-@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix owl:  <http://www.w3.org/2002/07/owl#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-```
+Each section below gives the data as a scientist would see it, then the
+exact RDF, then the unit rule. Diagrams: `tbox-illustration/`.
 
-`ex:` is for instance IRIs only — materials, properties, representations. Components
-always come from `rep:`.
+## Scalar — rank 0
 
----
+A single measured number. No axis: there is nothing to scan over.
 
-## 1. Scalar — `abox_scalar.ttl`
+**Data.** A thermocouple reading during a melting-point determination.
 
-**Shape** `()` · **rank** 0 · **inferred** `rep:Scalar` · **axes** none
-
-Silicon sample, recorded specimen temperature. *The instrument logged kelvin.*
-
-| value |
+| temperature |
 |---|
-| 293.15 |
+| 1811.0 |
+
+**RDF** — `examples/scalar-valid-kelvin-abox.ttl`
 
 ```turtle
-ex:Si     a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Silicon"@en ;
-    tax:hasMaterialProperty ex:Si_Temp .
+ex:melting_point a tax:MeltingTemperature ;
+    rep:has_scalar_representation ex:tc_reading .
 
-ex:Si_Temp  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "Specimen temperature"@en ;
-    rep:has_scalar_representation ex:r_scalar ;
-    rep:has_dsd                   _:dsd .
+ex:tc_reading a rep:Scalar , qb:DataSet ;
+    rep:rank "0"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_03 .
 
-ex:r_scalar a rep:Representation , rep:Scalar , owl:NamedIndividual ;
-    rep:rank   "0"^^xsd:nonNegativeInteger ;   ## triggers rep:Scalar
-    rep:extent "1"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
+ex:dsd_03 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_03_temperature .
 
-## no dimension component — rank 0 has no independent variable
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:temperature ;
-    qb:component [ qb:measure rep:temperature ] .
+ex:cs_03_temperature a qb:ComponentSpecification ;
+    qb:measure rep:temperature ;
+    rep:hasUnit unit:K .
 
-_:o0 a rep:Observation ; qb:dataSet ex:r_scalar ;
-    rep:temperature "293.15"^^xsd:double .
+ex:obs_03_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:tc_reading ;
+    rep:temperature "1811.0"^^xsd:double .
 ```
 
-`rep:temperature` carries `rep:hasQuantityKind qk:Temperature`, so a query can find
-this dataset by quantity kind without knowing the material or the property name.
+One component specification, and it is a measure. The rank-0 case is
+often modelled badly by inventing a length-1 axis to make it look like
+the others; this module does not.
+
+**Units.** `qk:Temperature` → `unit:K`.
+See `tbox-illustration/scalar.md`.
 
 ---
 
-## 2. Spectrum — `abox_spectrum.ttl`
+## Spectrum — rank 1, axis `rep:energy`
 
-**Shape** `(5,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:Spectrum`
-· **axis** `rep:energy`
+**Data.** An XPS survey scan.
 
-Fe K-edge absorption scan. *Axis values are Energy and signal values are detector counts
-in the source file; neither unit is in the graph.*
+| energy (eV) | intensity (count) |
+|---|---|
+| 0.0 | 120 |
+| 0.5 | 134 |
+| 1.0 | 129 |
+| … | … |
 
-| index | energy | intensity |
+**RDF** — `examples/profile-spectrum-valid-abox.ttl`
+
+```turtle
+ex:core_level_spectrum a tax:Spectra ;
+    rep:has_spectrum_representation ex:xps_survey .
+
+ex:xps_survey a rep:Spectrum , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_01 .
+
+ex:dsd_01 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_01_energy , ex:cs_01_intensity .
+
+ex:cs_01_energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:EV .
+
+ex:cs_01_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+ex:obs_01_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:xps_survey ;
+    rep:energy "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+```
+
+**Units.** Axis `qk:Energy` → `unit:EV`. Signal `tax:Intensity` →
+`unit:COUNT`.
+
+---
+
+## TimeSeries — rank 1, axis `rep:time`
+
+**Data.** A photoluminescence decay curve.
+
+| time (s) | intensity (count) |
+|---|---|
+| 0.0 | 4820 |
+| 0.1 | 3910 |
+| 0.2 | 3170 |
+| … | … |
+
+**RDF** — `examples/profile-timeseries-valid-second-abox.ttl`
+
+```turtle
+ex:carrier_lifetime a tax:CarrierLifetime ;
+    rep:has_timeseries_representation ex:decay_curve .
+
+ex:decay_curve a rep:TimeSeries , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_14 .
+
+ex:dsd_14 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_14_time , ex:cs_14_intensity .
+
+ex:cs_14_time a qb:ComponentSpecification ;
+    qb:dimension rep:time ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:SEC .
+
+ex:cs_14_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+ex:obs_14_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:decay_curve ;
+    rep:time "0.0"^^xsd:double ;
+    rep:intensity "4820"^^xsd:nonNegativeInteger .
+```
+
+**Units.** `qk:Time` → `unit:SEC`.
+
+---
+
+## DepthProfile — rank 1, axis `rep:depth`
+
+**Data.** A SIMS depth profile through a surface layer.
+
+| depth (nm) | intensity (count) |
+|---|---|
+| 0.0 | 9120 |
+| 2.5 | 8740 |
+| 5.0 | 6210 |
+| … | … |
+
+**RDF** — `examples/profile-depth-valid-nanometre-abox.ttl`
+
+```turtle
+ex:depth_composition a tax:ElementalComposition ;
+    rep:has_depthprofile_representation ex:sims_depth .
+
+ex:sims_depth a rep:DepthProfile , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_08 .
+
+ex:dsd_08 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_08_depth , ex:cs_08_intensity .
+
+ex:cs_08_depth a qb:ComponentSpecification ;
+    qb:dimension rep:depth ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:NanoM .
+
+ex:cs_08_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+ex:obs_08_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sims_depth ;
+    rep:depth "0.0"^^xsd:double ;
+    rep:intensity "9120"^^xsd:nonNegativeInteger .
+```
+
+**Units.** `qk:Length` → `unit:NanoM`. Note this is *narrower* than for
+Image below, despite the identical quantity kind. That gap is the
+reason the SHACL has two layers.
+
+---
+
+## Image — rank 2, axes `rep:y`, `rep:x`
+
+**Data.** An SEM intensity map, 3 × 4 pixels. Axis values µm, cells
+counts.
+
+| y \ x | 0.0 | 0.5 | 1.0 | 1.5 |
+|---|---|---|---|---|
+| **0.0** | 120 | 118 | 131 | 127 |
+| **0.5** | 119 | 145 | 162 | 130 |
+| **1.0** | 121 | 133 | 128 | 125 |
+
+**RDF** — `examples/image-valid-micrometre-abox.ttl`
+
+```turtle
+ex:surface_morphology a tax:Morphology ;
+    rep:has_image_representation ex:sem_map .
+
+ex:sem_map a rep:Image , qb:DataSet ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_06 .
+
+ex:dsd_06 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_06_y , ex:cs_06_x , ex:cs_06_intensity .
+
+ex:cs_06_y a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_06_x a qb:ComponentSpecification ;
+    qb:dimension rep:x ;
+    qb:order "1"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_06_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+ex:obs_06_y0_x0 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sem_map ;
+    rep:y "0.0"^^xsd:double ;
+    rep:x "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+```
+
+`rep:extent` on the dataset is 12; on `rep:y` it is 3, on `rep:x` it is
+4. The signal never carries an extent — it is always the product of the
+axis extents, so stating it would be a second source of truth.
+
+**Units.** `qk:Length` → `unit:MicroM`, `unit:NanoM`.
+
+---
+
+## VolumeData — rank 3, axes `rep:z`, `rep:y`, `rep:x`
+
+**Data.** A tomography reconstruction, 2 slices of 2 × 3.
+
+| z | y \ x | 0.0 | 0.5 | 1.0 |
+|---|---|---|---|---|
+| **0.0** | **0.0** | 120 | 118 | 131 |
+| **0.0** | **0.5** | 119 | 145 | 162 |
+| **1.0** | **0.0** | 122 | 117 | 129 |
+| **1.0** | **0.5** | 118 | 140 | 158 |
+
+**RDF** — `examples/volume-valid-micrometre-abox.ttl`
+
+```turtle
+ex:pore_structure a tax:Porosity ;
+    rep:has_volume_representation ex:tomo .
+
+ex:tomo a rep:VolumeData , qb:DataSet ;
+    rep:rank "3"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_10 .
+
+ex:dsd_10 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_10_z , ex:cs_10_y , ex:cs_10_x , ex:cs_10_intensity .
+
+ex:cs_10_z a qb:ComponentSpecification ;
+    qb:dimension rep:z ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_10_y a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    qb:order "1"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_10_x a qb:ComponentSpecification ;
+    qb:dimension rep:x ;
+    qb:order "2"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_10_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+ex:obs_10_z0_y0_x0 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:tomo ;
+    rep:z "0.0"^^xsd:double ;
+    rep:y "0.0"^^xsd:double ;
+    rep:x "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+```
+
+**Naming.** The class is `rep:VolumeData`, not `rep:Volume`, and carries
+`owl:disjointWith tax:Volume`. `tax:Volume` already exists in the base
+taxonomy as a structural property — the space a material occupies. A 3D
+data cube is a different thing, and the collision is worth ruling out
+explicitly.
+
+**Units.** `qk:Length` → `unit:MicroM`, `unit:NanoM`.
+
+---
+
+# Units
+
+Every component carries two edges: what it measures, and what it is
+measured in.
+
+```turtle
+rep:energy  rep:hasQuantityKind  qk:Energy ;
+            rep:hasUnit          unit:EV .
+```
+
+That is the whole model. `rep:hasQuantityKind` gives the quantity kind,
+`rep:hasUnit` gives the unit, and SHACL checks the two agree.
+
+The unit is *not* chained behind the kind — there is no
+`qk:Energy → unit:EV` triple in the ontology. A kind does not have one
+unit; energy is measured in eV, joules or hartrees depending on who is
+asking. `rep:hasUnit` is functional, so hanging it off the kind would
+turn the second option into a contradiction rather than an
+alternative. Both edges start at the component, where the answer is
+actually single-valued.
+
+## The canonical defaults
+
+`representation.ttl` declares six unit individuals, one per component:
+
+| component | quantity kind | unit |
 |---|---|---|
-| 0 | 7980.0 | 12 |
-| 1 | 7980.5 | 15 |
-| 2 | 7981.0 | 115 |
-| 3 | 7981.5 | 850 |
-| 4 | 7982.0 | 230 |
+| `rep:energy` | `qk:Energy` | `unit:EV` |
+| `rep:time` | `qk:Time` | `unit:SEC` |
+| `rep:depth` | `qk:Length` | `unit:NanoM` |
+| `rep:x`, `rep:y`, `rep:z` | `qk:Length` | `unit:MicroM` |
+| `rep:temperature` | `qk:Temperature` | `unit:K` |
+| `rep:intensity` | `tax:Intensity` | `unit:COUNT` |
 
-```turtle
-ex:FeFoil      a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Iron foil"@en .
+A dataset that needs a different unit states it on its own
+`qb:ComponentSpecification`, beside `qb:order` and `rep:extent`. Same
+property, same validation.
 
-ex:FeFoil_XAS  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "Fe K-edge absorption"@en ;
-    rep:has_spectrum_representation ex:r_spectrum ;
-    rep:has_dsd                     _:dsd .
+## What you can write today
 
-ex:r_spectrum a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "5"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
+The `shp:permitsUnit` table in `representation.shacl.ttl`. Ordinary RDF
+— queryable without a validator, see `SPARQL_USAGE.md` Q2.
 
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:energy , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:energy ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
+| quantity kind | permitted units |
+|---|---|
+| `qk:Temperature` | `unit:K` |
+| `qk:Length` | `unit:NanoM`, `unit:MicroM` |
+| `qk:Time` | `unit:SEC` |
+| `qk:Energy` | `unit:EV` |
+| `tax:Intensity` | `unit:COUNT` |
 
-## component IRIs act as predicates on the observation
-_:o3 a rep:Observation ; qb:dataSet ex:r_spectrum ;
-    rep:index "3"^^xsd:nonNegativeInteger ;
-    rep:energy "7981.5"^^xsd:double ; rep:intensity "850.0"^^xsd:double .
-```
+Length is the only kind with two, because a depth axis works in
+nanometres and an image axis in micrometres.
+
+> **This list is what the module uses today, as of September 2026, and
+> it will grow without notice.** It is not a survey of what QUDT offers
+> and not a claim that nothing else is valid — millimetres, keV and
+> minutes are all perfectly real units that simply have no dataset
+> asking for them yet. Adding one is a single triple in
+> `representation.shacl.ttl`: no shape edit, no TBox change, no
+> reasoning to redo. Query the table rather than memorising it.
+
+It happens to match the six declared unit individuals exactly right
+now. That is where the module starts, not a rule — the first dataset
+that needs millimetres grows the SHACL table and leaves the TBox alone.
+The permitted set is a closed-world statement and OWL has no closed
+world, which is why it lives in the shapes file and only there.
+
+`qk:Temperature` lists kelvin alone. Non-absolute scales raise a
+question this module does not answer — a delta of 5 °C is not a
+temperature of 5 °C, and nothing here distinguishes them. That is a
+design decision rather than a triple; see `CHANGELOG/suggestions.txt`.
 
 ---
 
-## 3. TimeSeries — `abox_timeseries.ttl`
+# SHACL validation
 
-**Shape** `(6,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:TimeSeries`
-· **axis** `rep:time`
+`representation.shacl.ttl` holds the shapes **and** the permitted-unit
+table. It is loaded twice by the test runner — once as the shapes graph,
+once into the data graph — because the `FILTER NOT EXISTS` in
+`REP-UNIT-001` is evaluated against the data. The shapes are inert as
+data; nothing targets them.
 
-316L stainless steel, passivation current decay. *Times were logged in seconds.*
+## Why OWL is not enough
 
-| index | time | intensity |
+OWL is open-world: an absent axiom is unknown, never false. Nothing in
+`representation.ttl` says a `qk:Energy` component may not point at a
+time unit, so there is no contradiction to derive — and a reasoner
+derives contradictions, it does not invent rules.
+
+Measured, not asserted. Running the invalid examples through HermiT:
+
+| ABox | HermiT | SHACL |
 |---|---|---|
-| 0 | 0 | 12500 |
-| 1 | 60 | 8400 |
-| 2 | 300 | 5100 |
-| 3 | 600 | 3800 |
-| 4 | 1800 | 2200 |
-| 5 | 3600 | 1520 |
+| energy axis in `unit:SEC` | consistent | `REP-UNIT-001` |
+| temperature signal in `unit:M` | consistent | `REP-UNIT-001` |
+| component specification with no unit | consistent | `REP-UNIT-003` |
+| two units on one specification | consistent | `REP-UNIT-003` |
+| `qk:Energy` used where a unit belongs | consistent | `REP-UNIT-002` |
 
-```turtle
-ex:SS316L         a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "316L stainless steel"@en .
+Every graph SHACL rejects, HermiT accepts. That gap is not a reasoner
+defect — it is the open-world assumption doing its job, and it is why
+the constraints cannot live in the TBox.
 
-ex:SS316L_Passiv  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "Passivation current decay"@en ;
-    rep:has_timeseries_representation ex:r_timeseries ;
-    rep:has_dsd                       _:dsd .
+What OWL *does* catch, because it is a genuine logical axiom:
+`rep:energy` used as a `qb:measure` is **inconsistent**, since `rep:Axis`
+and `rep:Signal` are disjoint.
 
-ex:r_timeseries a rep:Representation , rep:TimeSeries , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "6"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
+## Two layers
 
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:time , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:time ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:t5 a rep:Observation ; qb:dataSet ex:r_timeseries ;
-    rep:index "5"^^xsd:nonNegativeInteger ;
-    rep:time "3600.0"^^xsd:double ; rep:intensity "1520.0"^^xsd:double .
-```
-
-The only structural difference from a Spectrum is the axis IRI. Swapping
-`rep:energy` for `rep:time` and asserting `rep:TimeSeries` instead of `rep:Spectrum`
-is the whole change.
-
----
-
-## 4. DepthProfile — `abox_depthprofile.ttl`
-
-**Shape** `(6,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:DepthProfile`
-· **axis** `rep:depth`
-
-Boron-implanted silicon, SIMS sputter profile. *Depths were recorded in nm.*
-
-| index | depth | intensity |
+| | layer 1 — dimensional | layer 2 — profile |
 |---|---|---|
-| 0 | 0 | 120000 |
-| 1 | 5 | 85000 |
-| 2 | 10 | 32000 |
-| 3 | 20 | 5000 |
-| 4 | 50 | 210 |
-| 5 | 100 | 45 |
+| asks | is this unit a unit *of this kind*? | is it the unit *conventional for this type*? |
+| driven by | `shp:permitsUnit` table | `sh:in` list per representation type |
+| severity | `sh:Violation` | `sh:Warning` |
+| effect | graph does not conform | graph still conforms |
+| means | the data is **wrong** | the data is **unusual** |
 
-```turtle
-ex:BdopedSi       a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Boron-implanted silicon"@en .
+**Why layer 2 has to exist.** `qk:Length` covers both the nanometre-scale
+depth axis and the micrometre-scale image axes. The quantity kind cannot
+separate them; the representation type can.
+`examples/profile-depth-warn-micrometre-abox.ttl` is a depth profile
+stepped in micrometres — a permitted length unit, exactly right on an
+image axis, and three orders of magnitude off on a depth axis. Layer 1
+has nothing to say about it. Layer 2 warns, and the graph still
+validates.
 
-ex:BdopedSi_SIMS  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "SIMS boron depth profile"@en ;
-    rep:has_depthprofile_representation ex:r_depthprofile ;
-    rep:has_dsd                         _:dsd .
+## Error codes
 
-ex:r_depthprofile a rep:Representation , rep:DepthProfile , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "6"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:depth , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:depth ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:d5 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
-    rep:index "5"^^xsd:nonNegativeInteger ;
-    rep:depth "100.0"^^xsd:double ; rep:intensity "45.0"^^xsd:double .
-```
-
----
-
-## 5. Image — `abox_image.ttl`
-
-**Shape** `(5, 5)` · **rank** 2 · **inferred** `rep:Image` · **axes** `rep:y` (0), `rep:x` (1)
-
-DP780 dual-phase steel, EBSD orientation map.
-
-| y \ x | 0 | 2 | 4 | 6 | 8 |
-|---|---|---|---|---|---|
-| **0** | 10 | 12 | 11 | 14 | 10 |
-| **2** | 13 | 45 | 120 | 50 | 15 |
-| **4** | 11 | 110 | **850** | 115 | 12 |
-| **6** | 14 | 55 | 118 | 48 | 11 |
-| **8** | 10 | 12 | 14 | 11 | 9 |
-
-Flat index: `idx = j × Nx + i`
-
-```turtle
-ex:DP780       a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "DP780 dual-phase steel"@en .
-
-ex:DP780_EBSD  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "EBSD orientation map"@en ;
-    rep:has_image_representation ex:r_image ;
-    rep:has_dsd                  _:dsd .
-
-ex:r_image a rep:Representation , rep:Image , owl:NamedIndividual ;
-    rep:rank        "2"^^xsd:nonNegativeInteger ;
-    rep:extent      "25"^^xsd:nonNegativeInteger ;   ## 5 × 5
-    rep:is_separable true ;
-    qb:structure    _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:y , rep:x , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:y ;                       ## slow axis
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
-        [ qb:dimension rep:x ;                       ## fast axis
-          qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:p22 a rep:Observation ; qb:dataSet ex:r_image ;
-    rep:index "12"^^xsd:nonNegativeInteger ;         ## j=2, i=2 → 2×5+2
-    rep:y "4.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
-    rep:intensity "850.0"^^xsd:double .
-```
-
-Both axes carry `qk:Length`. `qb:order` is the only thing that tells `rep:y` from
-`rep:x` — a query that filters on quantity kind alone gets them in arbitrary order.
-
----
-
-## 6. VolumeData — `abox_volume.ttl`
-
-**Shape** `(2, 2, 3)` · **rank** 3 · **inferred** `rep:VolumeData` · **axes** `rep:z` (0),
-`rep:y` (1), `rep:x` (2)
-
-Porous alumina foam, microCT reconstruction. *Voxel pitch was 2 µm.*
-
-**z = 0**
-
-| y \ x | 0 | 2 | 4 |
+| code | layer | severity | fires when |
 |---|---|---|---|
-| **0** | 10 | 12 | 11 |
-| **2** | 13 | 15 | 12 |
+| `REP-UNIT-001` | 1 | Violation | unit not permitted for the component's quantity kind |
+| `REP-UNIT-002` | 1 | Violation | object of `rep:hasUnit` is a `qudt:QuantityKind` |
+| `REP-UNIT-003` | 1 | Violation | a specification has zero or more than one unit |
+| `REP-UNIT-010` | 2 | Warning | Scalar temperature outside K |
+| `REP-UNIT-011` | 2 | Warning | Spectrum axis outside eV |
+| `REP-UNIT-012` | 2 | Warning | TimeSeries axis outside s |
+| `REP-UNIT-013` | 2 | Warning | DepthProfile axis outside nm |
+| `REP-UNIT-014` | 2 | Warning | Image axis outside µm / nm |
+| `REP-UNIT-015` | 2 | Warning | VolumeData axis outside µm / nm |
+| `REP-UNIT-016` | 2 | Warning | intensity signal outside count |
 
-**z = 5**
+`REP-UNIT-002` exists because layer 1 alone would report a swapped kind
+as *"`qk:Energy` is not admissible for `qk:Energy`"* — true, and
+useless. Naming the actual mistake is worth a shape of its own.
 
-| y \ x | 0 | 2 | 4 |
-|---|---|---|---|
-| **0** | 11 | 14 | 10 |
-| **2** | 12 | **550** | 14 |
+`REP-UNIT-003` is not redundant with `owl:FunctionalProperty`.
+Functional means *any two values are the same individual*, so OWL
+responds to two units by inferring `unit:MicroM owl:sameAs unit:NanoM`
+and carrying on. That inference is silently wrong and propagates.
 
-Flat index: `idx = k × Ny × Nx + j × Nx + i`
+## Structured errors
 
-```turtle
-ex:Al2O3foam     a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Porous alumina foam"@en .
+Every shape carries `shp:code`, `shp:category`, `shp:layer` and
+`shp:remedy`. A validation result points back at its shape through
+`sh:sourceShape`, so a consumer joins result → shape → metadata and gets
+a stable code. Nothing parses prose out of `sh:resultMessage`; the
+message is for humans.
 
-ex:Al2O3foam_CT  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "MicroCT reconstruction"@en ;
-    rep:has_volume_representation ex:r_volume ;
-    rep:has_dsd                   _:dsd .
-
-ex:r_volume a rep:Representation , rep:VolumeData , owl:NamedIndividual ;
-    rep:rank        "3"^^xsd:nonNegativeInteger ;
-    rep:extent      "12"^^xsd:nonNegativeInteger ;   ## 2 × 2 × 3
-    rep:is_separable true ;
-    qb:structure    _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:z , rep:y , rep:x , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:z ;                       ## slowest
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
-        [ qb:dimension rep:y ;
-          qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
-        [ qb:dimension rep:x ;                       ## fastest
-          qb:order     "2"^^xsd:nonNegativeInteger ;
-          rep:extent   "3"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:v111 a rep:Observation ; qb:dataSet ex:r_volume ;
-    rep:index "10"^^xsd:nonNegativeInteger ;         ## k=1,j=1,i=1 → 1×6+1×3+1
-    rep:z "5.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
-    rep:x "2.0"^^xsd:double ; rep:intensity "550.0"^^xsd:double .
+```python
+owner = shapes.value(predicate=SH.property, object=source_shape) or source_shape
+code  = shapes.value(owner, SHP.code)        # "REP-UNIT-013"
 ```
 
----
+That join is `findings()` in `test/representation_test.py`, ~20 lines.
 
-## Authoring checklist
+## Test coverage
 
-```
-1. Pick the representation type and set rep:rank to match
-       rank 0 -> Scalar          rank 2 -> Image
-       rank 1 -> Profile         rank 3 -> VolumeData
-       Spectrum / TimeSeries / DepthProfile also asserted at rank 1
+14 ABoxes, each an independent graph — several contradict each other on
+purpose and are never loaded together. Full output in `test/reports.md`.
 
-2. Use the axis IRIs fixed for that type
-       Scalar        none
-       Spectrum      rep:energy
-       TimeSeries    rep:time
-       DepthProfile  rep:depth
-       Image         rep:y , rep:x
-       VolumeData    rep:z , rep:y , rep:x
-
-3. Pick the signal
-       counts       -> rep:intensity     (the usual case)
-       temperature  -> rep:temperature
-       anything else -> add a Signal to the TBox first;
-                        never reuse an Axis IRI as a measure
-
-4. Assign qb:order   0 = slowest ... n-1 = fastest
-
-5. rep:extent goes on
-       the Representation             total observations
-       each axis ComponentSpec        that axis's length
-       never on the Signal            it is product(axis extents)
-
-6. Use the component IRIs as predicates on each observation
-
-```
-
----
-
-## Extent rules
-
-| subject | meaning | stored? |
+| file | conforms | codes |
 |---|---|---|
-| `rep:Representation` | total observations = product of axis extents | always |
-| `qb:ComponentSpecification` (axis) | that axis's array length | always |
-| `rep:Signal` | always equals product(axis extents) | never — derivable |
+| `scalar-valid-kelvin` | yes | — |
+| `scalar-invalid-metre` | no | `001`, `010` |
+| `profile-spectrum-valid` | yes | — |
+| `profile-spectrum-invalid-seconds` | no | `001`, `011` |
+| `profile-spectrum-invalid-missing-unit` | no | `003` |
+| `profile-spectrum-invalid-kind-as-unit` | no | `001`, `002`, `011` |
+| `profile-spectrum-invalid-intensity-ev` | no | `001`, `016` |
+| `profile-timeseries-valid-second` | yes | — |
+| `profile-depth-valid-nanometre` | yes | — |
+| `profile-depth-warn-micrometre` | **yes** | `013` |
+| `image-valid-micrometre` | yes | — |
+| `image-invalid-seconds` | no | `001`, `014` |
+| `image-invalid-two-units` | no | `003` |
+| `volume-valid-micrometre` | yes | — |
+
+`profile-depth-warn-micrometre` conforms *and* carries a finding. A pipeline
+gates on layer 1 and logs layer 2.
 
 ---
 
-## Flat index convention
+# Description logic and formal notation
 
-`rep:index` is optional. Include it when the dataset must point back to a position in
-the source array.
+The ontology in DL syntax, and the shapes in the notation that suits
+them. Two different logics, deliberately — the split is the point.
 
-| rank | formula | worked example |
-|---|---|---|
-| 1 | `i` | index 3 → element 3 |
-| 2 | `j × Nx + i` | (2,2) with Nx=5 → 12 |
-| 3 | `k × Ny × Nx + j × Nx + i` | (1,1,1) with Ny=2, Nx=3 → 10 |
+## Notation
 
-When all coordinates are materialised in RDF the coordinate tuple is the natural key,
-and the index adds nothing.
+| symbol | meaning |
+|---|---|
+| ⊑ | subsumption (is-a) |
+| ≡ | equivalence (definition) |
+| ⊓ ⊔ | intersection, union |
+| ∃R.C | some values from |
+| ∀R.C | all values from |
+| ∋ | has value (nominal) |
+| ⊤ ⊥ | top, bottom |
+| ⩽n R | at-most cardinality |
+| ¬ | negation |
+
+## TBox — class axioms
+
+Everything descends from one umbrella class:
+
+```
+DataStructureDefinition  ⊑  Representation
+ComponentProperty        ⊑  Representation
+Observation              ⊑  Representation
+Scalar ⊔ Profile ⊔ Image ⊔ VolumeData  ⊑  Representation
+Spectrum ⊔ TimeSeries ⊔ DepthProfile   ⊑  Profile
+```
+
+The component roles form a **disjoint union** — this is the one axiom
+in the module a reasoner can actually break an ABox on:
+
+```
+ComponentProperty  ≡  Axis ⊔ Signal ⊔ UnitAttribute
+Axis ⊓ Signal  ≡  ⊥
+Axis ⊓ UnitAttribute  ≡  ⊥
+Signal ⊓ UnitAttribute  ≡  ⊥
+```
+
+So `rep:energy` used as a `qb:measure` is **inconsistent**, because it
+would have to be both `Axis` and `Signal`.
+
+The rank-based types are **defined**, not primitive — `≡` rather than
+`⊑`, which is what lets a reasoner derive the type from the data:
+
+```
+Scalar      ≡  Representation ⊓ ∃rank.{0}
+Profile     ≡  Representation ⊓ ∃rank.{1}
+Image       ≡  Representation ⊓ ∃rank.{2}
+VolumeData  ≡  Representation ⊓ ∃rank.{3}
+```
+
+`Spectrum`, `TimeSeries` and `DepthProfile` are primitive (`⊑ Profile`)
+because rank 1 alone cannot tell them apart.
+
+The qb bridges:
+
+```
+Axis    ⊑  qb:DimensionProperty  ⊑  rdf:Property
+Signal  ⊑  qb:MeasureProperty    ⊑  rdf:Property
+```
+
+That second subsumption into `rdf:Property` is what makes the OWL 2
+punning legal: `rep:energy` is an individual *and* a predicate.
+
+## TBox — property axioms
+
+```
+⊤ ⊑ ∀hasQuantityKind.QuantityKind          range
+∃hasQuantityKind.⊤ ⊑ ComponentProperty     domain
+⊤ ⊑ ⩽1 hasQuantityKind                     functional
+
+⊤ ⊑ ∀hasUnit.Unit                          range
+∃hasUnit.⊤ ⊑ ComponentProperty ⊔ qb:ComponentSpecification
+⊤ ⊑ ⩽1 hasUnit                             functional
+
+has_scalar_representation     ⊑ has_representation
+has_spectrum_representation   ⊑ has_representation
+has_timeseries_representation ⊑ has_representation
+has_depthprofile_representation ⊑ has_representation
+has_image_representation      ⊑ has_representation
+has_volume_representation     ⊑ has_representation
+
+∃has_representation.⊤ ⊑ tax:MaterialProperty
+⊤ ⊑ ∀has_spectrum_representation.Spectrum       (and so on per subtype)
+```
+
+The typed subproperties give two independent routes to the same
+conclusion — range assertion and rank definition — and a reasoner
+flags the conflict when they disagree. A dataset asserted
+`has_image_representation` but carrying `rank = 1` is inconsistent:
+
+```
+Image ≡ Representation ⊓ ∃rank.{2}     and     ∃rank.{1}     ⊨  ⊥
+```
+
+The canonical individuals, as ABox assertions:
+
+```
+Axis(energy)   hasQuantityKind(energy, Energy)   hasUnit(energy, EV)
+Axis(depth)    hasQuantityKind(depth, Length)    hasUnit(depth, NanoM)
+Axis(x)        hasQuantityKind(x, Length)        hasUnit(x, MicroM)
+Signal(temperature)  hasQuantityKind(temperature, Temperature)
+                     hasUnit(temperature, K)
+```
+
+## Where DL stops
+
+The unit rule cannot be written above. The natural-looking attempt is
+
+```
+∀c. hasUnit(c, u) ⊓ hasQuantityKind(c, k)  →  permits(k, u)
+```
+
+and it is **not expressible in OWL 2 DL**, for two separate reasons.
+
+First, it is a *role–role* constraint: it relates the fillers of two
+different roles on the same individual. DL concept constructors quantify
+over one role at a time. SWRL could express it, at the cost of
+decidability.
+
+Second, even written, it would not do the job. OWL is open-world, so
+
+```
+KB ⊭ ¬permits(Energy, SEC)
+```
+
+Absence of a `permits` assertion is *unknown*, never *false*. Nothing is
+violated, so nothing is derived. Measured, not argued: HermiT accepts
+every one of the invalid examples in `examples/`.
+
+The one thing OWL *does* catch here is a genuine contradiction, and it
+needs the disjointness axiom to do it:
+
+```
+Axis(energy) ⊓ Signal(energy)  ⊨  ⊥
+```
+
+## SHACL — the closed-world half
+
+SHACL is validation over a fixed graph, so the quantifier is bounded
+and negation-as-failure is available. Layer 1:
+
+```
+∀ c ∈ { x : ∃u. hasUnit(x, u) } .
+    ∀ k ∈ kind(c) .  hasUnit(c) ∈ permits(k)
+```
+
+where `kind(c)` resolves through whichever path applies:
+
+```
+kind(c) = { k : hasQuantityKind(c, k) }
+        ∪ { k : ∃d. qb:dimension(c, d) ∧ hasQuantityKind(d, k) }
+        ∪ { k : ∃m. qb:measure(c, m)   ∧ hasQuantityKind(m, k) }
+```
+
+Directly as the SPARQL the shape actually runs:
+
+```
+{(c,u,k) : hasUnit(c,u) ∧ k ∈ kind(c) ∧ (k,u) ∉ permits}  =  ∅
+```
+
+`∉` is the operative symbol. It is `FILTER NOT EXISTS`, and it is
+exactly what DL cannot supply.
+
+Layer 2 narrows by representation type rather than by kind:
+
+```
+∀ d : Image .      units(axes(d))  ⊆  {MicroM, NanoM}
+∀ d : DepthProfile. units(axes(d)) ⊆  {NanoM}
+```
+
+Both sets are `qk:Length`, which is the formal statement of why one
+layer is not enough:
+
+```
+permits(Length) = {NanoM, MicroM}
+profile(Image)  = {MicroM, NanoM}
+profile(Depth)  = {NanoM}
+
+profile(Depth) ⊊ permits(Length)
+```
+
+A micrometre depth axis sits in `permits(Length) \ profile(Depth)` —
+admissible, off-profile. Warning, not violation.
+
+Cardinality, closing the gap `owl:FunctionalProperty` leaves open:
+
+```
+∀ c ∈ ComponentSpecification .  |{u : hasUnit(c,u)}| = 1
+```
+
+OWL's functionality says any two fillers are the *same individual*,
+which under a unique-name-free semantics infers `MicroM ≡ NanoM` rather
+than rejecting. SHACL counts instead of identifying.
+
+## The division, in one line
+
+```
+OWL   ⊨  what must follow      open world,   entailment
+SHACL ⊨  what must be present  closed world, validation
+```
+
+Nothing in `representation.ttl` is a constraint, and nothing in
+`representation.shacl.ttl` is a definition. Each file does the job its
+logic can actually do.
 
 ---
 
-## Extending the vocabulary (INTERNAL future updates)
+## Known limits
 
-If the quantity you need has no canonical component, add the individual to the
-canonical vocabulary block in the TBox:
+Not yet enforced anywhere, by design or by omission:
 
-```turtle
-rep:pressure  a owl:NamedIndividual , rep:Signal ;
-    rep:hasQuantityKind qk:Pressure ;
-    rdfs:comment "Pressure signal."@en ;
-    skos:prefLabel "pressure"@en .
-```
+- **Canonical axis membership.** Nothing here stops an ABox minting
+  `ex:my_axis`. A candidate shape is drafted in the enforcement note at
+  the foot of `representation.ttl`; it is intended for a future
+  structural shapes graph and is not present in this unit-scoped file.
+- **`rep:extent` arithmetic.** That dataset extent equals the product of
+  axis extents is validated in Pydantic, not in SHACL.
+- **Index contiguity.**
+- **`tax:Spectra ⊑ ∃has_representation.rep:Spectrum`** — the coupling
+  axiom tying taxonomy classes to required representation types.
 
-Declare the quantity kind if it is not already present:
+## See also
 
-```turtle
-qk:Pressure a owl:NamedIndividual , qudt:QuantityKind ;
-    skos:prefLabel "Pressure"@en .
-```
-
-The new component is then available across the whole knowledge graph. The one
-judgement call is Axis versus Signal: an Axis is an independent variable you scan
-over, a Signal is what the detector reports.
+- `SPARQL_USAGE.md` — what you can ask, with real output
+- `tbox-illustration/overview.md` — the diagrams
+- `CHANGELOG/` — what changed, and what is only a suggestion

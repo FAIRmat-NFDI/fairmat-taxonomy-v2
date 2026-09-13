@@ -1,0 +1,51 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-spectrum-invalid-kind-as-unit-abox.ttl
+##  expect: REP-UNIT-001, REP-UNIT-002, REP-UNIT-011
+##
+## A quantity kind used where a unit belongs.
+##
+## The commonest authoring slip. Layer 1 would report it as "qk:Energy
+## is not admissible for qk:Energy", which is true but unhelpful, so
+## REP-UNIT-002 exists to name the actual mistake.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:spectrum_kindasunit a rep:Spectrum , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_13 .
+
+ex:dsd_13 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_13_energy , ex:cs_13_intensity .
+
+ex:cs_13_energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit qk:Energy .         #### WRONG: that is a quantity kind, not a unit
+
+ex:cs_13_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- data values remain usable while SHACL reports the kind/unit mix-up
+ex:obs_13_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:spectrum_kindasunit ;
+    rep:energy "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+
+ex:obs_13_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:spectrum_kindasunit ;
+    rep:energy "0.5"^^xsd:double ;
+    rep:intensity "134"^^xsd:nonNegativeInteger .

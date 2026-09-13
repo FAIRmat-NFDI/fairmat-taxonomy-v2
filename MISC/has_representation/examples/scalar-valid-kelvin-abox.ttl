@@ -1,0 +1,40 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  scalar-valid-kelvin-abox.ttl
+##  expect: conforms
+##
+## Scalar temperature in kelvin. The module default.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+### the taxonomy bridge -- which material property this data represents
+ex:melting_point a tax:MeltingTemperature ;
+    rep:has_scalar_representation ex:tc_reading .
+
+ex:tc_reading a rep:Scalar , qb:DataSet ;
+    rep:rank "0"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_03 .
+
+ex:dsd_03 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_03_temperature .
+
+ex:cs_03_temperature a qb:ComponentSpecification ;
+    qb:measure rep:temperature ;
+    rep:hasUnit unit:K .
+
+### lifted observation -- a rank-0 dataset still has one measured value
+ex:obs_03_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:tc_reading ;
+    rep:temperature "1811.0"^^xsd:double .

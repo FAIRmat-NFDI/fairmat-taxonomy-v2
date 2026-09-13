@@ -1,0 +1,61 @@
+SUGGESTIONS  --  NOT APPLIED, listed for consent
+================================================
+Nothing in this file is shipped. Each would be a semantic
+change, and none was made without asking.
+
+
+[S0] The permitted-unit table will need widening
+     The shp:permitsUnit sets in representation.shacl.ttl are current as
+     of September 2026 and cover the units this module's own six
+     representation types actually use. They are not a survey of what
+     QUDT offers, and they will not stay sufficient. Expect requests for
+     cm and inches on image axes, THz and cm-1 on spectra, and whole new
+     quantity kinds -- pressure, magnetic flux density, current -- as
+     more instrument classes come in. Each addition is one triple, no
+     shape edit, no TBox change. This is listed here not because it
+     needs a decision but so nobody mistakes the current table for a
+     closed set.
+
+
+[S1] Non-absolute temperature scales
+     qk:Temperature currently permits unit:K alone, after Celsius was
+     removed. Adding unit:DEG_C or unit:DEG_F back is one triple in the
+     shp:permitsUnit table, but it opens a question the module does not
+     currently answer: a temperature difference of 5 degC is not a
+     temperature of 5 degC, and nothing here distinguishes an absolute
+     reading from a delta. QUDT has separate IRIs for some of these.
+     Worth settling deliberately rather than by adding a triple.
+
+[S2] Canonical axis membership shape
+     Nothing stops an ABox minting ex:my_axis and using it as a
+     qb:dimension. HermiT accepts it. The shape is four lines and is
+     already sketched in the enforcement note at the foot of
+     representation.ttl. It belongs in representation_shapes.ttl, the
+     structural shapes file, not the unit-scoped one -- so it was left
+     out of this delivery rather than dropped in the wrong file.
+
+[S3] rep:extent arithmetic in SHACL
+     That the dataset extent equals the product of the axis extents is
+     enforced in Pydantic and nowhere in RDF. A sh:sparql constraint
+     with SUM/GROUP BY would close it.
+
+[S4] Coupling axiom tax:Spectra -> rep:Spectrum
+     A long-standing open item. A taxonomy class that can only
+     sensibly be measured as a spectrum could assert
+         tax:Spectra rdfs:subClassOf [ owl:onProperty rep:has_representation ;
+                                       owl:someValuesFrom rep:Spectrum ]
+     This has real consequences for every existing Spectra instance and
+     needs a decision about which taxonomy classes get it.
+
+[S5] Units on rep:Observation
+     Units are currently structural -- they describe a slot, not a
+     value. If a single observation ever needs its own unit (mixed-unit
+     acquisitions), the model would need an attribute-carried unit, and
+     rep:UnitAttribute is already declared and waiting for exactly that.
+     No current data needs it.
+
+[S6] Machine-readable severity policy
+     shp:layer is an annotation a consumer must know to read. A named
+     policy resource stating "layer 1 gates, layer 2 logs" would let a
+     pipeline configure itself from the shapes graph instead of
+     hard-coding the rule.

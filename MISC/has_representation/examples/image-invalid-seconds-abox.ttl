@@ -1,0 +1,51 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  image-invalid-seconds-abox.ttl
+##  expect: REP-UNIT-001, REP-UNIT-014
+##
+## Image whose x axis carries a time unit while y is correct.
+## Shows the report isolating the offending spec: ex:cs_07_x is named,
+## ex:cs_07_y is not.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+ex:sem_broken a rep:Image , qb:DataSet ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_07 .
+
+ex:dsd_07 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_07_y , ex:cs_07_x , ex:cs_07_intensity .
+
+ex:cs_07_y a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_07_x a qb:ComponentSpecification ;
+    qb:dimension rep:x ;
+    qb:order "1"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:SEC .          #### WRONG: qk:Length does not permit a time unit
+
+ex:cs_07_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- values are real; the x-axis unit is intentionally wrong
+ex:obs_07_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sem_broken ; rep:y "0.0"^^xsd:double ; rep:x "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+ex:obs_07_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:sem_broken ; rep:y "0.0"^^xsd:double ; rep:x "0.5"^^xsd:double ;
+    rep:intensity "118"^^xsd:nonNegativeInteger .

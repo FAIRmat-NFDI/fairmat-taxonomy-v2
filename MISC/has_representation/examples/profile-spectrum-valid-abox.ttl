@@ -1,0 +1,58 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  profile-spectrum-valid-abox.ttl
+##  expect: conforms
+##
+## Spectrum, canonical units throughout. The baseline.
+## energy axis -> qk:Energy -> unit:EV        Layer 1 ok, Layer 2 in profile
+## intensity signal -> tax:Intensity -> COUNT Layer 1 ok, Layer 2 in profile
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+### the taxonomy bridge -- which material property this data represents
+ex:core_level_spectrum a tax:Spectra ;
+    rep:has_spectrum_representation ex:xps_survey .
+
+ex:xps_survey a rep:Spectrum , qb:DataSet ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_01 .
+
+ex:dsd_01 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_01_energy , ex:cs_01_intensity .
+
+ex:cs_01_energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:EV .
+
+ex:cs_01_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- the canonical component IRIs are predicates
+ex:obs_01_000 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:xps_survey ;
+    rep:energy "0.0"^^xsd:double ;
+    rep:intensity "120"^^xsd:nonNegativeInteger .
+
+ex:obs_01_001 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:xps_survey ;
+    rep:energy "0.5"^^xsd:double ;
+    rep:intensity "134"^^xsd:nonNegativeInteger .
+
+ex:obs_01_002 a rep:Observation , qb:Observation ;
+    qb:dataSet ex:xps_survey ;
+    rep:energy "1.0"^^xsd:double ;
+    rep:intensity "129"^^xsd:nonNegativeInteger .

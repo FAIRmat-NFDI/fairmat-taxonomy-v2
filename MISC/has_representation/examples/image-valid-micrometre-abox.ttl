@@ -1,0 +1,59 @@
+@prefix ex:   <http://example.org/data#> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/2.1/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+##  image-valid-micrometre-abox.ttl
+##  expect: conforms
+##
+## Image, both axes in micrometres. rank 2, axes y then x.
+##
+##  Standalone data graph. Validate with:
+##      python test/representation_test.py
+##  Several example files contradict each other on purpose and are
+##  never loaded together.
+#################################################################
+
+### the taxonomy bridge -- which material property this data represents
+ex:surface_morphology a tax:Morphology ;
+    rep:has_image_representation ex:sem_map .
+
+ex:sem_map a rep:Image , qb:DataSet ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd_06 .
+
+ex:dsd_06 a rep:DataStructureDefinition , qb:DataStructureDefinition ;
+    qb:component ex:cs_06_y , ex:cs_06_x , ex:cs_06_intensity .
+
+ex:cs_06_y a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    qb:order "0"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_06_x a qb:ComponentSpecification ;
+    qb:dimension rep:x ;
+    qb:order "1"^^xsd:nonNegativeInteger ;
+    rep:hasUnit unit:MicroM .
+
+ex:cs_06_intensity a qb:ComponentSpecification ;
+    qb:measure rep:intensity ;
+    rep:hasUnit unit:COUNT .
+
+### lifted observations -- a complete 3 x 4 SEM intensity map
+ex:obs_06_y0_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.0"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "120"^^xsd:nonNegativeInteger .
+ex:obs_06_y0_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.0"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "118"^^xsd:nonNegativeInteger .
+ex:obs_06_y0_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.0"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "131"^^xsd:nonNegativeInteger .
+ex:obs_06_y0_x3 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.0"^^xsd:double ; rep:x "1.5"^^xsd:double ; rep:intensity "127"^^xsd:nonNegativeInteger .
+ex:obs_06_y1_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.5"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "119"^^xsd:nonNegativeInteger .
+ex:obs_06_y1_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.5"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "145"^^xsd:nonNegativeInteger .
+ex:obs_06_y1_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.5"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "162"^^xsd:nonNegativeInteger .
+ex:obs_06_y1_x3 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "0.5"^^xsd:double ; rep:x "1.5"^^xsd:double ; rep:intensity "130"^^xsd:nonNegativeInteger .
+ex:obs_06_y2_x0 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "1.0"^^xsd:double ; rep:x "0.0"^^xsd:double ; rep:intensity "121"^^xsd:nonNegativeInteger .
+ex:obs_06_y2_x1 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "1.0"^^xsd:double ; rep:x "0.5"^^xsd:double ; rep:intensity "133"^^xsd:nonNegativeInteger .
+ex:obs_06_y2_x2 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "1.0"^^xsd:double ; rep:x "1.0"^^xsd:double ; rep:intensity "128"^^xsd:nonNegativeInteger .
+ex:obs_06_y2_x3 a rep:Observation , qb:Observation ; qb:dataSet ex:sem_map ; rep:y "1.0"^^xsd:double ; rep:x "1.5"^^xsd:double ; rep:intensity "125"^^xsd:nonNegativeInteger .
