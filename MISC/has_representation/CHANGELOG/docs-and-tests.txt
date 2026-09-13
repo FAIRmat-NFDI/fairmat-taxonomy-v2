@@ -1,0 +1,50 @@
+CHANGELOG -- examples, tests and documentation
+===============================================
+
+Examples
+--------
+Added 18 independent Turtle ABoxes:
+- valid optional-unit case for every representation;
+- invalid supplied-unit case for every representation;
+- invalid missing-quantity-kind case for every representation.
+
+The six valid ABoxes now contain scientist-readable sample data, explicit
+material-property links, and multi-observation profile/image/volume fixtures.
+
+examples-TBOX/ was intentionally skipped.
+
+Tests
+-----
+Added test/representation_test.py. It checks:
+- Turtle and SHACL execution;
+- declared versus actual result codes;
+- expected conformance status;
+- observation completeness;
+- canonical QUDT ranges;
+- absence of class-level skos:closeMatch;
+- RDF Data Cube subclass bridges;
+- absence of locally defined order semantics.
+
+The runner regenerates test/reports.md.
+
+Documentation
+-------------
+Updated the reference branch's documentation structure for the revised
+semantics:
+- README.md;
+- SPARQL_USAGE.md;
+- complexity.md;
+- tbox-illustration/overview.md;
+- tbox-illustration/class-hierarchy.md;
+- tbox-illustration/scalar.md;
+- tbox-illustration/profile.md;
+- tbox-illustration/image.md;
+- tbox-illustration/volume.md;
+- tbox-illustration/validation.md;
+- CHANGELOG/.
+
+README.md now includes complete executable RDF for every representation and
+explains the OWL, Data Cube, QUDT and SHACL contract. SPARQL_USAGE.md documents
+asserted, entailment-enabled and validation-time capabilities with expected
+results. The illustration pages connect TBox axioms to worked ABox data and
+state the current unit-only validation boundary.

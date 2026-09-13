@@ -1,0 +1,73 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: VolumeData / valid optional unit
+
+ex:volume-property a tax:MaterialProperty ;
+    rep:has_volume_representation ex:volume-valid-dataset .
+
+ex:volume-valid-dataset a rep:VolumeData ;
+    rep:rank "3"^^xsd:nonNegativeInteger ;
+    rep:extent "8"^^xsd:nonNegativeInteger ;
+    qb:structure ex:volume-valid-dsd .
+
+ex:volume-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:volume-valid-axis-z,
+        ex:volume-valid-axis-y,
+        ex:volume-valid-axis-x,
+        ex:volume-valid-signal .
+
+ex:volume-valid-axis-z a qb:ComponentSpecification ;
+    qb:dimension rep:z ; rep:hasUnit unit:MicroM .
+
+ex:volume-valid-axis-y a qb:ComponentSpecification ;
+    qb:dimension rep:y .
+
+ex:volume-valid-axis-x a qb:ComponentSpecification ;
+    qb:dimension rep:x .
+
+ex:volume-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:volume-valid-observation a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:volume-valid-observation-z0-y0-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ; rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "132"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z0-y1-x0 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ; rep:intensity "118"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z0-y1-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "147"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y0-x0 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ; rep:intensity "121"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y0-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "128"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y1-x0 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ; rep:intensity "115"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y1-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "144"^^xsd:nonNegativeInteger .

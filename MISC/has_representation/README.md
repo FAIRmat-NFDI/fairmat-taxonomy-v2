@@ -1,502 +1,983 @@
-# FAIRmat Representation Ontology — Usage Guide
-## Writing & Loading Representations
+# representation — FAIRmat taxonomy module
 
-How to write RDF for each representation type, and how to query it back out.
-Every example in this guide is a real file that validates against the TBox:
+How material-science measurement data is shaped as OWL 2.
 
-| representation | file | observations |
-|---|---|---|
-| Scalar | `abox_scalar.ttl` | 1 |
-| Spectrum | `abox_spectrum.ttl` | 5 |
-| TimeSeries | `abox_timeseries.ttl` | 6 |
-| DepthProfile | `abox_depthprofile.ttl` | 6 |
-| Image | `abox_image.ttl` | 25 |
-| VolumeData | `abox_volume.ttl` | 12 |
+The FAIRmat taxonomy identifies what a material property is. This module
+describes the form in which its measured data is represented: a scalar, a
+one-dimensional profile, an image, or a volume. It separates the dataset, its
+schema, reusable component meanings, optional unit metadata, and concrete
+observations.
 
----
-
-## The component chain
-
-Every Axis and every Signal declares what it measures. The intended model is a
-two-link chain:
-
-```
-COMPONENT  --hasQuantityKind-->  QUANTITY KIND 
+```text
+tax:MaterialProperty
+  → rep:has_*_representation
+  → representation dataset
+  → qb:structure
+  → component specifications
+  → axes and signals
+  → quantity kinds and optional units
+  → observations
 ```
 
+The ontology uses machine-actionable subclass bridges to W3C RDF Data Cube
+classes and canonical QUDT IRIs. The companion SHACL file is currently scoped
+to quantity-kind and optional-unit metadata.
 
+## Contents
 
-| representation | component | role | `rep:hasQuantityKind` 
+```text
+representation.ttl              OWL ontology
+representation.shacl.ttl        unit shapes and validator-owned whitelist
+README.md                       model, complete examples, and formal semantics
+SPARQL_USAGE.md                 executable query capabilities and result tables
+complexity.md                   graph-size and validation scaling
+
+examples/                       18 independent ABox fixtures
+  <representation>-valid-abox.ttl
+  <representation>-invalid-unit-abox.ttl
+  <representation>-invalid-missing-kind-abox.ttl
+
+test/
+  representation_test.py       load → validate → inspect → report
+  reports.md                   generated result matrix
+
+tbox-illustration/
+  overview.md                  complete module walk-through
+  class-hierarchy.md           OWL hierarchy and RDF Data Cube bridges
+  scalar.md                    rank-zero example
+  profile.md                   Spectrum, TimeSeries, and DepthProfile
+  image.md                     rank-two example
+  volume.md                    rank-three example
+  validation.md                optional-unit validation flow
+
+CHANGELOG/
+  ontology.txt
+  shacl.txt
+  docs-and-tests.txt
+  deferred.txt
+```
+
+`examples-TBOX/` is intentionally omitted.
+
+## Quick start
+
+```bash
+python -m pip install -r requirements.txt
+python test/representation_test.py
+```
+
+Expected summary:
+
+```text
+18/18 examples passed; report: test/reports.md
+```
+
+The test runner can be started from any working directory. It resolves the
+package root from its own path and checks:
+
+- Turtle parsing and SHACL meta-validation;
+- expected result codes and conformance for all 18 fixtures;
+- observation completeness;
+- canonical QUDT ranges;
+- RDF Data Cube subclass bridges;
+- absence of class-level `skos:closeMatch`;
+- absence of locally defined ordering semantics.
+
+## The model
+
+Five layers prevent scientific meaning, dataset-specific structure, and values
+from being collapsed into one node.
+
+| Layer | Main entity | Holds | Scope |
 |---|---|---|---|
-| Scalar | `rep:temperature` | signal | `qk:Temperature` |
-| Spectrum | `rep:energy` | axis | `qk:Energy` | ~~`unit:EV`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| TimeSeries | `rep:time` | axis | `qk:Time` | ~~`unit:SEC`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| DepthProfile | `rep:depth` | axis | `qk:Length` | ~~`unit:NanoM`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| Image | `rep:y` (0) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:x` (1) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
-| VolumeData | `rep:z` (0) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:y` (1) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:x` (2) | axis | `qk:Length` | ~~`unit:MicroM`~~ |
-| | `rep:intensity` | signal | `tax:Intensity` | ~~`unit:COUNT`~~ |
+| taxonomy | `tax:MaterialProperty` | what is measured | scientific domain |
+| dataset | `rep:Scalar` … `rep:VolumeData` | rank, extent, schema link | one representation |
+| schema | `rep:DataStructureDefinition` | component specifications | one reusable structure |
+| component | `rep:Axis`, `rep:Signal` | role and quantity kind | reusable vocabulary |
+| observation | `rep:Observation` | coordinates and signal values | one data point |
 
+A `qb:ComponentSpecification` sits between the schema and reusable component.
+It identifies a dimension, measure, or attribute and may carry a
+dataset-specific `rep:hasUnit`. Units on specifications are optional.
 
+### End-to-end graph pattern
 
 ```turtle
-## live -- every component declares its quantity kind
-rep:energy       rep:hasQuantityKind  qk:Energy .
-rep:intensity    rep:hasQuantityKind  tax:Intensity .
-rep:temperature  rep:hasQuantityKind  qk:Temperature .
+ex:dataset a rep:Image ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    qb:structure ex:dsd .
 
+ex:dsd a rep:DataStructureDefinition ;
+    qb:component ex:y-spec, ex:x-spec, ex:signal-spec .
+
+ex:y-spec a qb:ComponentSpecification ;
+    qb:dimension rep:y ;
+    rep:hasUnit unit:MicroM .
+
+ex:x-spec a qb:ComponentSpecification ;
+    qb:dimension rep:x .
+
+ex:signal-spec a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:pixel a rep:Observation ;
+    qb:dataSet ex:dataset ;
+    rep:y 0 ;
+    rep:x 0 ;
+    rep:intensity 125 .
 ```
 
+The missing units on `ex:x-spec` and `ex:signal-spec` are valid. No default
+value is inserted.
 
----
+### RDF Data Cube alignment
 
-## The canonical vocabulary
+The FAIRmat classes are narrower specializations of Data Cube classes:
 
-All Axis and Signal IRIs come from this set. ABoxes do not mint `ex:` components.
-
-### Axes — fixed per representation type
-
-| representation | rank | axes (in `qb:order`) |
-|---|---|---|
-| `rep:Scalar` | 0 | none |
-| `rep:Spectrum` | 1 | `rep:energy` |
-| `rep:TimeSeries` | 1 | `rep:time` |
-| `rep:DepthProfile` | 1 | `rep:depth` |
-| `rep:Image` | 2 | `rep:y` (0), `rep:x` (1) |
-| `rep:VolumeData` | 3 | `rep:z` (0), `rep:y` (1), `rep:x` (2) |
-
-`rank` equals the number of axes, and the axis IRIs are determined by the type. A
-rank-2 dataset uses `rep:y` and `rep:x` — no other pair is valid.
-
-| Axis IRI | quantity kind |
-|---|---|
-| `rep:x` | `qk:Length` |
-| `rep:y` | `qk:Length` |
-| `rep:z` | `qk:Length` |
-| `rep:depth` | `qk:Length` |
-| `rep:energy` | `qk:Energy` |
-| `rep:time` | `qk:Time` |
-
-### Signals
-
-| Signal IRI | quantity kind | use |
-|---|---|---|
-| `rep:intensity` | `tax:Intensity` | raw detector counts — the default |
-| `rep:temperature` | `qk:Temperature` | temperature as a measured value |
-
-### Axis and Signal are disjoint
-
-`rep:Axis` and `rep:Signal` are `owl:disjointWith`, so an IRI declared as one cannot
-be used as the other. `rep:energy` is an Axis; putting it in a `qb:measure` slot makes
-the graph inconsistent under HermiT.
-
-```turtle
-## INCONSISTENT — rep:energy is an Axis, not a Signal
-qb:component [ qb:measure rep:energy ] .
+```text
+rep:DataStructureDefinition ⊑ qb:DataStructureDefinition
+rep:Scalar                  ⊑ qb:DataSet
+rep:Profile                 ⊑ qb:DataSet
+rep:Image                   ⊑ qb:DataSet
+rep:VolumeData              ⊑ qb:DataSet
+rep:Observation             ⊑ qb:Observation
+rep:Axis                    ⊑ qb:DimensionProperty
+rep:Signal                  ⊑ qb:MeasureProperty
+rep:UnitAttribute           ⊑ qb:AttributeProperty
 ```
 
-A measurement whose quantity kind has no matching Signal in the vocabulary needs one
-added to the TBox — see *Extending the vocabulary* below. Do not reach for the Axis
-IRI that happens to share the quantity kind.
-
----
-
-## Prefix block
+The former class-level `skos:closeMatch` statements are removed. The current
+subclass axioms support RDFS/OWL inference. From:
 
 ```turtle
-@prefix ex:   <http://fairmat-nfdi.eu/taxonomy/abox#> .
+ex:map a rep:Image .
+```
+
+an entailment-aware system derives:
+
+```turtle
+ex:map a qb:DataSet .
+```
+
+A basic triple-pattern engine without entailment sees only the asserted type.
+It may materialize superclass types during ingestion.
+
+The local ontology declares the external Data Cube entities it references. It
+does not impose local functionality, disjointness, domains, ranges, or order on
+the `qb:` vocabulary. Load the official Data Cube ontology separately when
+those axioms or the complete Data Cube integrity constraints are needed.
+
+### QUDT alignment
+
+The canonical QUDT schema namespace is:
+
+```turtle
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+```
+
+The ontology therefore uses the actual class IRIs:
+
+```text
+http://qudt.org/schema/qudt/QuantityKind
+http://qudt.org/schema/qudt/Unit
+```
+
+QUDT vocabulary individuals continue to use:
+
+```text
+http://qudt.org/vocab/quantitykind/
+http://qudt.org/vocab/unit/
+```
+
+### Rank determines the current representation class
+
+`rep:Scalar`, `rep:Profile`, `rep:Image`, and `rep:VolumeData` are
+defined through `owl:equivalentClass` and `rep:rank`:
+
+| Type | Rank | Intended axes | Typical signal |
+|---|---:|---|---|
+| `rep:Scalar` | 0 | none | `rep:temperature` |
+| `rep:Spectrum` | 1 | `rep:energy` | `rep:intensity` |
+| `rep:TimeSeries` | 1 | `rep:time` | `rep:intensity` |
+| `rep:DepthProfile` | 1 | `rep:depth` | `rep:intensity` |
+| `rep:Image` | 2 | `rep:y`, `rep:x` | `rep:intensity` |
+| `rep:VolumeData` | 3 | `rep:z`, `rep:y`, `rep:x` | `rep:intensity` |
+
+The four defined classes are:
+
+```text
+Scalar     ≡ Representation ⊓ ∃rank.{0}
+Profile    ≡ Representation ⊓ ∃rank.{1}
+Image      ≡ Representation ⊓ ∃rank.{2}
+VolumeData ≡ Representation ⊓ ∃rank.{3}
+```
+
+`Spectrum`, `TimeSeries`, and `DepthProfile` are primitive subclasses of
+`Profile` because rank one alone does not distinguish their scientific
+meaning.
+
+The module currently documents intended axis membership but does not validate
+it in the unit-only SHACL graph.
+
+### No ordering semantics
+
+The ontology contains neither `rep:order` nor a local `qb:order` declaration.
+It makes no statement about presentation order, NumPy memory order, NeXus axis
+indices, or storage layout. Queries return component membership without
+claiming sequence. A future storage-order property needs its own name,
+definition, domain, range, and validation rules.
+
+### Canonical component vocabulary
+
+| Component | Role | Quantity kind | Retained unit assertion |
+|---|---|---|---|
+| `rep:energy` | Axis | `qk:Energy` | `unit:EV` |
+| `rep:time` | Axis | `qk:Time` | `unit:SEC` |
+| `rep:depth` | Axis | `qk:Length` | `unit:NanoM` |
+| `rep:x` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:y` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:z` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:intensity` | Signal | `tax:Intensity` | `unit:COUNT` |
+| `rep:temperature` | Signal | `qk:Temperature` | `unit:K` |
+
+Each canonical component IRI is both an OWL named individual and an OWL
+datatype property. The individual view carries metadata; the property view is
+used on observations. The predicates have the broad `rdfs:Literal` range.
+Numerical datatype restrictions belong to later structural validation.
+
+`tax:Intensity` is a local quantity kind for an uncalibrated detector signal.
+
+The unit assertions on canonical components are retained from the supplied
+ontology. This release defines no default, fallback, inheritance, precedence,
+or override algorithm. If a dataset-specific specification omits
+`rep:hasUnit`, the validation contract treats the unit as unspecified.
+
+# The six representations
+
+Each section presents the scientist-facing data, the exact complete Turtle
+fixture, what OWL can infer, and what the unit profile validates.
+
+## Scalar — rank 0
+
+A Scalar is one measured value with no independent coordinate.
+
+**Data.** A temperature reading:
+
+| temperature |
+|---:|
+| 293.15 |
+
+**Complete RDF** — `examples/scalar-valid-abox.ttl`
+
+```turtle
+@prefix ex:   <http://example.org/representation/> .
 @prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
 @prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
 @prefix qb:   <http://purl.org/linked-data/cube#> .
 @prefix qk:   <http://qudt.org/vocab/quantitykind/> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-```
 
-`ex:` is for instance IRIs only — materials, properties, representations. Components
-always come from `rep:`.
+## expect: conforms
+## case: Scalar / valid optional unit
 
----
+ex:scalar-property a tax:MaterialProperty ;
+    rep:has_scalar_representation ex:scalar-valid-dataset .
 
-## 1. Scalar — `abox_scalar.ttl`
-
-**Shape** `()` · **rank** 0 · **inferred** `rep:Scalar` · **axes** none
-
-Silicon sample, recorded specimen temperature. *The instrument logged kelvin.*
-
-| value |
-|---|
-| 293.15 |
-
-```turtle
-ex:Si     a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Silicon"@en ;
-    tax:hasMaterialProperty ex:Si_Temp .
-
-ex:Si_Temp  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "Specimen temperature"@en ;
-    rep:has_scalar_representation ex:r_scalar ;
-    rep:has_dsd                   _:dsd .
-
-ex:r_scalar a rep:Representation , rep:Scalar , owl:NamedIndividual ;
-    rep:rank   "0"^^xsd:nonNegativeInteger ;   ## triggers rep:Scalar
+ex:scalar-valid-dataset a rep:Scalar ;
+    rep:rank "0"^^xsd:nonNegativeInteger ;
     rep:extent "1"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
+    qb:structure ex:scalar-valid-dsd .
 
-## no dimension component — rank 0 has no independent variable
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:temperature ;
-    qb:component [ qb:measure rep:temperature ] .
+ex:scalar-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:scalar-valid-signal .
 
-_:o0 a rep:Observation ; qb:dataSet ex:r_scalar ;
+ex:scalar-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:temperature .
+
+ex:scalar-valid-observation a rep:Observation ;
+    qb:dataSet ex:scalar-valid-dataset ;
     rep:temperature "293.15"^^xsd:double .
 ```
 
-`rep:temperature` carries `rep:hasQuantityKind qk:Temperature`, so a query can find
-this dataset by quantity kind without knowing the material or the property name.
+The component specification omits `rep:hasUnit`. This conforms because units
+are optional. `rep:temperature` still has exactly one quantity kind,
+`qk:Temperature`. From the dataset's `rep:Scalar` type, an RDFS reasoner can
+derive `qb:DataSet`. From rank zero and the equivalent-class axiom, an OWL
+reasoner can also classify a suitable `rep:Representation` as `rep:Scalar`.
 
----
+The invalid-unit fixture supplies `unit:EV` for the temperature measure. It
+produces `REP-UNIT-001` and advisory `REP-UNIT-010`. The missing-kind fixture
+uses a custom signal without `rep:hasQuantityKind` and produces
+`REP-UNIT-004` and `REP-UNIT-005`.
 
-## 2. Spectrum — `abox_spectrum.ttl`
+## Spectrum — rank 1, energy axis
 
-**Shape** `(5,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:Spectrum`
-· **axis** `rep:energy`
+**Data.** Three points from an energy spectrum:
 
-Fe K-edge absorption scan. *Axis values are Energy and signal values are detector counts
-in the source file; neither unit is in the graph.*
+| energy (eV) | intensity |
+|---:|---:|
+| 10.0 | 125 |
+| 10.5 | 142 |
+| 11.0 | 131 |
 
-| index | energy | intensity |
+**Complete RDF** — `examples/spectrum-valid-abox.ttl`
+
+```turtle
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: Spectrum / valid optional unit
+
+ex:spectrum-property a tax:MaterialProperty ;
+    rep:has_spectrum_representation ex:spectrum-valid-dataset .
+
+ex:spectrum-valid-dataset a rep:Spectrum ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    rep:extent "3"^^xsd:nonNegativeInteger ;
+    qb:structure ex:spectrum-valid-dsd .
+
+ex:spectrum-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:spectrum-valid-axis-energy,
+        ex:spectrum-valid-signal .
+
+ex:spectrum-valid-axis-energy a qb:ComponentSpecification ;
+    qb:dimension rep:energy ; rep:hasUnit unit:EV .
+
+ex:spectrum-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:spectrum-valid-observation a rep:Observation ;
+    qb:dataSet ex:spectrum-valid-dataset ;
+    rep:energy "10.0"^^xsd:double ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:spectrum-valid-observation-2 a rep:Observation ;
+    qb:dataSet ex:spectrum-valid-dataset ;
+    rep:energy "10.5"^^xsd:double ;
+    rep:intensity "142"^^xsd:nonNegativeInteger .
+
+ex:spectrum-valid-observation-3 a rep:Observation ;
+    qb:dataSet ex:spectrum-valid-dataset ;
+    rep:energy "11.0"^^xsd:double ;
+    rep:intensity "131"^^xsd:nonNegativeInteger .
+```
+
+The energy specification supplies `unit:EV`, which is whitelisted for
+`qk:Energy`. The intensity unit is omitted. Both choices conform. The component
+IRIs used as observation predicates are the same resources described in the
+ontology as `rep:Axis` and `rep:Signal`.
+
+The invalid-unit fixture attaches `unit:SEC` to `rep:energy`. The pair is
+outside the current whitelist, producing `REP-UNIT-001`, and outside the
+Spectrum profile, producing warning `REP-UNIT-011`.
+
+## TimeSeries — rank 1, time axis
+
+**Data.** A decaying signal:
+
+| time (s) | intensity |
+|---:|---:|
+| 0.5 | 125 |
+| 1.0 | 101 |
+| 1.5 | 82 |
+
+**Complete RDF** — `examples/timeseries-valid-abox.ttl`
+
+```turtle
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: TimeSeries / valid optional unit
+
+ex:timeseries-property a tax:MaterialProperty ;
+    rep:has_timeseries_representation ex:timeseries-valid-dataset .
+
+ex:timeseries-valid-dataset a rep:TimeSeries ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    rep:extent "3"^^xsd:nonNegativeInteger ;
+    qb:structure ex:timeseries-valid-dsd .
+
+ex:timeseries-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:timeseries-valid-axis-time,
+        ex:timeseries-valid-signal .
+
+ex:timeseries-valid-axis-time a qb:ComponentSpecification ;
+    qb:dimension rep:time ; rep:hasUnit unit:SEC .
+
+ex:timeseries-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:timeseries-valid-observation a rep:Observation ;
+    qb:dataSet ex:timeseries-valid-dataset ;
+    rep:time "0.5"^^xsd:double ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:timeseries-valid-observation-2 a rep:Observation ;
+    qb:dataSet ex:timeseries-valid-dataset ;
+    rep:time "1.0"^^xsd:double ;
+    rep:intensity "101"^^xsd:nonNegativeInteger .
+
+ex:timeseries-valid-observation-3 a rep:Observation ;
+    qb:dataSet ex:timeseries-valid-dataset ;
+    rep:time "1.5"^^xsd:double ;
+    rep:intensity "82"^^xsd:nonNegativeInteger .
+```
+
+The time unit is omitted; the intensity specification supplies
+`unit:COUNT`. Optionality is independent per specification. The supplied
+intensity pair conforms to `tax:Intensity → unit:COUNT`.
+
+The invalid-unit fixture supplies `unit:EV` for the time axis, producing
+`REP-UNIT-001` and warning `REP-UNIT-012`.
+
+## DepthProfile — rank 1, depth axis
+
+**Data.** Three points into a surface:
+
+| depth (nm) | intensity |
+|---:|---:|
+| 25.0 | 125 |
+| 27.5 | 112 |
+| 30.0 | 97 |
+
+**Complete RDF** — `examples/depthprofile-valid-abox.ttl`
+
+```turtle
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: DepthProfile / valid optional unit
+
+ex:depthprofile-property a tax:MaterialProperty ;
+    rep:has_depthprofile_representation ex:depthprofile-valid-dataset .
+
+ex:depthprofile-valid-dataset a rep:DepthProfile ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    rep:extent "3"^^xsd:nonNegativeInteger ;
+    qb:structure ex:depthprofile-valid-dsd .
+
+ex:depthprofile-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:depthprofile-valid-axis-depth,
+        ex:depthprofile-valid-signal .
+
+ex:depthprofile-valid-axis-depth a qb:ComponentSpecification ;
+    qb:dimension rep:depth ; rep:hasUnit unit:NanoM .
+
+ex:depthprofile-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:depthprofile-valid-observation a rep:Observation ;
+    qb:dataSet ex:depthprofile-valid-dataset ;
+    rep:depth "25.0"^^xsd:double ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:depthprofile-valid-observation-2 a rep:Observation ;
+    qb:dataSet ex:depthprofile-valid-dataset ;
+    rep:depth "27.5"^^xsd:double ;
+    rep:intensity "112"^^xsd:nonNegativeInteger .
+
+ex:depthprofile-valid-observation-3 a rep:Observation ;
+    qb:dataSet ex:depthprofile-valid-dataset ;
+    rep:depth "30.0"^^xsd:double ;
+    rep:intensity "97"^^xsd:nonNegativeInteger .
+```
+
+The depth specification supplies `unit:NanoM`; the signal unit is omitted.
+`unit:NanoM` is whitelisted for `qk:Length` and matches the retained
+DepthProfile convention.
+
+The invalid-unit fixture supplies `unit:SEC` for the depth axis. It produces
+`REP-UNIT-001` and advisory `REP-UNIT-013`. `unit:MicroM` would pass the
+whitelist because it is a supported length unit, but it would produce only the
+DepthProfile profile warning.
+
+## Image — rank 2, y and x axes
+
+**Data.** A 2 × 2 intensity image:
+
+| y \ x | 0 | 1 |
+|---:|---:|---:|
+| 0 | 125 | 140 |
+| 1 | 119 | 153 |
+
+**Complete RDF** — `examples/image-valid-abox.ttl`
+
+```turtle
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: Image / valid optional unit
+
+ex:image-property a tax:MaterialProperty ;
+    rep:has_image_representation ex:image-valid-dataset .
+
+ex:image-valid-dataset a rep:Image ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    rep:extent "4"^^xsd:nonNegativeInteger ;
+    qb:structure ex:image-valid-dsd .
+
+ex:image-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:image-valid-axis-y,
+        ex:image-valid-axis-x,
+        ex:image-valid-signal .
+
+ex:image-valid-axis-y a qb:ComponentSpecification ;
+    qb:dimension rep:y ; rep:hasUnit unit:MicroM .
+
+ex:image-valid-axis-x a qb:ComponentSpecification ;
+    qb:dimension rep:x .
+
+ex:image-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:image-valid-observation a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:image-valid-observation-y0-x1 a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ;
+    rep:intensity "140"^^xsd:nonNegativeInteger .
+
+ex:image-valid-observation-y1-x0 a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    rep:intensity "119"^^xsd:nonNegativeInteger .
+
+ex:image-valid-observation-y1-x1 a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ;
+    rep:intensity "153"^^xsd:nonNegativeInteger .
+```
+
+Only the y specification supplies `unit:MicroM`. The x and intensity units are
+omitted, proving that optionality applies to individual slots rather than to
+the dataset as a whole. Every observation supplies one value for both declared
+dimensions and the measure.
+
+The invalid-unit fixture supplies `unit:SEC` for y. It produces
+`REP-UNIT-001` and advisory `REP-UNIT-014`.
+
+## VolumeData — rank 3, z, y and x axes
+
+**Data.** A 2 × 2 × 2 volume:
+
+| z | y | x | intensity |
+|---:|---:|---:|---:|
+| 0 | 0 | 0 | 125 |
+| 0 | 0 | 1 | 132 |
+| 0 | 1 | 0 | 118 |
+| 0 | 1 | 1 | 147 |
+| 1 | 0 | 0 | 121 |
+| 1 | 0 | 1 | 128 |
+| 1 | 1 | 0 | 115 |
+| 1 | 1 | 1 | 144 |
+
+**Complete RDF** — `examples/volume-valid-abox.ttl`
+
+```turtle
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: VolumeData / valid optional unit
+
+ex:volume-property a tax:MaterialProperty ;
+    rep:has_volume_representation ex:volume-valid-dataset .
+
+ex:volume-valid-dataset a rep:VolumeData ;
+    rep:rank "3"^^xsd:nonNegativeInteger ;
+    rep:extent "8"^^xsd:nonNegativeInteger ;
+    qb:structure ex:volume-valid-dsd .
+
+ex:volume-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:volume-valid-axis-z,
+        ex:volume-valid-axis-y,
+        ex:volume-valid-axis-x,
+        ex:volume-valid-signal .
+
+ex:volume-valid-axis-z a qb:ComponentSpecification ;
+    qb:dimension rep:z ; rep:hasUnit unit:MicroM .
+
+ex:volume-valid-axis-y a qb:ComponentSpecification ;
+    qb:dimension rep:y .
+
+ex:volume-valid-axis-x a qb:ComponentSpecification ;
+    qb:dimension rep:x .
+
+ex:volume-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:volume-valid-observation a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:volume-valid-observation-z0-y0-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ; rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "132"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z0-y1-x0 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ; rep:intensity "118"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z0-y1-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "0"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "147"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y0-x0 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ; rep:intensity "121"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y0-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "128"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y1-x0 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ; rep:intensity "115"^^xsd:nonNegativeInteger .
+ex:volume-valid-observation-z1-y1-x1 a rep:Observation ;
+    qb:dataSet ex:volume-valid-dataset ;
+    rep:z "1"^^xsd:nonNegativeInteger ; rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ; rep:intensity "144"^^xsd:nonNegativeInteger .
+```
+
+Only z has an explicit dataset-specific unit. All eight observations are
+complete for z, y, x, and intensity. RDF expansion is useful for small,
+addressable examples; large volumes should keep their numerical arrays in
+HDF5, Zarr, NeXus, or another array format and use RDF for semantics and access
+metadata.
+
+The invalid-unit fixture supplies `unit:SEC` for z. It produces
+`REP-UNIT-001` and advisory `REP-UNIT-015`.
+
+# Optional units and the whitelist
+
+`rep:hasQuantityKind` and `rep:hasUnit` are independent edges:
+
+```turtle
+rep:energy rep:hasQuantityKind qk:Energy .
+ex:energy-spec qb:dimension rep:energy ;
+    rep:hasUnit unit:EV .
+```
+
+The unit can occur directly on a reusable component or on the
+dataset-specific component specification. It is optional in both locations.
+
+## What is required
+
+Every `rep:ComponentProperty` must identify exactly one IRI typed as
+`qudt:QuantityKind`. This requirement remains even when no unit is supplied,
+because the quantity kind is the semantic anchor for the component.
+
+If `rep:hasUnit` is present, validation requires:
+
+1. zero or one unit value overall;
+2. an IRI value;
+3. exactly one resolvable quantity kind;
+4. a quantity-kind/unit pair in the validator-owned whitelist.
+
+## Current whitelist
+
+| Quantity kind | Permitted unit |
+|---|---|
+| `qk:Temperature` | `unit:K` |
+| `qk:Length` | `unit:NanoM`, `unit:MicroM` |
+| `qk:Time` | `unit:SEC` |
+| `qk:Energy` | `unit:EV` |
+| `tax:Intensity` | `unit:COUNT` |
+
+The table expresses application support. A unit absent from the table is
+unsupported by this profile. It is not automatically scientifically
+incompatible. Metres are physically valid for length but are currently
+outside this profile.
+
+The whitelist is trusted validation configuration. Producers must not be able
+to make submitted data conform by adding their own `shp:permitsUnit` triples.
+
+# SHACL validation
+
+The shapes graph is unit-scoped and provides stable, machine-readable codes.
+
+| Code | Severity | Meaning |
 |---|---|---|
-| 0 | 7980.0 | 12 |
-| 1 | 7980.5 | 15 |
-| 2 | 7981.0 | 115 |
-| 3 | 7981.5 | 850 |
-| 4 | 7982.0 | 230 |
+| `REP-UNIT-001` | Violation | supplied pair is outside the whitelist |
+| `REP-UNIT-002` | Violation | a quantity kind is used as a unit |
+| `REP-UNIT-003` | Violation | unit value is non-IRI or occurs more than once |
+| `REP-UNIT-004` | Violation | component lacks one typed quantity kind |
+| `REP-UNIT-005` | Violation | unit-bearing node lacks one resolvable kind |
+| `REP-UNIT-010` | Warning | Scalar temperature outside K profile |
+| `REP-UNIT-011` | Warning | Spectrum axis outside eV profile |
+| `REP-UNIT-012` | Warning | TimeSeries axis outside seconds profile |
+| `REP-UNIT-013` | Warning | DepthProfile axis outside nanometre profile |
+| `REP-UNIT-014` | Warning | Image axis outside micrometre/nanometre profile |
+| `REP-UNIT-015` | Warning | Volume axis outside micrometre/nanometre profile |
+| `REP-UNIT-016` | Warning | intensity outside count profile |
+
+## Optionality versus completeness
+
+These statements conform:
 
 ```turtle
-ex:FeFoil      a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Iron foil"@en .
-
-ex:FeFoil_XAS  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "Fe K-edge absorption"@en ;
-    rep:has_spectrum_representation ex:r_spectrum ;
-    rep:has_dsd                     _:dsd .
-
-ex:r_spectrum a rep:Representation , rep:Spectrum , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "5"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:energy , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:energy ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-## component IRIs act as predicates on the observation
-_:o3 a rep:Observation ; qb:dataSet ex:r_spectrum ;
-    rep:index "3"^^xsd:nonNegativeInteger ;
-    rep:energy "7981.5"^^xsd:double ; rep:intensity "850.0"^^xsd:double .
+ex:time-spec qb:dimension rep:time .
+ex:intensity-spec qb:measure rep:intensity .
 ```
 
----
+The unit is absent, while `rep:time` and `rep:intensity` already carry their
+quantity kinds.
 
-## 3. TimeSeries — `abox_timeseries.ttl`
-
-**Shape** `(6,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:TimeSeries`
-· **axis** `rep:time`
-
-316L stainless steel, passivation current decay. *Times were logged in seconds.*
-
-| index | time | intensity |
-|---|---|---|
-| 0 | 0 | 12500 |
-| 1 | 60 | 8400 |
-| 2 | 300 | 5100 |
-| 3 | 600 | 3800 |
-| 4 | 1800 | 2200 |
-| 5 | 3600 | 1520 |
+This statement fails:
 
 ```turtle
-ex:SS316L         a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "316L stainless steel"@en .
-
-ex:SS316L_Passiv  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "Passivation current decay"@en ;
-    rep:has_timeseries_representation ex:r_timeseries ;
-    rep:has_dsd                       _:dsd .
-
-ex:r_timeseries a rep:Representation , rep:TimeSeries , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "6"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:time , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:time ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:t5 a rep:Observation ; qb:dataSet ex:r_timeseries ;
-    rep:index "5"^^xsd:nonNegativeInteger ;
-    rep:time "3600.0"^^xsd:double ; rep:intensity "1520.0"^^xsd:double .
+ex:custom-signal a rep:Signal .
 ```
 
-The only structural difference from a Spectrum is the axis IRI. Swapping
-`rep:energy` for `rep:time` and asserting `rep:TimeSeries` instead of `rep:Spectrum`
-is the whole change.
+It lacks `rep:hasQuantityKind` and produces `REP-UNIT-004`.
 
----
-
-## 4. DepthProfile — `abox_depthprofile.ttl`
-
-**Shape** `(6,)` · **rank** 1 · **inferred** `rep:Profile` · **asserted** `rep:DepthProfile`
-· **axis** `rep:depth`
-
-Boron-implanted silicon, SIMS sputter profile. *Depths were recorded in nm.*
-
-| index | depth | intensity |
-|---|---|---|
-| 0 | 0 | 120000 |
-| 1 | 5 | 85000 |
-| 2 | 10 | 32000 |
-| 3 | 20 | 5000 |
-| 4 | 50 | 210 |
-| 5 | 100 | 45 |
+This unit-bearing specification also fails:
 
 ```turtle
-ex:BdopedSi       a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Boron-implanted silicon"@en .
-
-ex:BdopedSi_SIMS  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "SIMS boron depth profile"@en ;
-    rep:has_depthprofile_representation ex:r_depthprofile ;
-    rep:has_dsd                         _:dsd .
-
-ex:r_depthprofile a rep:Representation , rep:DepthProfile , owl:NamedIndividual ;
-    rep:rank   "1"^^xsd:nonNegativeInteger ;
-    rep:extent "6"^^xsd:nonNegativeInteger ;
-    qb:structure _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:depth , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:depth ;
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "6"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:d5 a rep:Observation ; qb:dataSet ex:r_depthprofile ;
-    rep:index "5"^^xsd:nonNegativeInteger ;
-    rep:depth "100.0"^^xsd:double ; rep:intensity "45.0"^^xsd:double .
+ex:custom-spec qb:measure ex:custom-signal ;
+    rep:hasUnit unit:COUNT .
 ```
 
----
+The specification cannot resolve a kind, so it produces `REP-UNIT-005` as well.
 
-## 5. Image — `abox_image.ttl`
+## Why SHACL is used
 
-**Shape** `(5, 5)` · **rank** 2 · **inferred** `rep:Image` · **axes** `rep:y` (0), `rep:x` (1)
+OWL's open-world semantics does not treat a missing whitelist triple as false.
+The profile needs closed-world validation over a controlled graph:
 
-DP780 dual-phase steel, EBSD orientation map.
+```text
+for each supplied hasUnit(subject, unit):
+    resolve exactly one kind
+    require permitsUnit(kind, unit)
+```
 
-| y \ x | 0 | 2 | 4 | 6 | 8 |
-|---|---|---|---|---|---|
-| **0** | 10 | 12 | 11 | 14 | 10 |
-| **2** | 13 | 45 | 120 | 50 | 15 |
-| **4** | 11 | 110 | **850** | 115 | 12 |
-| **6** | 14 | 55 | 118 | 48 | 11 |
-| **8** | 10 | 12 | 14 | 11 | 9 |
+The whitelist check is an anti-join:
 
-Flat index: `idx = j × Nx + i`
+```sparql
+FILTER NOT EXISTS { ?kind shp:permitsUnit ?unit }
+```
+
+OWL still supplies useful entailments: subclass classification, domains,
+ranges, functional properties, disjoint component roles, and rank-based
+classes. SHACL checks explicit data completeness and application policy.
+
+## Structured results
+
+Each named shape carries:
 
 ```turtle
-ex:DP780       a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "DP780 dual-phase steel"@en .
-
-ex:DP780_EBSD  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "EBSD orientation map"@en ;
-    rep:has_image_representation ex:r_image ;
-    rep:has_dsd                  _:dsd .
-
-ex:r_image a rep:Representation , rep:Image , owl:NamedIndividual ;
-    rep:rank        "2"^^xsd:nonNegativeInteger ;
-    rep:extent      "25"^^xsd:nonNegativeInteger ;   ## 5 × 5
-    rep:is_separable true ;
-    qb:structure    _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:y , rep:x , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:y ;                       ## slow axis
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
-        [ qb:dimension rep:x ;                       ## fast axis
-          qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "5"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:p22 a rep:Observation ; qb:dataSet ex:r_image ;
-    rep:index "12"^^xsd:nonNegativeInteger ;         ## j=2, i=2 → 2×5+2
-    rep:y "4.0"^^xsd:double ; rep:x "4.0"^^xsd:double ;
-    rep:intensity "850.0"^^xsd:double .
+shp:code
+shp:category
+shp:layer
+shp:remedy
 ```
 
-Both axes carry `qk:Length`. `qb:order` is the only thing that tells `rep:y` from
-`rep:x` — a query that filters on quantity kind alone gets them in arbitrary order.
+A validation result points to a source shape. The test runner walks from a
+nested property or SPARQL shape to its named owner and reads the stable code.
+Consumers should use the code; the result message is written for the human
+reader.
 
----
+## Test matrix
 
-## 6. VolumeData — `abox_volume.ttl`
+There are three fixtures for every representation:
 
-**Shape** `(2, 2, 3)` · **rank** 3 · **inferred** `rep:VolumeData` · **axes** `rep:z` (0),
-`rep:y` (1), `rep:x` (2)
-
-Porous alumina foam, microCT reconstruction. *Voxel pitch was 2 µm.*
-
-**z = 0**
-
-| y \ x | 0 | 2 | 4 |
+| Representation | Valid | Wrong supplied unit | Missing quantity kind |
 |---|---|---|---|
-| **0** | 10 | 12 | 11 |
-| **2** | 13 | 15 | 12 |
+| Scalar | conforms | `001`, `010` | `004`, `005` |
+| Spectrum | conforms | `001`, `011` | `004`, `005` |
+| TimeSeries | conforms | `001`, `012` | `004`, `005` |
+| DepthProfile | conforms | `001`, `013` | `004`, `005` |
+| Image | conforms | `001`, `014` | `004`, `005` |
+| VolumeData | conforms | `001`, `015` | `004`, `005` |
 
-**z = 5**
+Warnings are reported but remain non-blocking when `allow_warnings=True`.
 
-| y \ x | 0 | 2 | 4 |
-|---|---|---|---|
-| **0** | 11 | 14 | 10 |
-| **2** | 12 | **550** | 14 |
+# Description logic and formal notation
 
-Flat index: `idx = k × Ny × Nx + j × Nx + i`
+## Core class axioms
 
-```turtle
-ex:Al2O3foam     a tax:Material , owl:NamedIndividual ;
-    skos:prefLabel "Porous alumina foam"@en .
+```text
+DataStructureDefinition ⊑ Representation ⊓ qb:DataStructureDefinition
+ComponentProperty       ⊑ Representation ⊓ qb:ComponentProperty
+Observation             ⊑ Representation ⊓ qb:Observation
 
-ex:Al2O3foam_CT  a tax:MaterialProperty , owl:NamedIndividual ;
-    skos:prefLabel "MicroCT reconstruction"@en ;
-    rep:has_volume_representation ex:r_volume ;
-    rep:has_dsd                   _:dsd .
+Axis          ⊑ ComponentProperty ⊓ qb:DimensionProperty
+Signal        ⊑ ComponentProperty ⊓ qb:MeasureProperty
+UnitAttribute ⊑ ComponentProperty ⊓ qb:AttributeProperty
 
-ex:r_volume a rep:Representation , rep:VolumeData , owl:NamedIndividual ;
-    rep:rank        "3"^^xsd:nonNegativeInteger ;
-    rep:extent      "12"^^xsd:nonNegativeInteger ;   ## 2 × 2 × 3
-    rep:is_separable true ;
-    qb:structure    _:dsd .
-
-_:dsd a rep:DataStructureDefinition ;
-    rep:hasComponent rep:z , rep:y , rep:x , rep:intensity ;
-    qb:component
-        [ qb:dimension rep:z ;                       ## slowest
-          qb:order     "0"^^xsd:nonNegativeInteger ;
-          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
-        [ qb:dimension rep:y ;
-          qb:order     "1"^^xsd:nonNegativeInteger ;
-          rep:extent   "2"^^xsd:nonNegativeInteger ] ,
-        [ qb:dimension rep:x ;                       ## fastest
-          qb:order     "2"^^xsd:nonNegativeInteger ;
-          rep:extent   "3"^^xsd:nonNegativeInteger ] ,
-        [ qb:measure   rep:intensity ] .
-
-_:v111 a rep:Observation ; qb:dataSet ex:r_volume ;
-    rep:index "10"^^xsd:nonNegativeInteger ;         ## k=1,j=1,i=1 → 1×6+1×3+1
-    rep:z "5.0"^^xsd:double ; rep:y "2.0"^^xsd:double ;
-    rep:x "2.0"^^xsd:double ; rep:intensity "550.0"^^xsd:double .
+ComponentProperty ≡ Axis ⊔ Signal ⊔ UnitAttribute
+Axis ⊓ Signal ≡ ⊥
+Axis ⊓ UnitAttribute ≡ ⊥
+Signal ⊓ UnitAttribute ≡ ⊥
 ```
 
----
+The `owl:disjointUnionOf` axiom partitions component roles. If one resource is
+both an Axis and Signal, an OWL reasoner can detect an inconsistency.
 
-## Authoring checklist
+## Rank definitions
 
-```
-1. Pick the representation type and set rep:rank to match
-       rank 0 -> Scalar          rank 2 -> Image
-       rank 1 -> Profile         rank 3 -> VolumeData
-       Spectrum / TimeSeries / DepthProfile also asserted at rank 1
+```text
+Scalar     ≡ Representation ⊓ ∃rank.{0}
+Profile    ≡ Representation ⊓ ∃rank.{1}
+Image      ≡ Representation ⊓ ∃rank.{2}
+VolumeData ≡ Representation ⊓ ∃rank.{3}
 
-2. Use the axis IRIs fixed for that type
-       Scalar        none
-       Spectrum      rep:energy
-       TimeSeries    rep:time
-       DepthProfile  rep:depth
-       Image         rep:y , rep:x
-       VolumeData    rep:z , rep:y , rep:x
-
-3. Pick the signal
-       counts       -> rep:intensity     (the usual case)
-       temperature  -> rep:temperature
-       anything else -> add a Signal to the TBox first;
-                        never reuse an Axis IRI as a measure
-
-4. Assign qb:order   0 = slowest ... n-1 = fastest
-
-5. rep:extent goes on
-       the Representation             total observations
-       each axis ComponentSpec        that axis's length
-       never on the Signal            it is product(axis extents)
-
-6. Use the component IRIs as predicates on each observation
-
+Spectrum     ⊑ Profile
+TimeSeries   ⊑ Profile
+DepthProfile ⊑ Profile
 ```
 
----
+## Property axioms
 
-## Extent rules
+```text
+domain(hasQuantityKind) = ComponentProperty
+range(hasQuantityKind)  = qudt:QuantityKind
+Functional(hasQuantityKind)
 
-| subject | meaning | stored? |
-|---|---|---|
-| `rep:Representation` | total observations = product of axis extents | always |
-| `qb:ComponentSpecification` (axis) | that axis's array length | always |
-| `rep:Signal` | always equals product(axis extents) | never — derivable |
+domain(hasUnit) = ComponentProperty ⊔ qb:ComponentSpecification
+range(hasUnit)  = qudt:Unit
+Functional(hasUnit)
 
----
-
-## Flat index convention
-
-`rep:index` is optional. Include it when the dataset must point back to a position in
-the source array.
-
-| rank | formula | worked example |
-|---|---|---|
-| 1 | `i` | index 3 → element 3 |
-| 2 | `j × Nx + i` | (2,2) with Nx=5 → 12 |
-| 3 | `k × Ny × Nx + j × Nx + i` | (1,1,1) with Ny=2, Nx=3 → 10 |
-
-When all coordinates are materialised in RDF the coordinate tuple is the natural key,
-and the index adds nothing.
-
----
-
-## Extending the vocabulary (INTERNAL future updates)
-
-If the quantity you need has no canonical component, add the individual to the
-canonical vocabulary block in the TBox:
-
-```turtle
-rep:pressure  a owl:NamedIndividual , rep:Signal ;
-    rep:hasQuantityKind qk:Pressure ;
-    rdfs:comment "Pressure signal."@en ;
-    skos:prefLabel "pressure"@en .
+has_scalar_representation       ⊑ has_representation
+has_spectrum_representation     ⊑ has_representation
+has_timeseries_representation   ⊑ has_representation
+has_depthprofile_representation ⊑ has_representation
+has_image_representation        ⊑ has_representation
+has_volume_representation       ⊑ has_representation
 ```
 
-Declare the quantity kind if it is not already present:
+`Functional(hasUnit)` means at most one filler under OWL semantics. It does not
+require a filler. SHACL `sh:maxCount 1` checks the explicit graph and does not
+infer `owl:sameAs` between two supplied units.
 
-```turtle
-qk:Pressure a owl:NamedIndividual , qudt:QuantityKind ;
-    skos:prefLabel "Pressure"@en .
+## Validation predicates
+
+Let `kind(s)` be the union of the direct and component-mediated paths:
+
+```text
+kind(s) =
+  { k | hasQuantityKind(s,k) }
+  ∪ { k | dimension(s,c) ∧ hasQuantityKind(c,k) }
+  ∪ { k | measure(s,c) ∧ hasQuantityKind(c,k) }
+  ∪ { k | attribute(s,c) ∧ hasQuantityKind(c,k) }
 ```
 
-The new component is then available across the whole knowledge graph. The one
-judgement call is Axis versus Signal: an Axis is an independent variable you scan
-over, a Signal is what the detector reports.
+For every unit-bearing subject `s`, the required condition is:
+
+```text
+|kind(s)| = 1
+and
+(hasUnit(s,u) → permitsUnit(kind(s),u))
+```
+
+For every representation component `c`:
+
+```text
+|hasQuantityKind(c)| = 1
+```
+
+The last condition does not make units mandatory.
+
+# What can be queried and inferred
+
+Without entailment, SPARQL can retrieve:
+
+- representation instances with explicitly stated types and ranks;
+- dataset-to-DSD and DSD-to-component paths;
+- dimensions, measures, quantity kinds, supplied units, and observations;
+- the complete whitelist;
+- missing quantity kinds and non-whitelisted supplied units.
+
+With RDFS/OWL entailment, applications can additionally retrieve:
+
+- every FAIRmat dataset as `qb:DataSet`;
+- every FAIRmat observation as `qb:Observation`;
+- rank-derived structural classes;
+- domain/range-derived types;
+- consequences of functionality and component-role disjointness.
+
+SHACL adds:
+
+- zero-or-one explicit unit enforcement;
+- quantity-kind completeness;
+- whitelist membership;
+- per-representation advisory profiles;
+- stable validation codes and remedies.
+
+See `SPARQL_USAGE.md` for executable queries and their actual results.
+
+# Known limits
+
+The current unit shapes do not validate:
+
+- rank against the number of dimensions;
+- intended axis membership;
+- extent multiplication;
+- observation uniqueness;
+- numeric datatypes;
+- coordinate reference systems;
+- calibration and uncertainty;
+- external dense-array locations;
+- all RDF Data Cube integrity constraints.
+
+The following ontology decisions remain pending separate review:
+
+- rank alone defines the structural representation class;
+- representation properties remain functional;
+- canonical components retain unit assertions without default semantics.
+
+# See also
+
+- `SPARQL_USAGE.md`
+- `complexity.md`
+- `tbox-illustration/overview.md`
+- `tbox-illustration/class-hierarchy.md`
+- `tbox-illustration/validation.md`
+- `CHANGELOG/deferred.txt`

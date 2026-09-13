@@ -1,0 +1,44 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: TimeSeries / valid optional unit
+
+ex:timeseries-property a tax:MaterialProperty ;
+    rep:has_timeseries_representation ex:timeseries-valid-dataset .
+
+ex:timeseries-valid-dataset a rep:TimeSeries ;
+    rep:rank "1"^^xsd:nonNegativeInteger ;
+    rep:extent "3"^^xsd:nonNegativeInteger ;
+    qb:structure ex:timeseries-valid-dsd .
+
+ex:timeseries-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:timeseries-valid-axis-time,
+        ex:timeseries-valid-signal .
+
+ex:timeseries-valid-axis-time a qb:ComponentSpecification ;
+    qb:dimension rep:time ; rep:hasUnit unit:SEC .
+
+ex:timeseries-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:timeseries-valid-observation a rep:Observation ;
+    qb:dataSet ex:timeseries-valid-dataset ;
+    rep:time "0.5"^^xsd:double ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:timeseries-valid-observation-2 a rep:Observation ;
+    qb:dataSet ex:timeseries-valid-dataset ;
+    rep:time "1.0"^^xsd:double ;
+    rep:intensity "101"^^xsd:nonNegativeInteger .
+
+ex:timeseries-valid-observation-3 a rep:Observation ;
+    qb:dataSet ex:timeseries-valid-dataset ;
+    rep:time "1.5"^^xsd:double ;
+    rep:intensity "82"^^xsd:nonNegativeInteger .

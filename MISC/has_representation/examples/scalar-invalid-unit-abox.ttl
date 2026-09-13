@@ -1,0 +1,27 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: REP-UNIT-001, REP-UNIT-010
+## case: Scalar / invalid supplied unit
+
+ex:scalar-bad-dataset a rep:Scalar ;
+    rep:rank "0"^^xsd:nonNegativeInteger ;
+    rep:extent "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:scalar-bad-dsd .
+
+ex:scalar-bad-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:scalar-bad-signal .
+
+ex:scalar-bad-signal a qb:ComponentSpecification ;
+    qb:measure rep:temperature ;
+    rep:hasUnit unit:EV .
+
+ex:scalar-bad-observation a rep:Observation ;
+    qb:dataSet ex:scalar-bad-dataset ;
+    rep:temperature "293.15"^^xsd:double .

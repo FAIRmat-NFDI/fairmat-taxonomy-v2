@@ -1,0 +1,29 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: Scalar / valid optional unit
+
+ex:scalar-property a tax:MaterialProperty ;
+    rep:has_scalar_representation ex:scalar-valid-dataset .
+
+ex:scalar-valid-dataset a rep:Scalar ;
+    rep:rank "0"^^xsd:nonNegativeInteger ;
+    rep:extent "1"^^xsd:nonNegativeInteger ;
+    qb:structure ex:scalar-valid-dsd .
+
+ex:scalar-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:scalar-valid-signal .
+
+ex:scalar-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:temperature .
+
+ex:scalar-valid-observation a rep:Observation ;
+    qb:dataSet ex:scalar-valid-dataset ;
+    rep:temperature "293.15"^^xsd:double .

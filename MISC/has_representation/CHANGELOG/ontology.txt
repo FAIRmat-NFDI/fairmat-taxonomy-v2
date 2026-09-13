@@ -1,0 +1,43 @@
+CHANGELOG -- representation.ttl
+================================
+
+Source
+------
+Revised from the latest user-supplied representation ontology. The linked
+dev/hotfix/1.0/v3 folder at commit a971ebc7fb241f538c6ffabbe05dd3b695218e43
+was used only as the documentation and directory-structure reference.
+
+Applied
+-------
+1. Replaced the versioned QUDT schema namespace
+   http://qudt.org/2.1/schema/qudt/
+   with the canonical term namespace
+   http://qudt.org/schema/qudt/.
+
+2. Replaced class-level skos:closeMatch statements with directional
+   rdfs:subClassOf bridges to qb:DataStructureDefinition, qb:DataSet and
+   qb:Observation.
+
+3. Retained and made explicit the existing subclass bridges from Axis,
+   Signal and UnitAttribute to their RDF Data Cube component roles.
+
+4. Removed rep:order and the local declaration/strengthening of qb:order.
+   The module now defines no presentation order or array-storage order.
+
+5. Reduced local RDF Data Cube statements to external entity declarations.
+   Project-specific domains, ranges, functionality and disjointness are no
+   longer asserted on external qb: terms.
+
+6. Documented rep:hasUnit as optional. Its OWL functionality remains, giving
+   a maximum of one value under OWL semantics.
+
+7. Declared canonical observation predicates explicitly as
+   owl:DatatypeProperty with broad rdfs:Literal ranges.
+
+Preserved
+---------
+- rank-based equivalent-class definitions;
+- functional representation properties;
+- canonical component unit assertions;
+- canonical component vocabulary.
+

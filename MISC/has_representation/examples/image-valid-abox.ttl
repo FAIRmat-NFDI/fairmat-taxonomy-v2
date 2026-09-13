@@ -1,0 +1,57 @@
+@prefix ex:   <http://example.org/representation/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+## expect: conforms
+## case: Image / valid optional unit
+
+ex:image-property a tax:MaterialProperty ;
+    rep:has_image_representation ex:image-valid-dataset .
+
+ex:image-valid-dataset a rep:Image ;
+    rep:rank "2"^^xsd:nonNegativeInteger ;
+    rep:extent "4"^^xsd:nonNegativeInteger ;
+    qb:structure ex:image-valid-dsd .
+
+ex:image-valid-dsd a rep:DataStructureDefinition ;
+    qb:component
+        ex:image-valid-axis-y,
+        ex:image-valid-axis-x,
+        ex:image-valid-signal .
+
+ex:image-valid-axis-y a qb:ComponentSpecification ;
+    qb:dimension rep:y ; rep:hasUnit unit:MicroM .
+
+ex:image-valid-axis-x a qb:ComponentSpecification ;
+    qb:dimension rep:x .
+
+ex:image-valid-signal a qb:ComponentSpecification ;
+    qb:measure rep:intensity .
+
+ex:image-valid-observation a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    rep:intensity "125"^^xsd:nonNegativeInteger .
+
+ex:image-valid-observation-y0-x1 a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "0"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ;
+    rep:intensity "140"^^xsd:nonNegativeInteger .
+
+ex:image-valid-observation-y1-x0 a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "0"^^xsd:nonNegativeInteger ;
+    rep:intensity "119"^^xsd:nonNegativeInteger .
+
+ex:image-valid-observation-y1-x1 a rep:Observation ;
+    qb:dataSet ex:image-valid-dataset ;
+    rep:y "1"^^xsd:nonNegativeInteger ;
+    rep:x "1"^^xsd:nonNegativeInteger ;
+    rep:intensity "153"^^xsd:nonNegativeInteger .
