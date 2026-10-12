@@ -1,0 +1,462 @@
+# representation — FAIRmat taxonomy module
+
+Describes **in which form** the data of a material property is represented:
+a scalar, a 1-D profile, an image or a volume. Built on the W3C RDF Data Cube
+pattern (`qb:`) and QUDT units. All rules are OWL 2 axioms; a reasoner such as
+HermiT reports a violation as an *unsatisfiable class* (TBox) or an
+*inconsistent ontology* (ABox).
+
+```text
+tax:<MaterialProperty class>
+  └─ rep:HasRepresentation ─▶ rep:<Type>
+       └─ qb:structure ─▶ rep:DataStructureDefinition
+            └─ qb:component ─▶ qb:ComponentSpecification
+                 ├─ qb:dimension ─▶ rep:<Axis>     (+ rep:HasUnit <unit>, optional)
+                 └─ qb:measure   ─▶ rep:<Signal>   (+ rep:HasUnit <unit>, optional)
+```
+
+| File | Content |
+|---|---|
+| `representation.ttl` | the module (standalone) |
+| `main.ttl` | FAIRmat taxonomy with the module appended |
+| `TOOL_README.md` | GUI and reasoner usage |
+| `CHANGELOG.md` | all changes and test results |
+
+| Prefix | Namespace |
+|---|---|
+| `rep:` | `http://fairmat-nfdi.eu/taxonomy/representation#` |
+| `tax:` | `http://fairmat-nfdi.eu/taxonomy/` |
+| `qb:` | `http://purl.org/linked-data/cube#` |
+| `qudt:` | `http://qudt.org/schema/qudt/` |
+| `unit:` | `http://qudt.org/vocab/unit/` |
+| `qk:` | `http://qudt.org/vocab/quantitykind/` |
+
+---
+
+## 1. Axioms
+
+**Strict** = enforced by the reasoner. **Canonical** = shipped vocabulary or
+intended use; extendable (see §4).
+
+### 1.1 Representation types
+
+| Type | Parent | Rank | Max. dimensions | Axis | Measures |
+|---|---|---:|---:|---|---|
+| `rep:Scalar` | Representation | 0 | 0 | none | any Signal |
+| `rep:Profile` | Representation | 1 | 1 | any Axis | any Signal |
+| `rep:Spectrum` | Profile | 1 | 1 | any Axis (canonical: `Energy`) | any Signal |
+| `rep:TimeSeries` | Profile | 1 | 1 | **`Time` only** | any Signal |
+| `rep:DepthProfile` | Profile | 1 | 1 | any Axis (canonical: `Depth`) | any Signal |
+| `rep:Image` | Representation | 2 | 2 | any Axis (canonical: `X`, `Y`) | any Signal |
+| `rep:VolumeData` | Representation | 3 | 3 | any Axis (canonical: `X`, `Y`, `Z`) | any Signal |
+
+All rank rules are strict: a representation has exactly one rank; a type is
+*defined* by its rank (rank 0 ⇔ Scalar, …); types of different rank exclude
+each other; every type is also a `qb:DataSet`.
+
+### 1.2 Scalar
+
+| Rule | Kind |
+|---|---|
+| rank 0 | strict |
+| its DSD has measure components only — no dimension | strict |
+
+### 1.3 Profile
+
+| Rule | Kind |
+|---|---|
+| rank 1 | strict |
+| at most 1 dimension | strict |
+
+### 1.4 Spectrum
+
+| Rule | Kind |
+|---|---|
+| a Profile: rank 1, at most 1 dimension | strict |
+| energy axis (`rep:Energy`) | canonical |
+
+### 1.5 TimeSeries
+
+| Rule | Kind |
+|---|---|
+| a Profile: rank 1, at most 1 dimension | strict |
+| the only permitted axis is `rep:Time` | strict |
+
+### 1.6 DepthProfile
+
+| Rule | Kind |
+|---|---|
+| a Profile: rank 1, at most 1 dimension | strict |
+| depth axis (`rep:Depth`) | canonical |
+
+### 1.7 Image
+
+| Rule | Kind |
+|---|---|
+| rank 2, at most 2 dimensions | strict |
+| axes `rep:X`, `rep:Y` | canonical |
+
+### 1.8 VolumeData
+
+| Rule | Kind |
+|---|---|
+| rank 3, at most 3 dimensions | strict |
+| axes `rep:X`, `rep:Y`, `rep:Z` | canonical |
+
+### 1.9 Structure (DSD and component specifications)
+
+| Rule | Kind |
+|---|---|
+| a `qb:dimension` must be an Axis, a `qb:measure` must be a Signal | strict |
+| one dimension per component specification | strict |
+| `rep:DataStructureDefinition` is a `qb:DataStructureDefinition` | strict |
+
+### 1.10 Components
+
+| Component | Kind | Quantity kind | Canonical unit |
+|---|---|---|---|
+| `rep:X`, `rep:Y`, `rep:Z` | Axis | `qk:Length` | `unit:MicroM` |
+| `rep:Depth` | Axis | `qk:Length` | `unit:NanoM` |
+| `rep:Energy` | Axis | `qk:Energy` | `unit:EV` |
+| `rep:Time` | Axis | `qk:Time` | `unit:SEC` |
+| `rep:Intensity` | Signal | `tax:Intensity` | `unit:COUNT` |
+| `rep:Temperature` | Signal | `qk:Temperature` | `unit:K` |
+
+| Rule | Kind |
+|---|---|
+| a component is exactly one of Axis / Signal / UnitAttribute | strict |
+| Axis / Signal / UnitAttribute are `qb:` dimension / measure / attribute properties | strict |
+| at most one quantity kind per component | strict |
+| the listed components are different individuals | strict |
+| the list of components, their quantity kinds and canonical units | canonical |
+
+### 1.11 Units
+
+| Quantity kind | Permitted units |
+|---|---|
+| `qk:Temperature` | `unit:K` |
+| `qk:Length` | `unit:NanoM`, `unit:MicroM` |
+| `qk:Time` | `unit:SEC` |
+| `qk:Energy` | `unit:EV` |
+| `tax:Intensity` | `unit:COUNT` |
+
+| Rule | Kind |
+|---|---|
+| a unit is optional; at most one per component or specification | strict |
+| the unit must be permitted for the quantity kind (table above), on the component itself or on a spec through its dimension / measure | strict |
+| the listed units are different individuals | strict |
+| a quantity kind can never be used as a unit | strict |
+| the permitted-unit table and the list of units | canonical |
+
+### 1.12 Taxonomy link
+
+| Rule | Kind |
+|---|---|
+| `rep:HasRepresentation`: from a `tax:MaterialProperty` to a `rep:Representation`, at most one | strict |
+| `rep:HasDataStructureDefinition`: from a `tax:MaterialProperty` to a DSD, at most one | strict |
+| hence a class (and its subclasses) cannot get representations of different rank | strict |
+
+---
+
+## 2. Usage at TBox level (taxonomy classes)
+
+A taxonomy class gets **one nested restriction** (`rdfs:subClassOf`).
+One `qb:component` block per axis and per signal; units go on the
+specification. Manchester syntax below; the GUI (`TOOL_README.md`) produces the
+same as Turtle. All examples are consistent with `main.ttl`.
+
+### 2.1 Scalar
+
+```text
+tax:MeltingTemperature SubClassOf rep:HasRepresentation some (rep:Scalar
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Temperature) and (rep:HasUnit value unit:K))))))
+```
+
+### 2.2 Profile
+
+```text
+tax:ElementalComposition SubClassOf rep:HasRepresentation some (rep:Profile
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:X) and (rep:HasUnit value unit:MicroM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Intensity) and (rep:HasUnit value unit:COUNT))))))
+```
+
+### 2.3 Spectrum
+
+```text
+tax:ElectronicDensityOfStates SubClassOf rep:HasRepresentation some (rep:Spectrum
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:Energy) and (rep:HasUnit value unit:EV)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Intensity) and (rep:HasUnit value unit:COUNT))))))
+```
+
+### 2.4 TimeSeries
+
+```text
+tax:CarrierLifetime SubClassOf rep:HasRepresentation some (rep:TimeSeries
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:Time) and (rep:HasUnit value unit:SEC)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Intensity) and (rep:HasUnit value unit:COUNT))))))
+```
+
+### 2.5 DepthProfile
+
+```text
+tax:LayerThickness SubClassOf rep:HasRepresentation some (rep:DepthProfile
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:Depth) and (rep:HasUnit value unit:NanoM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Intensity) and (rep:HasUnit value unit:COUNT))))))
+```
+
+### 2.6 Image
+
+```text
+tax:GrainSize SubClassOf rep:HasRepresentation some (rep:Image
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:Y) and (rep:HasUnit value unit:MicroM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:X) and (rep:HasUnit value unit:MicroM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Intensity) and (rep:HasUnit value unit:COUNT))))))
+```
+
+### 2.7 VolumeData
+
+```text
+tax:Porosity SubClassOf rep:HasRepresentation some (rep:VolumeData
+  and (qb:structure some (rep:DataStructureDefinition
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:Z) and (rep:HasUnit value unit:MicroM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:Y) and (rep:HasUnit value unit:MicroM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:dimension value rep:X) and (rep:HasUnit value unit:MicroM)))
+    and (qb:component some (qb:ComponentSpecification
+          and (qb:measure value rep:Intensity) and (rep:HasUnit value unit:COUNT))))))
+```
+
+**Mistakes the reasoner rejects** (the class becomes unsatisfiable): a Scalar with
+a dimension; a TimeSeries axis other than `Time`; more dimensions than the rank;
+an Axis as measure or a Signal as dimension; a unit not permitted for the
+quantity kind; a class and its superclass with representations of different rank.
+
+---
+
+## 3. Usage at ABox level (instance data)
+
+Named individuals for the sample, its dataset, the DSD, one specification per
+component, and observations. The type of the dataset gives the rank
+(`rep:Rank` may be stated; it must agree). Component IRIs are used as data
+properties on observations. All examples are consistent with `main.ttl`.
+
+Common prefixes:
+
+```turtle
+@prefix ex:   <http://example.org/data/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+```
+
+### 3.1 Scalar
+
+```turtle
+ex:mp-1 a tax:MeltingTemperature ; rep:HasRepresentation ex:mp-1-data .
+ex:mp-1-data a rep:Scalar ; qb:structure ex:mp-1-dsd .
+ex:mp-1-dsd a rep:DataStructureDefinition ; qb:component ex:mp-1-t .
+ex:mp-1-t a qb:ComponentSpecification ; qb:measure rep:Temperature ; rep:HasUnit unit:K .
+ex:mp-1-obs a rep:Observation ; qb:dataSet ex:mp-1-data ; rep:Temperature "1357.77"^^xsd:double .
+```
+
+### 3.2 Profile
+
+```turtle
+ex:ec-1 a tax:ElementalComposition ; rep:HasRepresentation ex:ec-1-data .
+ex:ec-1-data a rep:Profile ; qb:structure ex:ec-1-dsd .
+ex:ec-1-dsd a rep:DataStructureDefinition ; qb:component ex:ec-1-x , ex:ec-1-i .
+ex:ec-1-x a qb:ComponentSpecification ; qb:dimension rep:X ; rep:HasUnit unit:MicroM .
+ex:ec-1-i a qb:ComponentSpecification ; qb:measure rep:Intensity ; rep:HasUnit unit:COUNT .
+ex:ec-1-obs a rep:Observation ; qb:dataSet ex:ec-1-data ;
+    rep:X "0.5"^^xsd:double ; rep:Intensity "812"^^xsd:nonNegativeInteger .
+```
+
+### 3.3 Spectrum
+
+```turtle
+ex:dos-1 a tax:ElectronicDensityOfStates ; rep:HasRepresentation ex:dos-1-data .
+ex:dos-1-data a rep:Spectrum ; qb:structure ex:dos-1-dsd .
+ex:dos-1-dsd a rep:DataStructureDefinition ; qb:component ex:dos-1-e , ex:dos-1-i .
+ex:dos-1-e a qb:ComponentSpecification ; qb:dimension rep:Energy ; rep:HasUnit unit:EV .
+ex:dos-1-i a qb:ComponentSpecification ; qb:measure rep:Intensity ; rep:HasUnit unit:COUNT .
+ex:dos-1-obs a rep:Observation ; qb:dataSet ex:dos-1-data ;
+    rep:Energy "10.5"^^xsd:double ; rep:Intensity "142"^^xsd:nonNegativeInteger .
+```
+
+### 3.4 TimeSeries
+
+```turtle
+ex:cl-1 a tax:CarrierLifetime ; rep:HasRepresentation ex:cl-1-data .
+ex:cl-1-data a rep:TimeSeries ; qb:structure ex:cl-1-dsd .
+ex:cl-1-dsd a rep:DataStructureDefinition ; qb:component ex:cl-1-t , ex:cl-1-i .
+ex:cl-1-t a qb:ComponentSpecification ; qb:dimension rep:Time ; rep:HasUnit unit:SEC .
+ex:cl-1-i a qb:ComponentSpecification ; qb:measure rep:Intensity ; rep:HasUnit unit:COUNT .
+ex:cl-1-obs a rep:Observation ; qb:dataSet ex:cl-1-data ;
+    rep:Time "1.0e-9"^^xsd:double ; rep:Intensity "101"^^xsd:nonNegativeInteger .
+```
+
+### 3.5 DepthProfile
+
+```turtle
+ex:lt-1 a tax:LayerThickness ; rep:HasRepresentation ex:lt-1-data .
+ex:lt-1-data a rep:DepthProfile ; qb:structure ex:lt-1-dsd .
+ex:lt-1-dsd a rep:DataStructureDefinition ; qb:component ex:lt-1-d , ex:lt-1-i .
+ex:lt-1-d a qb:ComponentSpecification ; qb:dimension rep:Depth ; rep:HasUnit unit:NanoM .
+ex:lt-1-i a qb:ComponentSpecification ; qb:measure rep:Intensity ; rep:HasUnit unit:COUNT .
+ex:lt-1-obs a rep:Observation ; qb:dataSet ex:lt-1-data ;
+    rep:Depth "25.0"^^xsd:double ; rep:Intensity "125"^^xsd:nonNegativeInteger .
+```
+
+### 3.6 Image
+
+```turtle
+ex:gs-1 a tax:GrainSize ; rep:HasRepresentation ex:gs-1-data .
+ex:gs-1-data a rep:Image ; qb:structure ex:gs-1-dsd .
+ex:gs-1-dsd a rep:DataStructureDefinition ; qb:component ex:gs-1-y , ex:gs-1-x , ex:gs-1-i .
+ex:gs-1-y a qb:ComponentSpecification ; qb:dimension rep:Y ; rep:HasUnit unit:MicroM .
+ex:gs-1-x a qb:ComponentSpecification ; qb:dimension rep:X ; rep:HasUnit unit:MicroM .
+ex:gs-1-i a qb:ComponentSpecification ; qb:measure rep:Intensity ; rep:HasUnit unit:COUNT .
+ex:gs-1-obs a rep:Observation ; qb:dataSet ex:gs-1-data ;
+    rep:Y "0"^^xsd:double ; rep:X "1"^^xsd:double ; rep:Intensity "140"^^xsd:nonNegativeInteger .
+```
+
+### 3.7 VolumeData
+
+```turtle
+ex:po-1 a tax:Porosity ; rep:HasRepresentation ex:po-1-data .
+ex:po-1-data a rep:VolumeData ; qb:structure ex:po-1-dsd .
+ex:po-1-dsd a rep:DataStructureDefinition ; qb:component ex:po-1-z , ex:po-1-y , ex:po-1-x , ex:po-1-i .
+ex:po-1-z a qb:ComponentSpecification ; qb:dimension rep:Z ; rep:HasUnit unit:MicroM .
+ex:po-1-y a qb:ComponentSpecification ; qb:dimension rep:Y ; rep:HasUnit unit:MicroM .
+ex:po-1-x a qb:ComponentSpecification ; qb:dimension rep:X ; rep:HasUnit unit:MicroM .
+ex:po-1-i a qb:ComponentSpecification ; qb:measure rep:Intensity ; rep:HasUnit unit:COUNT .
+ex:po-1-obs a rep:Observation ; qb:dataSet ex:po-1-data ;
+    rep:Z "0"^^xsd:double ; rep:Y "1"^^xsd:double ; rep:X "1"^^xsd:double ;
+    rep:Intensity "147"^^xsd:nonNegativeInteger .
+```
+
+**Mistakes the reasoner rejects** (the ontology becomes inconsistent): a unit not
+permitted for the quantity kind; two units on one specification; an Axis as
+measure; more dimension specifications than the rank; a TimeSeries with an axis
+other than `Time`; a Scalar with a dimension or a stated rank ≠ 0; a sample with
+two representations of different rank.
+
+---
+
+## 4. Mathematics (description logic)
+
+Abbreviations: `str` = `qb:structure`, `comp` = `qb:component`, `dim` = `qb:dimension`,
+`meas` = `qb:measure`, `HR` = `HasRepresentation`, `HQK` = `HasQuantityKind`,
+`HU` = `HasUnit`, `DSD` = `rep:DataStructureDefinition`.
+
+### 4.1 Strict axioms
+
+**Rank and types**
+
+```text
+Scalar     ≡ Representation ⊓ ∃Rank.{0}          Spectrum     ⊑ Profile
+Profile    ≡ Representation ⊓ ∃Rank.{1}          TimeSeries   ⊑ Profile
+Image      ≡ Representation ⊓ ∃Rank.{2}          DepthProfile ⊑ Profile
+VolumeData ≡ Representation ⊓ ∃Rank.{3}          Scalar, Profile, Image, VolumeData ⊑ qb:DataSet
+Func(Rank)
+```
+
+**Type rules**
+
+```text
+Scalar     ⊑ ∀str.∀comp.(∃meas.⊤ ⊓ ¬∃dim.⊤)            measures only
+TimeSeries ⊑ ∀str.∀comp.∀dim.{Time}                     axis is Time
+Profile    ⊑ ∀str.(≤1 comp.∃dim.⊤)                      rank limit 1
+Image      ⊑ ∀str.(≤2 comp.∃dim.⊤)                      rank limit 2
+VolumeData ⊑ ∀str.(≤3 comp.∃dim.⊤)                      rank limit 3
+```
+
+**Structure**
+
+```text
+DSD ⊑ Representation ⊓ qb:DataStructureDefinition
+DSD ⊑ ∀comp.(∀dim.Axis ⊓ ∀meas.Signal)                  strict roles
+DSD ⊑ ∀comp.(≤1 dim.⊤)                                  one dimension per spec
+```
+
+**Components**
+
+```text
+ComponentProperty ≡ Axis ⊔ Signal ⊔ UnitAttribute,  pairwise disjoint
+Axis ⊑ qb:DimensionProperty    Signal ⊑ qb:MeasureProperty    UnitAttribute ⊑ qb:AttributeProperty
+Func(HQK)     ∃HQK.⊤ ⊑ ComponentProperty     ⊤ ⊑ ∀HQK.qudt:QuantityKind
+X, Y, Z, Depth, Energy, Time, Intensity, Temperature   pairwise different
+```
+
+**Units**
+
+```text
+Func(HU)      ∃HU.⊤ ⊑ ComponentProperty ⊔ qb:ComponentSpecification      ⊤ ⊑ ∀HU.qudt:Unit
+qudt:Unit ⊓ qudt:QuantityKind ⊑ ⊥
+EV, K, MicroM, NanoM, SEC, COUNT   pairwise different
+
+for each quantity kind k with permitted units U(k):
+  ∃HQK.{k} ⊔ ∃dim.∃HQK.{k} ⊔ ∃meas.∃HQK.{k}  ⊑  ∀HU.U(k)
+
+  U(Temperature) = {K}      U(Length) = {NanoM, MicroM}      U(Time) = {SEC}
+  U(Energy)      = {EV}     U(Intensity) = {COUNT}
+```
+
+**Taxonomy link**
+
+```text
+Func(HR)    ∃HR.⊤ ⊑ tax:MaterialProperty    ⊤ ⊑ ∀HR.Representation
+Func(HasDataStructureDefinition)    ∃HasDataStructureDefinition.⊤ ⊑ tax:MaterialProperty
+⊤ ⊑ ∀HasDataStructureDefinition.DSD
+```
+
+### 4.2 Canonical assertions
+
+```text
+Axis(X)  Axis(Y)  Axis(Z)  Axis(Depth)  Axis(Energy)  Axis(Time)      Signal(Intensity)  Signal(Temperature)
+HQK(X, Length)   HQK(Y, Length)   HQK(Z, Length)   HQK(Depth, Length)
+HQK(Energy, Energy)   HQK(Time, Time)   HQK(Intensity, tax:Intensity)   HQK(Temperature, Temperature)
+HU(X, MicroM)    HU(Y, MicroM)    HU(Z, MicroM)    HU(Depth, NanoM)
+HU(Energy, EV)   HU(Time, SEC)    HU(Intensity, COUNT)   HU(Temperature, K)
+```
+
+Intended (not axioms): Spectrum → `Energy`, DepthProfile → `Depth`,
+Image → `X`, `Y`, VolumeData → `X`, `Y`, `Z`.
+
+### 4.3 Extending the canonical vocabulary
+
+The strict axioms are general; the canonical vocabulary is a starting set.
+
+| To add | From | Add | Effect |
+|---|---|---|---|
+| a component | the taxonomy (`tax:`) or an external vocabulary | `Axis(c)` or `Signal(c)`, `HQK(c, k)`, optionally `HU(c, u)`; add `c` to the pairwise-different components | all strict rules apply to `c` (roles, rank limits, TimeSeries, unit table) |
+| a unit | QUDT (`unit:`) or an external vocabulary | `qudt:Unit(u)`; add `u` to the pairwise-different units and to `U(k)` of its quantity kind | `u` becomes permitted for `k` |
+| a quantity kind | QUDT (`qk:`), the taxonomy, or external | `qudt:QuantityKind(k)` and one unit axiom `… ⊑ ∀HU.U(k)` | units for `k` are checked |
+| an intended axis made strict | — | copy the TimeSeries rule: `T ⊑ ∀str.∀comp.∀dim.{a₁, …}` | other axes are rejected for `T` |
+
+Terms used without these declarations (e.g. an external component typed
+nowhere) are accepted: the reasoner infers them to be an Axis or a Signal from
+the slot they are in, and does not count or reject them unless they are
+declared different from the listed ones.
