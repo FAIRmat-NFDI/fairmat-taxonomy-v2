@@ -1,0 +1,194 @@
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+
+#################################################################
+# CLASS_A -- Spectrum: energy [eV] (dimension), intensity [count] (measure)
+#################################################################
+tax:CLASS_A a owl:Class ;
+    rdfs:subClassOf tax:MaterialProperty ,
+        [ a owl:Restriction ;
+          owl:onProperty rep:has_spectrum_representation ;
+          owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+              rep:Spectrum
+              [ a owl:Restriction ;
+                owl:onProperty qb:structure ;
+                owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                    rep:DataStructureDefinition
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:hasValue rep:energy ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit  ; owl:hasValue unit:EV ]
+                      ) ] ]
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:measure ; owl:hasValue rep:intensity ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit ; owl:hasValue unit:COUNT ]
+                      ) ] ]
+                ) ] ]
+          ) ] ] ;
+    skos:prefLabel "CLASS_A"@en .
+
+#################################################################
+# CLASS_B -- Scalar: temperature [K] (measure only, rank 0 -> no dimension)
+#################################################################
+tax:CLASS_B a owl:Class ;
+    rdfs:subClassOf tax:MaterialProperty ,
+        [ a owl:Restriction ;
+          owl:onProperty rep:has_scalar_representation ;
+          owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+              rep:Scalar
+              [ a owl:Restriction ;
+                owl:onProperty qb:structure ;
+                owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                    rep:DataStructureDefinition
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:measure ; owl:hasValue rep:temperature ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit ; owl:hasValue unit:K ]
+                      ) ] ]
+                ) ] ]
+          ) ] ] ;
+    skos:prefLabel "CLASS_B"@en .
+
+#################################################################
+# CLASS_C -- Profile (generic): x [um] (dimension), intensity [count] (measure)
+#################################################################
+tax:CLASS_C a owl:Class ;
+    rdfs:subClassOf tax:MaterialProperty ,
+        [ a owl:Restriction ;
+          owl:onProperty rep:has_representation ;
+          owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+              rep:Profile
+              [ a owl:Restriction ;
+                owl:onProperty qb:structure ;
+                owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                    rep:DataStructureDefinition
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:hasValue rep:x ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit  ; owl:hasValue unit:MicroM ]
+                      ) ] ]
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:measure ; owl:hasValue rep:intensity ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit ; owl:hasValue unit:COUNT ]
+                      ) ] ]
+                ) ] ]
+          ) ] ] ;
+    skos:prefLabel "CLASS_C"@en .
+
+#################################################################
+# CLASS_D -- DepthProfile: depth [um] (dimension), intensity [count] (measure)
+#################################################################
+tax:CLASS_D a owl:Class ;
+    rdfs:subClassOf tax:MaterialProperty ,
+        [ a owl:Restriction ;
+          owl:onProperty rep:has_depthprofile_representation ;
+          owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+              rep:DepthProfile
+              [ a owl:Restriction ;
+                owl:onProperty qb:structure ;
+                owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                    rep:DataStructureDefinition
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:hasValue rep:depth ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit  ; owl:hasValue unit:MicroM ]
+                      ) ] ]
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:measure ; owl:hasValue rep:intensity ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit ; owl:hasValue unit:COUNT ]
+                      ) ] ]
+                ) ] ]
+          ) ] ] ;
+    skos:prefLabel "CLASS_D"@en .
+
+#################################################################
+# CLASS_E -- DepthProfile: depth [nm] (dimension), intensity [count] (measure)
+# Same structure as CLASS_D; only the dimension unit differs.
+#################################################################
+tax:CLASS_E a owl:Class ;
+    rdfs:subClassOf tax:MaterialProperty ,
+        [ a owl:Restriction ;
+          owl:onProperty rep:has_depthprofile_representation ;
+          owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+              rep:DepthProfile
+              [ a owl:Restriction ;
+                owl:onProperty qb:structure ;
+                owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                    rep:DataStructureDefinition
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:hasValue rep:depth ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit  ; owl:hasValue unit:NanoM ]
+                      ) ] ]
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:measure ; owl:hasValue rep:intensity ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit ; owl:hasValue unit:COUNT ]
+                      ) ] ]
+                ) ] ]
+          ) ] ] ;
+    skos:prefLabel "CLASS_E"@en .
+
+#################################################################
+# CLASS_F -- TimeSeries: time [s] (dimension), temperature [K] (measure)
+#################################################################
+tax:CLASS_F a owl:Class ;
+    rdfs:subClassOf tax:MaterialProperty ,
+        [ a owl:Restriction ;
+          owl:onProperty rep:has_timeseries_representation ;
+          owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+              rep:TimeSeries
+              [ a owl:Restriction ;
+                owl:onProperty qb:structure ;
+                owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                    rep:DataStructureDefinition
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:hasValue rep:time ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit  ; owl:hasValue unit:SEC ]
+                      ) ] ]
+                    [ a owl:Restriction ;
+                      owl:onProperty qb:component ;
+                      owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                          qb:ComponentSpecification
+                          [ a owl:Restriction ; owl:onProperty qb:measure ; owl:hasValue rep:temperature ]
+                          [ a owl:Restriction ; owl:onProperty rep:hasUnit ; owl:hasValue unit:K ]
+                      ) ] ]
+                ) ] ]
+          ) ] ] ;
+    skos:prefLabel "CLASS_F"@en .
+
+#################################################################
+#  Not needed on SHACL usage
+#################################################################
+[ a owl:AllDifferent ;
+  owl:distinctMembers ( unit:EV unit:K unit:MicroM unit:NanoM unit:SEC unit:COUNT ) ] .
