@@ -746,7 +746,7 @@ def run_gui(onto_path: str = "") -> None:
     ttk.Label(f3, textvariable=rep_info, style="Hint.TLabel", wraplength=540,
               justify="left").pack(anchor="w", pady=(4, 0))
 
-    f4 = ttk.LabelFrame(left, text="4  Components and units  (any choice; type an IRI or prefix:name for external terms)",
+    f4 = ttk.LabelFrame(left, text="4  Components and units",
                         padding=8)
     f4.pack(fill="both", expand=True)
     row = ttk.Frame(f4)
