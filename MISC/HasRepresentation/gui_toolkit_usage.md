@@ -32,13 +32,13 @@ Pass `main.ttl` as an argument (it loads straight away):
 
 ```bash
 source ~/rep-env/bin/activate
-python rep_modeller.py main.ttl
+python gui_toolkit.py main.ttl
 ```
 
 Or start without an argument and choose the file in the window:
 
 ```bash
-python rep_modeller.py
+python gui_toolkit.py
 ```
 
 → **Browse…** → select `main.ttl` → **Load**.
