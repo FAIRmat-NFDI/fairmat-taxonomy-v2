@@ -1,0 +1,454 @@
+@prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
+@prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
+@prefix qb:   <http://purl.org/linked-data/cube#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+@prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology ;
+    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasQuantityKind (range qudt:QuantityKind, QUDT 3.5.2). Axes are identified by rep:AxisIndex and rep:AxisLabel. The RDF Data Cube (qb) DSD layer is kept as an optional, derived layer for querying, validation and interoperability. No unit handling is defined in this module."@en .
+
+#################################################################
+# 0. External declarations (declarations only; no strengthening
+#    of external terms)
+#################################################################
+qb:DataSet a owl:Class .
+qb:DataStructureDefinition a owl:Class .
+qb:Observation a owl:Class .
+qb:ComponentSpecification a owl:Class .
+qb:ComponentProperty a owl:Class .
+qb:DimensionProperty a owl:Class .
+qb:MeasureProperty a owl:Class .
+qb:structure a owl:ObjectProperty .
+qb:component a owl:ObjectProperty .
+qb:dimension a owl:ObjectProperty .
+qb:measure a owl:ObjectProperty .
+qb:dataSet a owl:ObjectProperty .
+qb:order a owl:DatatypeProperty .
+qudt:QuantityKind a owl:Class .
+qudt:hasQuantityKind a owl:ObjectProperty .
+tax:MaterialProperty a owl:Class .
+skos:prefLabel a owl:AnnotationProperty .
+skos:definition a owl:AnnotationProperty .
+skos:note a owl:AnnotationProperty .
+skos:altLabel a owl:AnnotationProperty .
+
+#################################################################
+# 1. Umbrella and taxonomy connection
+#################################################################
+rep:Representation a owl:Class ;
+    skos:prefLabel "Representation"@en ;
+    rdfs:comment "Umbrella class for the representation module."@en .
+
+rep:HasRepresentation a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range rep:Representation ;
+    skos:prefLabel "HasRepresentation"@en ;
+    skos:definition "Links a material property to its single representation. A taxonomy class may allow alternative representations through owl:unionOf; each instance has exactly one."@en .
+
+#################################################################
+# 2. Components: signal and axes
+#################################################################
+rep:ComponentProperty a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:ComponentProperty ;
+    owl:disjointUnionOf ( rep:Axis rep:Signal ) ;
+    skos:prefLabel "ComponentProperty"@en ;
+    rdfs:comment "A component of a representation: either its signal or one of its axes."@en .
+
+rep:Signal a owl:Class ;
+    rdfs:subClassOf rep:ComponentProperty, qb:MeasureProperty ;
+    skos:prefLabel "Signal"@en ;
+    skos:definition "The dependent, measured component of a representation."@en .
+
+rep:Axis a owl:Class ;
+    rdfs:subClassOf rep:ComponentProperty, qb:DimensionProperty ;
+    skos:prefLabel "Axis"@en ;
+    skos:definition "An independent coordinate of a representation."@en .
+
+rep:HasSignal a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain rep:Representation ;
+    rdfs:range rep:Signal ;
+    skos:prefLabel "HasSignal"@en ;
+    skos:definition "Links a representation to its single signal."@en .
+
+rep:HasAxis a owl:ObjectProperty ;
+    rdfs:domain rep:Representation ;
+    rdfs:range rep:Axis ;
+    skos:prefLabel "HasAxis"@en ;
+    skos:definition "Links a representation to one of its axes (any number)."@en .
+
+rep:HasQuantityKind a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain rep:ComponentProperty ;
+    rdfs:range qudt:QuantityKind ;
+    skos:prefLabel "HasQuantityKind"@en ;
+    skos:definition "Physical quantity kind of a signal or an axis."@en .
+
+rep:AxisIndex a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain rep:Axis ;
+    rdfs:range xsd:positiveInteger ;
+    skos:prefLabel "AxisIndex"@en ;
+    skos:definition "Position of the axis (1, 2, 3, ...). Distinct indices make distinct axes."@en .
+
+rep:AxisLabel a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain rep:Axis ;
+    rdfs:range rep:AxisLabelTerm ;
+    skos:prefLabel "AxisLabel"@en ;
+    skos:definition "Case-specific label of an axis, chosen from the rep:AxisLabelTerm individuals (e.g. rep:Label_x, rep:Label_kx). New labels are added as new individuals."@en .
+
+rep:AxisLabelTerm a owl:Class ;
+    skos:prefLabel "AxisLabelTerm"@en ;
+    skos:definition "A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasQuantityKind; the label only names it."@en .
+
+#################################################################
+# 2b. Axis label individuals
+#################################################################
+rep:Label_x a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "x" ;
+    rdfs:comment "Spatial coordinate x."@en .
+rep:Label_y a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "y" ;
+    rdfs:comment "Spatial coordinate y."@en .
+rep:Label_z a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "z" ;
+    rdfs:comment "Spatial coordinate z."@en .
+rep:Label_kx a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "kx" ;
+    rdfs:comment "Reciprocal-space coordinate kx (e.g. electronic band structure, Fermi surface)."@en .
+rep:Label_ky a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "ky" ;
+    rdfs:comment "Reciprocal-space coordinate ky."@en .
+rep:Label_kz a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "kz" ;
+    rdfs:comment "Reciprocal-space coordinate kz."@en .
+rep:Label_E a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "E" ;
+    rdfs:comment "Symbol E, e.g. electric field or energy; the axis quantity kind disambiguates."@en .
+rep:Label_P a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "P" ;
+    rdfs:comment "Symbol P, e.g. pressure."@en .
+rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "rho" ;
+    skos:altLabel "\u03c1" ;
+    rdfs:comment "Symbol rho (\u03c1), e.g. density."@en .
+
+# Labels are distinct, so two axes with different labels are two axes.
+[ a owl:AllDifferent ;
+  owl:distinctMembers ( rep:Label_x rep:Label_y rep:Label_z rep:Label_kx rep:Label_ky
+                        rep:Label_kz rep:Label_E rep:Label_P rep:Label_rho ) ] .
+
+# The quantity kind of a property is the quantity kind of its signal,
+# never of its axes.
+qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasSignal rep:HasQuantityKind ) .
+
+#################################################################
+# 3. Representation parameters
+#################################################################
+rep:Rank a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain rep:Representation ;
+    rdfs:range xsd:nonNegativeInteger ;
+    skos:prefLabel "Rank"@en ;
+    rdfs:comment "Tensor rank of the signal values (0 scalar, 1 vector, 2 matrix). Left open for maps."@en .
+
+rep:Shape a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:domain rep:Representation ;
+    rdfs:range xsd:string ;
+    skos:prefLabel "Shape"@en ;
+    rdfs:comment "Component sizes of a vector or tensor signal, e.g. \"3\" or \"3,3\"."@en .
+
+#################################################################
+# 4. Representation types
+#################################################################
+rep:Scalar a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataSet ,
+        [ a owl:Restriction ; owl:onProperty rep:Rank ;
+          owl:hasValue "0"^^xsd:nonNegativeInteger ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:maxCardinality "0"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "Scalar"@en ;
+    rdfs:comment "Rank-0 signal: a single value without axes."@en .
+
+rep:Vector a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataSet ,
+        [ a owl:Restriction ; owl:onProperty rep:Rank ;
+          owl:hasValue "1"^^xsd:nonNegativeInteger ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:maxCardinality "0"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "Vector"@en ;
+    rdfs:comment "Rank-1 signal; component count given by rep:Shape. Indices are not axes."@en .
+
+rep:Tensor2 a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataSet ,
+        [ a owl:Restriction ; owl:onProperty rep:Rank ;
+          owl:hasValue "2"^^xsd:nonNegativeInteger ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:maxCardinality "0"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "Tensor2"@en ;
+    rdfs:comment "Rank-2 signal; component sizes given by rep:Shape. Indices are not axes."@en .
+
+rep:1Dmap a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataSet ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:cardinality "1"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "1Dmap"@en ;
+    rdfs:comment "Generic mapping from one axis to a signal; repeated axis values are allowed (e.g. hysteresis)."@en .
+
+rep:Spectrum a owl:Class ;
+    rdfs:subClassOf rep:1Dmap ;
+    skos:prefLabel "Spectrum"@en ;
+    skos:note "Canonical axis: Energy (may be expressed as frequency or angle). Suggested, not enforced."@en .
+
+rep:TimeSeries a owl:Class ;
+    rdfs:subClassOf rep:1Dmap ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ;
+                              owl:hasValue qk:Time ] ] ;
+    skos:prefLabel "TimeSeries"@en ;
+    rdfs:comment "1Dmap whose axis is time (enforced)."@en .
+
+rep:2Dmap a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataSet ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:cardinality "2"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "2Dmap"@en ;
+    rdfs:comment "Mapping from two axes to a signal."@en .
+
+rep:3Dmap a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataSet ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:cardinality "3"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "3Dmap"@en ;
+    rdfs:comment "Mapping from three axes to a signal."@en .
+
+#################################################################
+# 4b. Quantity kinds (QUDT v3.5.2)
+# Version-free QUDT IRIs (http://qudt.org/vocab/quantitykind/<Name>);
+# each exists and is not deprecated in QUDT v3.5.2.
+#   skos:prefLabel = name as used in the taxonomy (CamelCase)
+#   rdfs:label     = official QUDT label
+#################################################################
+qk:Time a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Time"@en ;
+    rdfs:label "Time"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Compressibility a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Compressibility"@en ;
+    rdfs:label "Compressibility"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Density a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Density"@en ;
+    rdfs:label "Density"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Dimensionless a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Dimensionless"@en ;
+    rdfs:label "Dimensionless"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:DynamicViscosity a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "DynamicViscosity"@en ;
+    rdfs:label "Dynamic Viscosity"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectricField a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectricField"@en ;
+    rdfs:label "Electric Field"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectricFieldStrength a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectricFieldStrength"@en ;
+    rdfs:label "Electric Field Strength"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectricPolarization a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectricPolarization"@en ;
+    rdfs:label "Electric Polarization"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectromagneticPermeability a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectromagneticPermeability"@en ;
+    rdfs:label "Permeability"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Energy a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Energy"@en ;
+    rdfs:label "Energy"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:EnergyDensity a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "EnergyDensity"@en ;
+    rdfs:label "Energy Density"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:EnergyDensityOfStates a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "EnergyDensityOfStates"@en ;
+    rdfs:label "Energy Density of States"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ForcePerArea a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ForcePerArea"@en ;
+    rdfs:label "Force per Area"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Frequency a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Frequency"@en ;
+    rdfs:label "Frequency"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Length a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Length"@en ;
+    rdfs:label "Length"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:MagneticFieldStrength a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "MagneticFieldStrength"@en ;
+    rdfs:label "Magnetic Field Strength"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Permittivity a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Permittivity"@en ;
+    rdfs:label "Permittivity"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Pressure a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Pressure"@en ;
+    rdfs:label "Pressure"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Stress a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Stress"@en ;
+    rdfs:label "Stress"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Temperature a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Temperature"@en ;
+    rdfs:label "Temperature"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Voltage a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Voltage"@en ;
+    rdfs:label "Voltage"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Wavenumber a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Wavenumber"@en ;
+    rdfs:label "Wavenumber"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+# Stress intensity factor: dimension vector A0E0L-0.5I0M1H0T-2D0
+# (stress times square root of length).
+qk:StressIntensityFactor a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "StressIntensityFactor"@en ;
+    rdfs:label "Stress Intensity Factor"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+
+#################################################################
+# 5. Data Cube (DSD) layer -- optional. Applies only when a DSD
+#    is present (generated or supplied with data).
+#################################################################
+rep:DataStructureDefinition a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:DataStructureDefinition ;
+    skos:prefLabel "DataStructureDefinition"@en ;
+    rdfs:comment "RDF Data Cube structure of a representation: its measure (signal) and dimension (axis) component specifications."@en .
+
+rep:Observation a owl:Class ;
+    rdfs:subClassOf rep:Representation, qb:Observation ;
+    skos:prefLabel "Observation"@en ;
+    rdfs:comment "A single data point of a representation's dataset (RDF Data Cube observation)."@en .
+
+rep:Extent a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:range xsd:nonNegativeInteger ;
+    skos:prefLabel "Extent"@en ;
+    rdfs:comment "Dataset observation count, or coordinate-array length on a dataset-specific axis ComponentSpecification."@en .
+
+# Strict roles: Every qb:dimension is a rep:Axis and every
+# qb:measure is a rep:Signal.
+rep:DataStructureDefinition rdfs:subClassOf [ a owl:Restriction ;
+    owl:onProperty qb:component ;
+    owl:allValuesFrom [ a owl:Class ; owl:intersectionOf (
+        [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:allValuesFrom rep:Axis ]
+        [ a owl:Restriction ; owl:onProperty qb:measure ;   owl:allValuesFrom rep:Signal ]
+    ) ] ] .
+
+# One dimension per component specification.
+rep:DataStructureDefinition rdfs:subClassOf [ a owl:Restriction ;
+    owl:onProperty qb:component ;
+    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:dimension ;
+        owl:maxCardinality "1"^^xsd:nonNegativeInteger ] ] .
+
+# Measure-only DSD for Scalar, Vector and Tensor2. Every
+# component specification has a qb:measure and no qb:dimension.
+_:measureOnly a owl:Restriction ;
+    owl:onProperty qb:structure ;
+    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
+        owl:allValuesFrom [ a owl:Class ; owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty qb:measure ; owl:someValuesFrom owl:Thing ]
+            [ a owl:Class ; owl:complementOf
+                [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:someValuesFrom owl:Thing ] ]
+        ) ] ] .
+rep:Scalar  rdfs:subClassOf _:measureOnly .
+rep:Vector  rdfs:subClassOf _:measureOnly .
+rep:Tensor2 rdfs:subClassOf _:measureOnly .
+
+# Maximum number of dimensions per map type.
+rep:1Dmap rdfs:subClassOf [ a owl:Restriction ;
+    owl:onProperty qb:structure ;
+    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
+        owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass [ a owl:Restriction ; owl:onProperty qb:dimension ;
+                      owl:someValuesFrom owl:Thing ] ] ] .
+rep:2Dmap rdfs:subClassOf [ a owl:Restriction ;
+    owl:onProperty qb:structure ;
+    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
+        owl:maxQualifiedCardinality "2"^^xsd:nonNegativeInteger ;
+        owl:onClass [ a owl:Restriction ; owl:onProperty qb:dimension ;
+                      owl:someValuesFrom owl:Thing ] ] ] .
+rep:3Dmap rdfs:subClassOf [ a owl:Restriction ;
+    owl:onProperty qb:structure ;
+    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
+        owl:maxQualifiedCardinality "3"^^xsd:nonNegativeInteger ;
+        owl:onClass [ a owl:Restriction ; owl:onProperty qb:dimension ;
+                      owl:someValuesFrom owl:Thing ] ] ] .
+
+# Every qb:dimension of a TimeSeries DSD is a time quantity.
+rep:TimeSeries rdfs:subClassOf [ a owl:Restriction ;
+    owl:onProperty qb:structure ;
+    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
+        owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:dimension ;
+            owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ;
+                                owl:hasValue qk:Time ] ] ] ] .
+
+#################################################################
+# 6. Deprecated (kept for backward compatibility)
+#################################################################
+rep:HasDataStructureDefinition a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:domain tax:MaterialProperty ;
+    rdfs:range rep:DataStructureDefinition ;
+    owl:deprecated true ;
+    skos:prefLabel "HasDataStructureDefinition"@en ;
+    rdfs:comment "Deprecated: use rep:HasRepresentation / qb:structure."@en .
+
+rep:HasComponent a owl:ObjectProperty ;
+    rdfs:domain rep:DataStructureDefinition ;
+    rdfs:range rep:ComponentProperty ;
+    owl:deprecated true ;
+    skos:prefLabel "HasComponent"@en ;
+    rdfs:comment "Deprecated: use rep:HasSignal / rep:HasAxis."@en .
