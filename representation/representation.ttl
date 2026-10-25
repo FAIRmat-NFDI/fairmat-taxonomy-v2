@@ -1,6 +1,5 @@
 @prefix rep:  <http://fairmat-nfdi.eu/taxonomy/representation#> .
 @prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
-@prefix qb:   <http://purl.org/linked-data/cube#> .
 @prefix qudt: <http://qudt.org/schema/qudt/> .
 @prefix qk:   <http://qudt.org/vocab/quantitykind/> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
@@ -10,25 +9,12 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology ;
-    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasQuantityKind (range qudt:QuantityKind, QUDT 3.5.2). Axes are identified by rep:AxisIndex and rep:AxisLabel. The RDF Data Cube (qb) DSD layer is kept as an optional, derived layer for querying, validation and interoperability. No unit handling is defined in this module."@en .
+    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasQuantityKind (range qudt:QuantityKind, QUDT 3.5.2). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
 
 #################################################################
 # 0. External declarations (declarations only; no strengthening
 #    of external terms)
 #################################################################
-qb:DataSet a owl:Class .
-qb:DataStructureDefinition a owl:Class .
-qb:Observation a owl:Class .
-qb:ComponentSpecification a owl:Class .
-qb:ComponentProperty a owl:Class .
-qb:DimensionProperty a owl:Class .
-qb:MeasureProperty a owl:Class .
-qb:structure a owl:ObjectProperty .
-qb:component a owl:ObjectProperty .
-qb:dimension a owl:ObjectProperty .
-qb:measure a owl:ObjectProperty .
-qb:dataSet a owl:ObjectProperty .
-qb:order a owl:DatatypeProperty .
 qudt:QuantityKind a owl:Class .
 qudt:hasQuantityKind a owl:ObjectProperty .
 tax:MaterialProperty a owl:Class .
@@ -54,18 +40,18 @@ rep:HasRepresentation a owl:ObjectProperty, owl:FunctionalProperty ;
 # 2. Components: signal and axes
 #################################################################
 rep:ComponentProperty a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:ComponentProperty ;
+    rdfs:subClassOf rep:Representation ;
     owl:disjointUnionOf ( rep:Axis rep:Signal ) ;
     skos:prefLabel "ComponentProperty"@en ;
     rdfs:comment "A component of a representation: either its signal or one of its axes."@en .
 
 rep:Signal a owl:Class ;
-    rdfs:subClassOf rep:ComponentProperty, qb:MeasureProperty ;
+    rdfs:subClassOf rep:ComponentProperty ;
     skos:prefLabel "Signal"@en ;
     skos:definition "The dependent, measured component of a representation."@en .
 
 rep:Axis a owl:Class ;
-    rdfs:subClassOf rep:ComponentProperty, qb:DimensionProperty ;
+    rdfs:subClassOf rep:ComponentProperty ;
     skos:prefLabel "Axis"@en ;
     skos:definition "An independent coordinate of a representation."@en .
 
@@ -163,7 +149,7 @@ rep:Shape a owl:DatatypeProperty, owl:FunctionalProperty ;
 # 4. Representation types
 #################################################################
 rep:Scalar a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataSet ,
+    rdfs:subClassOf rep:Representation ,
         [ a owl:Restriction ; owl:onProperty rep:Rank ;
           owl:hasValue "0"^^xsd:nonNegativeInteger ] ,
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
@@ -174,7 +160,7 @@ rep:Scalar a owl:Class ;
     rdfs:comment "Rank-0 signal: a single value without axes."@en .
 
 rep:Vector a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataSet ,
+    rdfs:subClassOf rep:Representation ,
         [ a owl:Restriction ; owl:onProperty rep:Rank ;
           owl:hasValue "1"^^xsd:nonNegativeInteger ] ,
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
@@ -185,7 +171,7 @@ rep:Vector a owl:Class ;
     rdfs:comment "Rank-1 signal; component count given by rep:Shape. Indices are not axes."@en .
 
 rep:Tensor2 a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataSet ,
+    rdfs:subClassOf rep:Representation ,
         [ a owl:Restriction ; owl:onProperty rep:Rank ;
           owl:hasValue "2"^^xsd:nonNegativeInteger ] ,
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
@@ -196,7 +182,7 @@ rep:Tensor2 a owl:Class ;
     rdfs:comment "Rank-2 signal; component sizes given by rep:Shape. Indices are not axes."@en .
 
 rep:1Dmap a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataSet ,
+    rdfs:subClassOf rep:Representation ,
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
           owl:someValuesFrom rep:Signal ] ,
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
@@ -218,7 +204,7 @@ rep:TimeSeries a owl:Class ;
     rdfs:comment "1Dmap whose axis is time (enforced)."@en .
 
 rep:2Dmap a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataSet ,
+    rdfs:subClassOf rep:Representation ,
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
           owl:someValuesFrom rep:Signal ] ,
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
@@ -227,7 +213,7 @@ rep:2Dmap a owl:Class ;
     rdfs:comment "Mapping from two axes to a signal."@en .
 
 rep:3Dmap a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataSet ,
+    rdfs:subClassOf rep:Representation ,
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
           owl:someValuesFrom rep:Signal ] ,
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
@@ -358,97 +344,3 @@ qk:StressIntensityFactor a owl:NamedIndividual, qudt:QuantityKind ;
     skos:prefLabel "StressIntensityFactor"@en ;
     rdfs:label "Stress Intensity Factor"@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
-
-
-#################################################################
-# 5. Data Cube (DSD) layer -- optional. Applies only when a DSD
-#    is present (generated or supplied with data).
-#################################################################
-rep:DataStructureDefinition a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:DataStructureDefinition ;
-    skos:prefLabel "DataStructureDefinition"@en ;
-    rdfs:comment "RDF Data Cube structure of a representation: its measure (signal) and dimension (axis) component specifications."@en .
-
-rep:Observation a owl:Class ;
-    rdfs:subClassOf rep:Representation, qb:Observation ;
-    skos:prefLabel "Observation"@en ;
-    rdfs:comment "A single data point of a representation's dataset (RDF Data Cube observation)."@en .
-
-rep:Extent a owl:DatatypeProperty, owl:FunctionalProperty ;
-    rdfs:range xsd:nonNegativeInteger ;
-    skos:prefLabel "Extent"@en ;
-    rdfs:comment "Dataset observation count, or coordinate-array length on a dataset-specific axis ComponentSpecification."@en .
-
-# Strict roles: Every qb:dimension is a rep:Axis and every
-# qb:measure is a rep:Signal.
-rep:DataStructureDefinition rdfs:subClassOf [ a owl:Restriction ;
-    owl:onProperty qb:component ;
-    owl:allValuesFrom [ a owl:Class ; owl:intersectionOf (
-        [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:allValuesFrom rep:Axis ]
-        [ a owl:Restriction ; owl:onProperty qb:measure ;   owl:allValuesFrom rep:Signal ]
-    ) ] ] .
-
-# One dimension per component specification.
-rep:DataStructureDefinition rdfs:subClassOf [ a owl:Restriction ;
-    owl:onProperty qb:component ;
-    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:dimension ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger ] ] .
-
-# Measure-only DSD for Scalar, Vector and Tensor2. Every
-# component specification has a qb:measure and no qb:dimension.
-_:measureOnly a owl:Restriction ;
-    owl:onProperty qb:structure ;
-    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
-        owl:allValuesFrom [ a owl:Class ; owl:intersectionOf (
-            [ a owl:Restriction ; owl:onProperty qb:measure ; owl:someValuesFrom owl:Thing ]
-            [ a owl:Class ; owl:complementOf
-                [ a owl:Restriction ; owl:onProperty qb:dimension ; owl:someValuesFrom owl:Thing ] ]
-        ) ] ] .
-rep:Scalar  rdfs:subClassOf _:measureOnly .
-rep:Vector  rdfs:subClassOf _:measureOnly .
-rep:Tensor2 rdfs:subClassOf _:measureOnly .
-
-# Maximum number of dimensions per map type.
-rep:1Dmap rdfs:subClassOf [ a owl:Restriction ;
-    owl:onProperty qb:structure ;
-    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
-        owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass [ a owl:Restriction ; owl:onProperty qb:dimension ;
-                      owl:someValuesFrom owl:Thing ] ] ] .
-rep:2Dmap rdfs:subClassOf [ a owl:Restriction ;
-    owl:onProperty qb:structure ;
-    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
-        owl:maxQualifiedCardinality "2"^^xsd:nonNegativeInteger ;
-        owl:onClass [ a owl:Restriction ; owl:onProperty qb:dimension ;
-                      owl:someValuesFrom owl:Thing ] ] ] .
-rep:3Dmap rdfs:subClassOf [ a owl:Restriction ;
-    owl:onProperty qb:structure ;
-    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
-        owl:maxQualifiedCardinality "3"^^xsd:nonNegativeInteger ;
-        owl:onClass [ a owl:Restriction ; owl:onProperty qb:dimension ;
-                      owl:someValuesFrom owl:Thing ] ] ] .
-
-# Every qb:dimension of a TimeSeries DSD is a time quantity.
-rep:TimeSeries rdfs:subClassOf [ a owl:Restriction ;
-    owl:onProperty qb:structure ;
-    owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:component ;
-        owl:allValuesFrom [ a owl:Restriction ; owl:onProperty qb:dimension ;
-            owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ;
-                                owl:hasValue qk:Time ] ] ] ] .
-
-#################################################################
-# 6. Deprecated (kept for backward compatibility)
-#################################################################
-rep:HasDataStructureDefinition a owl:ObjectProperty, owl:FunctionalProperty ;
-    rdfs:domain tax:MaterialProperty ;
-    rdfs:range rep:DataStructureDefinition ;
-    owl:deprecated true ;
-    skos:prefLabel "HasDataStructureDefinition"@en ;
-    rdfs:comment "Deprecated: use rep:HasRepresentation / qb:structure."@en .
-
-rep:HasComponent a owl:ObjectProperty ;
-    rdfs:domain rep:DataStructureDefinition ;
-    rdfs:range rep:ComponentProperty ;
-    owl:deprecated true ;
-    skos:prefLabel "HasComponent"@en ;
-    rdfs:comment "Deprecated: use rep:HasSignal / rep:HasAxis."@en .
