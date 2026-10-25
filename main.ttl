@@ -1103,9 +1103,9 @@ qudt:hasQuantityKind a owl:ObjectProperty ;
 ##  rep:HasRepresentation. The representation has one signal
 ##  (rep:HasSignal) and any number of axes (rep:HasAxis); signal
 ##  and axes carry their physical quantity kind through
-##  rep:HasQuantityKind (range qudt:QuantityKind, QUDT 3.5.2).
-##  Axes are identified by rep:AxisIndex and rep:AxisLabel. No
-##  unit handling is defined in this module.
+##  rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT
+##  3.5.2). Axes are identified by rep:AxisIndex and
+##  rep:AxisLabel. No unit handling is defined in this module.
 #################################################################
 #################################################################
 
@@ -1175,10 +1175,10 @@ rep:HasAxis a owl:ObjectProperty ;
     skos:prefLabel "HasAxis"@en ;
     skos:definition "Links a representation to one of its axes (any number)."@en .
 
-rep:HasQuantityKind a owl:ObjectProperty, owl:FunctionalProperty ;
+rep:HasComponentQuantityKind a owl:ObjectProperty, owl:FunctionalProperty ;
     rdfs:domain rep:ComponentProperty ;
     rdfs:range qudt:QuantityKind ;
-    skos:prefLabel "HasQuantityKind"@en ;
+    skos:prefLabel "HasComponentQuantityKind"@en ;
     skos:definition "Physical quantity kind of a signal or an axis."@en .
 
 rep:AxisIndex a owl:DatatypeProperty, owl:FunctionalProperty ;
@@ -1195,7 +1195,7 @@ rep:AxisLabel a owl:ObjectProperty, owl:FunctionalProperty ;
 
 rep:AxisLabelTerm a owl:Class ;
     skos:prefLabel "AxisLabelTerm"@en ;
-    skos:definition "A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasQuantityKind; the label only names it."@en .
+    skos:definition "A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasComponentQuantityKind; the label only names it."@en .
 
 #################################################################
 # 2b. Axis label individuals
@@ -1236,7 +1236,7 @@ rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
 
 # The quantity kind of a property is the quantity kind of its signal,
 # never of its axes.
-qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasSignal rep:HasQuantityKind ) .
+qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasSignal rep:HasComponentQuantityKind ) .
 
 #################################################################
 # 3. Representation parameters
@@ -1306,7 +1306,7 @@ rep:Spectrum a owl:Class ;
 rep:TimeSeries a owl:Class ;
     rdfs:subClassOf rep:1Dmap ,
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
-          owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ;
+          owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ;
                               owl:hasValue qk:Time ] ] ;
     skos:prefLabel "TimeSeries"@en ;
     rdfs:comment "1Dmap whose axis is time (enforced)."@en .
@@ -1453,6 +1453,22 @@ qk:StressIntensityFactor a owl:NamedIndividual, qudt:QuantityKind ;
     rdfs:label "Stress Intensity Factor"@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
 
+# QUDT quantity kinds are distinct individuals. OWL makes no unique-name
+# assumption, so without this the functional rep:HasComponentQuantityKind cannot
+# detect two different kinds on one signal or axis (e.g. a TimeSeries
+# axis with qk:Length would be read as qk:Length = qk:Time).
+# Extend this list whenever a quantity kind is added.
+[ a owl:AllDifferent ;
+  owl:distinctMembers ( qk:Time qk:Compressibility qk:Density qk:Dimensionless
+      qk:DynamicViscosity qk:ElectricField qk:ElectricFieldStrength
+      qk:ElectricPolarization qk:ElectromagneticPermeability qk:Energy
+      qk:EnergyDensity qk:EnergyDensityOfStates qk:ForcePerArea qk:Frequency
+      qk:Length qk:MagneticFieldStrength qk:Permittivity qk:Pressure qk:Stress
+      qk:Temperature qk:Voltage qk:Wavenumber qk:StressIntensityFactor
+      # quantity kinds already used by the taxonomy (typed below)
+      qk:ChemicalPotential qk:Fugacity qk:HeatCapacity
+      qk:ThermalExpansionCoefficient qk:Volume ) ] .
+
 #################################################################
 # Quantity kinds already used by the taxonomy above, typed as
 # qudt:QuantityKind (QUDT v3.5.2, version-free IRIs; each exists and
@@ -1491,7 +1507,7 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Voltage ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Voltage ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/CorrosionRate> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1510,14 +1526,14 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Voltage ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Voltage ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/PittingInitiationPotential> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Voltage ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Voltage ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/PoralizedPotential> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1563,19 +1579,19 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:3Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kx ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "2"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_ky ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "3"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kz ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ElectronicCompressibility> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1585,10 +1601,10 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Spectrum
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:EnergyDensityOfStates ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:EnergyDensityOfStates ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ) ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ElectronicGreensFunction> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1604,19 +1620,19 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:3Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kx ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "2"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_ky ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "3"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kz ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ElectricCoercitivity> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1629,11 +1645,11 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:1Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ElectricPolarization ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ElectricPolarization ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_E ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ElectricField ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ElectricField ] ) ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/RemanentPolarization> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1652,35 +1668,35 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/EliashbergFunction> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Spectrum
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/SuperconductingCoherenceLength> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Length ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/SuperconductingCriticalTemperature> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Temperature ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Temperature ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/SuperconductingGap> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/MagneticAnisotropyField> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1688,42 +1704,42 @@ qk:Volume a qudt:QuantityKind ;
         rep:Vector
         [ a owl:Restriction ; owl:onProperty rep:Shape ; owl:hasValue "3" ]
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/MagneticCoercitivity> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/MagneticCurieTemperature> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Temperature ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Temperature ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/MagneticSquareness> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/MaximumEnergyProduct> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:EnergyDensity ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:EnergyDensity ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/Permeability> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ElectromagneticPermeability ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ElectromagneticPermeability ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/RemanentMagnetization> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1731,7 +1747,7 @@ qk:Volume a qudt:QuantityKind ;
         rep:Vector
         [ a owl:Restriction ; owl:onProperty rep:Shape ; owl:hasValue "3" ]
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/SaturationMagentization> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1739,42 +1755,42 @@ qk:Volume a qudt:QuantityKind ;
         rep:Vector
         [ a owl:Restriction ; owl:onProperty rep:Shape ; owl:hasValue "3" ]
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/SpinExchangeInteractions> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/BulkModulus> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Pressure ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Pressure ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/Compressibility> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Compressibility ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Compressibility ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/CriticalResolvedShearStress> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/FatigueCrackGrowthRate> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Length ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/FatigueCrackGrowthThreshold> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1784,35 +1800,35 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/FatigueLimit> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/CharpyImpactEnergy> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/CrackTipOpeningDisplacement> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Length ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/DuctileToBrittleTransitionTemperature> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Temperature ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Temperature ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/FractureToughness> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1822,7 +1838,7 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/StressIntensityFactor> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
@@ -1832,99 +1848,99 @@ qk:Volume a qudt:QuantityKind ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ImpactToughness> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ModulusOfResilience> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:EnergyDensity ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:EnergyDensity ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/PoissonRatio> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ShearModulus> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/StrainHardeningExponent> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/StressStrainCurve> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:1Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
-                [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ) ] ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ) ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/TensileStrength> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/TotalElongation> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/Toughness> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:EnergyDensity ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:EnergyDensity ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/UniformElongation> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/Viscosity> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:DynamicViscosity ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:DynamicViscosity ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/YieldStrength> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/YoungModulus> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ForcePerArea ] ]
     ) ] ] .

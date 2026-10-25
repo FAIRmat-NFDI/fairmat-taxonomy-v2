@@ -9,7 +9,7 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology ;
-    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasQuantityKind (range qudt:QuantityKind, QUDT 3.5.2). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
+    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT 3.5.2). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
 
 #################################################################
 # 0. External declarations (declarations only; no strengthening
@@ -67,10 +67,10 @@ rep:HasAxis a owl:ObjectProperty ;
     skos:prefLabel "HasAxis"@en ;
     skos:definition "Links a representation to one of its axes (any number)."@en .
 
-rep:HasQuantityKind a owl:ObjectProperty, owl:FunctionalProperty ;
+rep:HasComponentQuantityKind a owl:ObjectProperty, owl:FunctionalProperty ;
     rdfs:domain rep:ComponentProperty ;
     rdfs:range qudt:QuantityKind ;
-    skos:prefLabel "HasQuantityKind"@en ;
+    skos:prefLabel "HasComponentQuantityKind"@en ;
     skos:definition "Physical quantity kind of a signal or an axis."@en .
 
 rep:AxisIndex a owl:DatatypeProperty, owl:FunctionalProperty ;
@@ -87,7 +87,7 @@ rep:AxisLabel a owl:ObjectProperty, owl:FunctionalProperty ;
 
 rep:AxisLabelTerm a owl:Class ;
     skos:prefLabel "AxisLabelTerm"@en ;
-    skos:definition "A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasQuantityKind; the label only names it."@en .
+    skos:definition "A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasComponentQuantityKind; the label only names it."@en .
 
 #################################################################
 # 2b. Axis label individuals
@@ -128,7 +128,7 @@ rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
 
 # The quantity kind of a property is the quantity kind of its signal,
 # never of its axes.
-qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasSignal rep:HasQuantityKind ) .
+qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasSignal rep:HasComponentQuantityKind ) .
 
 #################################################################
 # 3. Representation parameters
@@ -198,7 +198,7 @@ rep:Spectrum a owl:Class ;
 rep:TimeSeries a owl:Class ;
     rdfs:subClassOf rep:1Dmap ,
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
-          owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ;
+          owl:allValuesFrom [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ;
                               owl:hasValue qk:Time ] ] ;
     skos:prefLabel "TimeSeries"@en ;
     rdfs:comment "1Dmap whose axis is time (enforced)."@en .
@@ -344,3 +344,16 @@ qk:StressIntensityFactor a owl:NamedIndividual, qudt:QuantityKind ;
     skos:prefLabel "StressIntensityFactor"@en ;
     rdfs:label "Stress Intensity Factor"@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+# QUDT quantity kinds are distinct individuals. OWL makes no unique-name
+# assumption, so without this the functional rep:HasComponentQuantityKind cannot
+# detect two different kinds on one signal or axis (e.g. a TimeSeries
+# axis with qk:Length would be read as qk:Length = qk:Time).
+# Extend this list whenever a quantity kind is added.
+[ a owl:AllDifferent ;
+  owl:distinctMembers ( qk:Time qk:Compressibility qk:Density qk:Dimensionless
+      qk:DynamicViscosity qk:ElectricField qk:ElectricFieldStrength
+      qk:ElectricPolarization qk:ElectromagneticPermeability qk:Energy
+      qk:EnergyDensity qk:EnergyDensityOfStates qk:ForcePerArea qk:Frequency
+      qk:Length qk:MagneticFieldStrength qk:Permittivity qk:Pressure qk:Stress
+      qk:Temperature qk:Voltage qk:Wavenumber qk:StressIntensityFactor ) ] .

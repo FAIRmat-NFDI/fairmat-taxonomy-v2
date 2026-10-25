@@ -34,7 +34,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `rep:2Dmap` | 2Dmap | `rep:Representation` | Mapping from two axes to a signal. |
 | `rep:3Dmap` | 3Dmap | `rep:Representation` | Mapping from three axes to a signal. |
 | `rep:Axis` | Axis | `rep:ComponentProperty` | An independent coordinate of a representation. |
-| `rep:AxisLabelTerm` | AxisLabelTerm | — | A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasQuantityKind; the label only names it. |
+| `rep:AxisLabelTerm` | AxisLabelTerm | — | A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasComponentQuantityKind; the label only names it. |
 | `rep:ComponentProperty` | ComponentProperty | `rep:Representation` | A component of a representation: either its signal or one of its axes. |
 | `rep:Representation` | Representation | — | Umbrella class for the representation module. |
 | `rep:Scalar` | Scalar | `rep:Representation` | Rank-0 signal: a single value without axes. |
@@ -50,7 +50,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 |---|---|---|---|---|
 | `rep:AxisLabel` | `rep:Axis` | `rep:AxisLabelTerm` | functional | Case-specific label of an axis, chosen from the rep:AxisLabelTerm individuals (e.g. rep:Label_x, rep:Label_kx). New labels are added as new individuals. |
 | `rep:HasAxis` | `rep:Representation` | `rep:Axis` | — | Links a representation to one of its axes (any number). |
-| `rep:HasQuantityKind` | `rep:ComponentProperty` | `qudt:QuantityKind` | functional | Physical quantity kind of a signal or an axis. |
+| `rep:HasComponentQuantityKind` | `rep:ComponentProperty` | `qudt:QuantityKind` | functional | Physical quantity kind of a signal or an axis. |
 | `rep:HasRepresentation` | `tax:MaterialProperty` | `rep:Representation` | functional | Links a material property to its single representation. A taxonomy class may allow alternative representations through owl:unionOf; each instance has exactly one. |
 | `rep:HasSignal` | `rep:Representation` | `rep:Signal` | functional | Links a representation to its single signal. |
 
@@ -126,10 +126,10 @@ tax:<Property>
  │ ···► qudt:hasQuantityKind ···► qk:<signal kind>          (inferred)
  └─ rep:HasRepresentation ──► rep:<Type>                      (one per instance)
        ├─ rep:Shape "n" | "n,m"                               (Vector, Tensor2)
-       ├─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:<kind>
+       ├─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:<kind>
        └─ rep:HasAxis   ──► [Axis]   ─ rep:AxisIndex i
                                      ─ rep:AxisLabel ──► rep:Label_<…>
-                                     ─ rep:HasQuantityKind ──► qk:<kind>      × number of axes
+                                     ─ rep:HasComponentQuantityKind ──► qk:<kind>      × number of axes
 ```
 
 ### 4.2 Legend used in this document
@@ -162,18 +162,20 @@ Each subsection shows the **structure** and the **RDF** binding a taxonomy class
 **Structure**
 ```
 rep:ComponentProperty  ≡  rep:Signal ⊔ rep:Axis      (disjoint)
-   rep:Signal                          ─ rep:HasQuantityKind ──► qudt:QuantityKind
-   rep:Axis                             ─ rep:HasQuantityKind ──► qudt:QuantityKind
-                                        ─ rep:AxisIndex       ──► xsd:positiveInteger
-                                        ─ rep:AxisLabel       ──► rep:AxisLabelTerm
-                                                                    (rep:Label_x, …_kx, …_E, …)
+   rep:Signal   ─ rep:HasComponentQuantityKind ──► qudt:QuantityKind
+   rep:Axis     ─ rep:HasComponentQuantityKind ──► qudt:QuantityKind
+                ─ rep:AxisIndex                ──► xsd:positiveInteger
+                ─ rep:AxisLabel                ──► rep:AxisLabelTerm
+                                                   (rep:Label_x, …_kx, …_E, …)
 ```
 
 - The **signal** is the dependent, measured value. There's exactly one per representation.
 - An **axis** is an independent coordinate.
+- `rep:HasComponentQuantityKind` (signal or axis → quantity kind, functional) is distinct from QUDT's `qudt:hasQuantityKind` (taxonomy property → quantity kind). The second is derived from the first for the signal through the property chain (§6.1).
 - Two axes are distinct when their `rep:AxisIndex` values differ, or when their `rep:AxisLabel` individuals differ (labels are `owl:AllDifferent`).
 - A label carries **no** quantity kind: `rep:Label_E` serves both electric field and energy, and the axis quantity kind disambiguates.
 - A new label is added as a new `rep:AxisLabelTerm` individual and included in the `owl:AllDifferent` list.
+- Quantity kinds are also `owl:AllDifferent`. OWL makes no unique-name assumption, so without this a signal or axis given two different kinds (for example `qk:Length` on a TimeSeries axis, which must be `qk:Time`) would be read as the two kinds being the same individual, not as an error.
 
 ### 5.2 Scalar: example `tax:CorrosionPotential`
 
@@ -182,7 +184,7 @@ rep:ComponentProperty  ≡  rep:Signal ⊔ rep:Axis      (disjoint)
 tax:CorrosionPotential
  │ ···► qudt:hasQuantityKind ···► qk:Voltage
  └─ rep:HasRepresentation ──► rep:Scalar   [Rank 0, no axes]
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:Voltage
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Voltage
 ```
 
 **RDF**
@@ -190,7 +192,7 @@ tax:CorrosionPotential
 tax:CorrosionPotential rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:Scalar
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Voltage ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Voltage ] ]
     ) ] ] .
 ```
 
@@ -201,7 +203,7 @@ tax:CorrosionPotential rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:
 tax:MagneticAnisotropyField
  │ ···► qudt:hasQuantityKind ···► qk:MagneticFieldStrength
  └─ rep:HasRepresentation ──► rep:Vector   [Rank 1, Shape "3", no axes]
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:MagneticFieldStrength
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:MagneticFieldStrength
 ```
 
 **RDF**
@@ -210,7 +212,7 @@ tax:MagneticAnisotropyField rdfs:subClassOf [ a owl:Restriction ; owl:onProperty
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:Vector
         [ a owl:Restriction ; owl:onProperty rep:Shape ; owl:hasValue "3" ]
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:MagneticFieldStrength ] ]
     ) ] ] .
 ```
 Vector indices are not axes: all components share the one signal quantity kind.
@@ -222,7 +224,7 @@ Vector indices are not axes: all components share the one signal quantity kind.
 tax:ThermalConductivity
  │ ···► qudt:hasQuantityKind ···► qk:ThermalConductivity
  └─ rep:HasRepresentation ──► rep:Tensor2   [Rank 2, Shape "3,3", no axes]
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:ThermalConductivity
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:ThermalConductivity
 ```
 
 **RDF**
@@ -231,7 +233,7 @@ tax:ThermalConductivity rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:Tensor2
         [ a owl:Restriction ; owl:onProperty rep:Shape ; owl:hasValue "3,3" ]
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ThermalConductivity ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ThermalConductivity ] ]
     ) ] ] .
 ```
 `qk:ThermalConductivity` exists in QUDT 3.5.2 but isn't declared in this module. Declare it in `main.ttl` together with the binding.
@@ -245,7 +247,7 @@ Permittivity has one IRI and one label. Each instance uses exactly one of the al
 tax:Permittivity   "Permittivity"
  │ ···► qudt:hasQuantityKind ···► qk:Permittivity
  └─ rep:HasRepresentation ──► one of:
-       ├─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:Permittivity     (shared)
+       ├─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Permittivity     (shared)
        └─ ⊔ ┬─ rep:Scalar                       (isotropic)
             └─ rep:Tensor2 [Shape "3,3"]        (anisotropic)
 ```
@@ -255,7 +257,7 @@ tax:Permittivity   "Permittivity"
 tax:Permittivity rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Permittivity ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Permittivity ] ]
         [ a owl:Class ; owl:unionOf (
             rep:Scalar
             [ a owl:Class ; owl:intersectionOf ( rep:Tensor2
@@ -271,8 +273,8 @@ Write the alternatives as **one** union, never as two separate `rep:HasRepresent
 tax:ElectricHysteresis
  │ ···► qudt:hasQuantityKind ···► qk:ElectricPolarization
  └─ rep:HasRepresentation ──► rep:1Dmap   [exactly 1 axis]
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_E, HasQuantityKind ──► qk:ElectricField
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:ElectricPolarization
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_E, HasComponentQuantityKind ──► qk:ElectricField
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:ElectricPolarization
 ```
 
 **RDF**
@@ -280,11 +282,11 @@ tax:ElectricHysteresis
 tax:ElectricHysteresis rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:1Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ElectricPolarization ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ElectricPolarization ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_E ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:ElectricField ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:ElectricField ] ) ] ]
     ) ] ] .
 ```
 A 1Dmap allows repeated axis values (a hysteresis loop visits the same E twice).
@@ -296,8 +298,8 @@ A 1Dmap allows repeated axis values (a hysteresis loop visits the same E twice).
 tax:ElectronicDensityOfStates
  │ ···► qudt:hasQuantityKind ···► qk:EnergyDensityOfStates
  └─ rep:HasRepresentation ──► rep:Spectrum ⊑ rep:1Dmap
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_E, HasQuantityKind ──► qk:Energy
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:EnergyDensityOfStates
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_E, HasComponentQuantityKind ──► qk:Energy
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:EnergyDensityOfStates
 ```
 
 **RDF**
@@ -305,11 +307,11 @@ tax:ElectronicDensityOfStates
 tax:ElectronicDensityOfStates rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:Spectrum
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:EnergyDensityOfStates ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:EnergyDensityOfStates ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_E ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ) ] ]
     ) ] ] .
 ```
 The Energy axis of a Spectrum is a suggestion. A Spectrum with a Frequency or angle axis is still valid.
@@ -321,8 +323,8 @@ The Energy axis of a Spectrum is a suggestion. A Spectrum with a Frequency or an
 tax:MeanSquaredDisplacement
  │ ···► qudt:hasQuantityKind ···► qk:Area
  └─ rep:HasRepresentation ──► rep:TimeSeries ⊑ rep:1Dmap
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, HasQuantityKind ──► qk:Time   (enforced)
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:Area
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, HasComponentQuantityKind ──► qk:Time   (enforced)
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Area
 ```
 
 **RDF**
@@ -330,10 +332,10 @@ tax:MeanSquaredDisplacement
 tax:MeanSquaredDisplacement rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:TimeSeries
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Area ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Area ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Time ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Time ] ) ] ]
     ) ] ] .
 ```
 - **The axis label is optional.** None is given here because no time label individual exists yet.
@@ -347,9 +349,9 @@ tax:MeanSquaredDisplacement rdfs:subClassOf [ a owl:Restriction ; owl:onProperty
 tax:Morphology
  │ ···► qudt:hasQuantityKind ···► qk:Length
  └─ rep:HasRepresentation ──► rep:2Dmap   [exactly 2 axes]
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_x, HasQuantityKind ──► qk:Length
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 2, AxisLabel rep:Label_y, HasQuantityKind ──► qk:Length
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:Length
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_x, HasComponentQuantityKind ──► qk:Length
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 2, AxisLabel rep:Label_y, HasComponentQuantityKind ──► qk:Length
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Length
 ```
 
 **RDF**
@@ -357,15 +359,15 @@ tax:Morphology
 tax:Morphology rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:2Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Length ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_x ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Length ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "2"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_y ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Length ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ) ] ]
     ) ] ] .
 ```
 Both axes have the quantity kind Length. They stay two axes because their index and label differ.
@@ -377,10 +379,10 @@ Both axes have the quantity kind Length. They stay two axes because their index 
 tax:FermiSurface
  │ ···► qudt:hasQuantityKind ···► qk:Energy
  └─ rep:HasRepresentation ──► rep:3Dmap   [exactly 3 axes]
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_kx, HasQuantityKind ──► qk:Wavenumber
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 2, AxisLabel rep:Label_ky, HasQuantityKind ──► qk:Wavenumber
-       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 3, AxisLabel rep:Label_kz, HasQuantityKind ──► qk:Wavenumber
-       └─ rep:HasSignal ──► [Signal] ─ rep:HasQuantityKind ──► qk:Energy
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_kx, HasComponentQuantityKind ──► qk:Wavenumber
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 2, AxisLabel rep:Label_ky, HasComponentQuantityKind ──► qk:Wavenumber
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 3, AxisLabel rep:Label_kz, HasComponentQuantityKind ──► qk:Wavenumber
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Energy
 ```
 
 **RDF**
@@ -388,19 +390,19 @@ tax:FermiSurface
 tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:3Dmap
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Energy ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kx ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "2"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_ky ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
             [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "3"^^xsd:positiveInteger ]
             [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kz ]
-            [ a owl:Restriction ; owl:onProperty rep:HasQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
     ) ] ] .
 ```
 
@@ -419,8 +421,8 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 **`rep:HasAxis`**
 - Domain `rep:Representation`; range `rep:Axis`. No upper limit; the types set the count.
 
-**`rep:HasQuantityKind`**
-- Functional: one quantity kind per signal or axis.
+**`rep:HasComponentQuantityKind`**
+- Functional: one quantity kind per signal or axis. With the quantity kinds declared distinct, two different kinds on one component are a contradiction.
 - Domain `rep:ComponentProperty`; range `qudt:QuantityKind`.
 
 **`rep:AxisIndex`**
@@ -434,7 +436,7 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 - Ranges `xsd:nonNegativeInteger` and `xsd:string`.
 
 **`qudt:hasQuantityKind`** (bridge)
-- Property chain: `rep:HasRepresentation ∘ rep:HasSignal ∘ rep:HasQuantityKind`. The property's quantity kind is its signal's quantity kind.
+- Property chain: `rep:HasRepresentation ∘ rep:HasSignal ∘ rep:HasComponentQuantityKind`. The property's quantity kind is its signal's quantity kind.
 
 **`rep:ComponentProperty`, `rep:Signal`, `rep:Axis`**
 - `rep:ComponentProperty` is the disjoint union of `rep:Signal` and `rep:Axis`.
@@ -454,6 +456,9 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 **Axis labels**
 - `rep:Label_x … rep:Label_rho` are pairwise different (`owl:AllDifferent`).
 
+**Quantity kinds**
+- The 23 `qk:` individuals of the module are pairwise different (`owl:AllDifferent`). In `main.ttl` the list also covers the five kinds the taxonomy already used (ChemicalPotential, Fugacity, HeatCapacity, ThermalExpansionCoefficient, Volume), so it has 28 members.
+
 ### 6.2 Summary table
 
 | Axiom | Applies to | Effect |
@@ -462,17 +467,18 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 | domain / range | `rep:HasRepresentation` | links taxonomy to module |
 | functional | `rep:HasSignal` | one signal |
 | domain / range | `rep:HasSignal`, `rep:HasAxis` | type signal and axis nodes |
-| functional | `rep:HasQuantityKind` | one quantity kind per component |
-| domain / range | `rep:HasQuantityKind` | quantity kinds are `qudt:QuantityKind` |
+| functional | `rep:HasComponentQuantityKind` | one quantity kind per component |
+| domain / range | `rep:HasComponentQuantityKind` | quantity kinds are `qudt:QuantityKind` |
 | functional | `rep:AxisIndex`, `rep:AxisLabel` | distinct index or label means distinct axis |
 | `owl:AllDifferent` | axis labels | labels never merge |
+| `owl:AllDifferent` | quantity kinds | quantity kinds never merge; a second, different kind on a component is an error |
 | disjoint union | `rep:ComponentProperty` = Signal ⊔ Axis | a signal is never an axis |
 | property chain | `qudt:hasQuantityKind` | property quantity kind = signal quantity kind |
 | Rank = 0 / 1 / 2 | Scalar / Vector / Tensor2 | fixes signal rank |
 | ≥1 HasSignal | all types | every representation has a signal |
 | ≤0 HasAxis | Scalar, Vector, Tensor2 | no axes |
 | =1 / =2 / =3 HasAxis | 1Dmap / 2Dmap / 3Dmap | exact axis count |
-| ∀ HasAxis.(HasQuantityKind ∋ Time) | TimeSeries | time axis enforced |
+| ∀ HasAxis.(HasComponentQuantityKind ∋ Time) | TimeSeries | time axis enforced |
 | subclass | Spectrum, TimeSeries ⊑ 1Dmap | inherit 1 axis |
 
 ### 6.3 Description Logic notation
@@ -482,13 +488,13 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 ⊤ ⊑ ≤1 HasRepresentation              ∃HasRepresentation.⊤ ⊑ tax:MaterialProperty      ⊤ ⊑ ∀HasRepresentation.Representation
 ⊤ ⊑ ≤1 HasSignal                      ∃HasSignal.⊤ ⊑ Representation                  ⊤ ⊑ ∀HasSignal.Signal
                                       ∃HasAxis.⊤ ⊑ Representation                    ⊤ ⊑ ∀HasAxis.Axis
-⊤ ⊑ ≤1 HasQuantityKind                ∃HasQuantityKind.⊤ ⊑ ComponentProperty         ⊤ ⊑ ∀HasQuantityKind.qudt:QuantityKind
+⊤ ⊑ ≤1 HasComponentQuantityKind       ∃HasComponentQuantityKind.⊤ ⊑ ComponentProperty   ⊤ ⊑ ∀HasComponentQuantityKind.qudt:QuantityKind
 ⊤ ⊑ ≤1 AxisIndex                      ∃AxisIndex.⊤ ⊑ Axis                            ⊤ ⊑ ∀AxisIndex.xsd:positiveInteger
 ⊤ ⊑ ≤1 AxisLabel                      ∃AxisLabel.⊤ ⊑ Axis                            ⊤ ⊑ ∀AxisLabel.AxisLabelTerm
 ⊤ ⊑ ≤1 Rank                           ∃Rank.⊤ ⊑ Representation                       ⊤ ⊑ ∀Rank.xsd:nonNegativeInteger
 ⊤ ⊑ ≤1 Shape                          ∃Shape.⊤ ⊑ Representation                      ⊤ ⊑ ∀Shape.xsd:string
 
-HasRepresentation ∘ HasSignal ∘ HasQuantityKind ⊑ qudt:hasQuantityKind
+HasRepresentation ∘ HasSignal ∘ HasComponentQuantityKind ⊑ qudt:hasQuantityKind
 ```
 
 **Components and labels**
@@ -496,6 +502,7 @@ HasRepresentation ∘ HasSignal ∘ HasQuantityKind ⊑ qudt:hasQuantityKind
 ComponentProperty ⊑ Representation
 ComponentProperty ≡ Signal ⊔ Axis          Signal ⊓ Axis ⊑ ⊥
 Label_x ≠ Label_y ≠ Label_z ≠ Label_kx ≠ Label_ky ≠ Label_kz ≠ Label_E ≠ Label_P ≠ Label_rho   (pairwise)
+qk:Time ≠ qk:Length ≠ qk:Energy ≠ …   (all quantity kinds, pairwise)
 ```
 
 **Representation types**
@@ -505,7 +512,7 @@ Vector     ⊑ Representation ⊓ ∃Rank.{1} ⊓ ∃HasSignal.Signal ⊓ ≤0 H
 Tensor2    ⊑ Representation ⊓ ∃Rank.{2} ⊓ ∃HasSignal.Signal ⊓ ≤0 HasAxis
 1Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =1 HasAxis
 Spectrum   ⊑ 1Dmap
-TimeSeries ⊑ 1Dmap ⊓ ∀HasAxis.∃HasQuantityKind.{qk:Time}
+TimeSeries ⊑ 1Dmap ⊓ ∀HasAxis.∃HasComponentQuantityKind.{qk:Time}
 2Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =2 HasAxis
 3Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =3 HasAxis
 ```
@@ -514,10 +521,10 @@ TimeSeries ⊑ 1Dmap ⊓ ∀HasAxis.∃HasQuantityKind.{qk:Time}
 ```
 C ⊑ ∃HasRepresentation.( T
         ⊓ ∃Shape.{s}                                                    (Vector, Tensor2)
-        ⊓ ∃HasSignal.∃HasQuantityKind.{q}
-        ⊓ ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃AxisLabel.{ℓ} ⊓ ∃HasQuantityKind.{k})   × number of axes )
+        ⊓ ∃HasSignal.∃HasComponentQuantityKind.{q}
+        ⊓ ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃AxisLabel.{ℓ} ⊓ ∃HasComponentQuantityKind.{k})   × number of axes )
 
-Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasQuantityKind.{q} ⊓ (T₁ ⊔ T₂ ⊔ …) )
+Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasComponentQuantityKind.{q} ⊓ (T₁ ⊔ T₂ ⊔ …) )
 ```
 
 ### 6.4 Consequences the reasoner derives
@@ -536,7 +543,8 @@ Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasQuantityKind.{q}
 
 | Error | Violated axiom |
 |---|---|
-| TimeSeries with a non-time axis | TimeSeries axis must have quantity kind `qk:Time` |
+| TimeSeries with a non-time axis | TimeSeries axis must have quantity kind `qk:Time`; `rep:HasComponentQuantityKind` is functional and quantity kinds are distinct |
+| Signal or axis with two different quantity kinds | `rep:HasComponentQuantityKind` is functional and quantity kinds are distinct |
 | Scalar, Vector or Tensor2 with an axis | Scalar, Vector and Tensor2 allow no axis |
 | 1Dmap, 2Dmap or 3Dmap with the wrong number of axes | exact axis count per map type, with axes kept distinct by index or label |
 | Two separate `HasRepresentation` restrictions with different types | `rep:HasRepresentation` is functional and the representation types are disjoint (§6.4) |
@@ -548,12 +556,12 @@ Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasQuantityKind.{q}
 3. **Write implied quantity kinds explicitly** (for example `qk:Time` on a TimeSeries axis), so tools that read asserted triples see them.
 4. **Write alternatives as one `owl:unionOf`,** never as two separate restrictions.
 5. **New labels:** add a `rep:AxisLabelTerm` individual and include it in the `owl:AllDifferent` list.
-6. **New quantity kinds:** use the version-free QUDT IRI (`qk:<Name>`), check that it exists in QUDT 3.5.2, and declare it as `owl:NamedIndividual, qudt:QuantityKind`.
+6. **New quantity kinds:** use the version-free QUDT IRI (`qk:<Name>`), check that it exists in QUDT 3.5.2, declare it as `owl:NamedIndividual, qudt:QuantityKind`, and add it to the quantity-kind `owl:AllDifferent` list (in `representation.ttl` and `main.ttl`).
 7. **`qudt:hasQuantityKind` must not get cardinality or functional axioms.** The property chain makes it non-simple in OWL 2 DL.
 
 ## 7. Verification
 
-The module was checked with the HermiT reasoner, together with test bindings.
+The module was checked with the HermiT reasoner, together with test bindings. The test bindings add no distinctness axioms of their own; the checks rely only on the module.
 
 | Test | Expected | Result |
 |---|---|---|
@@ -572,7 +580,7 @@ The module was checked with the HermiT reasoner, together with test bindings.
 - **Use the current QUDT schema namespace** in `main.ttl`: `@prefix qudt: <http://qudt.org/schema/qudt/>`. With the old `…/2.1/schema/qudt/`, `qudt:hasQuantityKind` would split into two unrelated properties.
 - **Replace any older appended representation module; don't append next to it.** The old `Profile ≡ Rank 1` axiom would otherwise classify Vector and TimeSeries as Profile, and the old disjoint union with `UnitAttribute` would conflict.
 - **Existing direct `qudt:hasQuantityKind` restrictions** on taxonomy classes stay valid. When such a class gets a binding, remove the direct restriction or make sure it matches the signal quantity kind; the property isn't functional, so a mismatch isn't flagged.
-- **Declare in `main.ttl` any quantity kind used in a binding** that isn't declared in this module.
+- **Declare in `main.ttl` any quantity kind used in a binding** that isn't declared in this module, and include it in the quantity-kind `owl:AllDifferent` list.
 
 ## 9. Taxonomy bindings in `main.ttl`
 
