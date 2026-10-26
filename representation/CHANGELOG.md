@@ -1,385 +1,12 @@
 # Changelog: `main.ttl`
 
-## Representation module merge, 2026-10-25
+Newest first. Entries under **History** describe earlier states and are superseded where noted.
 
-`representation.ttl` merged into `main.ttl`. No content from the HasRepresentation_Adhoc sheet is included in this change; taxonomy bindings follow in the next stage.
+## Current state (2026-10-26)
 
-### Changed in place (minor fixes)
-
-| Change | Where | Detail |
-|---|---|---|
-| QUDT schema namespace updated | line 3 (`@prefix qudt:`) | `http://qudt.org/2.1/schema/qudt/` → `http://qudt.org/schema/qudt/` (current, version-free). This moves all `qudt:` terms to the namespace used by the representation module, so `qudt:hasQuantityKind` and `qudt:QuantityKind` are one property and one class. No 2.1 IRIs remain. |
-| Duplicate restrictions collapsed | 11 classes | Each `qudt:hasQuantityKind` restriction appeared five times with the same value; four copies removed per class. The restriction set itself is unchanged (11 class / quantity-kind pairs before and after). |
-
-Classes with collapsed restrictions: BoilingTemperature, ChemicalPotential, DebyeTemperature, Fugacity, GibbsEnergy, HallVoltage, HeatCapacity, HelmholtzEnergy, MeltingTemperature, ThermalExpansionCoefficient, Volume.
-
-### Appended at the end of the file
-
-All new content sits below the banner `REPRESENTATION MODULE (merged from representation.ttl)`.
-
-| Addition | Content |
-|---|---|
-| Prefix declarations | `rep:`, `tax:`, `qb:`, `qudt:`, `qk:`, `owl:`, `rdf:`, `rdfs:`, `xsd:`, `skos:` (Turtle allows prefixes mid-file) |
-| Representation module | the full content of `representation.ttl`: classes, properties, representation types, axis labels, QUDT 3.5.2 quantity kinds, optional Data Cube (DSD) layer and deprecated properties |
-| Quantity-kind typing | `qk:ChemicalPotential`, `qk:Fugacity`, `qk:HeatCapacity`, `qk:ThermalExpansionCoefficient`, `qk:Volume`, already used by the taxonomy, typed as `qudt:QuantityKind` with `rdfs:isDefinedBy` QUDT 3.5.2. All five exist and are not deprecated in QUDT 3.5.2. |
-
-The module's own `owl:Ontology` header (`http://fairmat-nfdi.eu/taxonomy/representation`) was not copied, so `main.ttl` keeps a single ontology header, `http://fairmat-nfdi.eu/taxonomy`. Its description is kept as a comment in the banner.
-
-### Unchanged
-
-- All taxonomy classes, labels, alternative labels, comments and the class hierarchy. No named triple of the original file is missing in the merged file.
-- The existing `qudt:hasQuantityKind` restrictions on the 11 classes above (values unchanged; only the duplicates were removed).
-- Existing quantity-kind individuals and their `rdfs:label` values.
-
-### Verification
-
-| Check | Result |
-|---|---|
-| Merged file parses (rdflib) | ✔ 1387 triples |
-| Original named triples present in merged file | ✔ none missing |
-| Remaining `qudt.org/2.1` IRIs | ✔ 0 |
-| `owl:Ontology` headers | ✔ 1 |
-| HermiT: unsatisfiable classes in merged file | ✔ none |
-| HermiT with test bindings: valid bindings satisfiable, invalid ones unsatisfiable | ✔ |
-| Inference through the property chain (CorrosionPotential instance → `qk:Voltage`) | ✔ |
-
-### Next stage (not in this change)
-
-- Taxonomy bindings (`rep:HasRepresentation`) from the HasRepresentation_Adhoc sheet.
-- Label and description edits from the sheet (Viscosity → DynamicViscosity, MagneticAnisotropyConstant note).
-- Local FAIRmat quantity kinds for PiezoelectricChargeCoefficient and PiezoelectricVoltageCoefficient (no QUDT 3.5.2 kind exists).
-- For classes that get a binding: remove or align their direct `qudt:hasQuantityKind` restriction with the signal quantity kind.
-
-
-## Representation bindings from HasRepresentation_Adhoc, 2026-10-25
-
-> **Superseded** by "Representation bindings remapped from the reviewed HasRepresentation_Adhoc sheet, 2026-10-26" at the end of this file. The tables below describe the first, partly reviewed sheet and are kept as history.
-
-Rows of the HasRepresentation_Adhoc sheet mapped onto `main.ttl` as `rep:HasRepresentation` bindings. This is a mapping operation only: no class, property, individual or axiom was added to the representation module, and the taxonomy classes themselves are unchanged.
-
-### Summary
-
-| | Count |
-|---|---:|
-| Sheet rows with an entry | 88 |
-| Mapped fully | 74 |
-| Mapped in part | 4 |
-| Not mapped (see Discussion) | 9 |
-| Comment only, nothing to map (PiezoelectricProperty, tree duplicate) | 1 |
-| Rows not yet reviewed in the sheet | 92 |
-| Triples added | 1055 |
-
-### Appended to `main.ttl`
-
-One `rdfs:subClassOf` restriction per mapped class, written as a separate statement below the banner `REPRESENTATION BINDINGS (mapped from HasRepresentation_Adhoc)` at the end of the file. The existing class blocks aren't edited.
-
-### Mapping rules applied
-
-| Sheet entry | Mapped to |
-|---|---|
-| Representation `Scalar` / `Spectrum` | `rep:Scalar` / `rep:Spectrum` |
-| Representation `VolumeData` | `rep:3Dmap` (VolumeData is renamed 3Dmap in the representation module) |
-| `Not sure` + comment "vector of dimension 3" | `rep:Vector` with `rep:Shape "3"` |
-| `Not sure` + comment "rep:1Dmap Stress(Strain)" | `rep:1Dmap` |
-| `Not sure` for ElectricHysteresis (comment: a map P(E)) | `rep:1Dmap`, the generic 1D map introduced for exactly this case in the 21/10 thread |
-| `qudt:<Name>` in Signal / Axis | `qk:<Name>` (QUDT quantity-kind namespace); every kind used is already declared in `main.ttl` |
-| Axis label `kx`, `ky`, `kz`, `E` | existing individuals `rep:Label_kx`, `rep:Label_ky`, `rep:Label_kz`, `rep:Label_E` |
-| Axis without a label | axis bound by index and quantity kind only |
-| Order of axes in the cell | `rep:AxisIndex` 1, 2, 3 |
-| Representation without a signal quantity kind | type only: `rep:HasRepresentation some rep:<Type>` |
-
-### Mapped
-
-| Class | Type | Shape | Signal | Axes (index: label, quantity kind) |
-|---|---|---|---|---|
-| `tax:AnodicPartialCurrent` | `rep:Scalar` | — | — | — |
-| `tax:CathodicPartialCurrent` | `rep:Scalar` | — | — | — |
-| `tax:AnodicPartialCurrentCorrosion` | `rep:Scalar` | — | — | — |
-| `tax:CorrosionPotential` | `rep:Scalar` | — | `qk:Voltage` | — |
-| `tax:CorrosionRate` | `rep:Scalar` | — | — | — |
-| `tax:FreeCorrosionCurrent` | `rep:Scalar` | — | — | — |
-| `tax:FreeCorrosionPotential` | `rep:Scalar` | — | — | — |
-| `tax:PassivationCurrent` | `rep:Scalar` | — | — | — |
-| `tax:PassivationPotential` | `rep:Scalar` | — | `qk:Voltage` | — |
-| `tax:PittingInitiationPotential` | `rep:Scalar` | — | `qk:Voltage` | — |
-| `tax:PoralizedPotential` | `rep:Scalar` | — | — | — |
-| `tax:ReactivationPotential` | `rep:Scalar` | — | — | — |
-| `tax:TranspassivationPotential` | `rep:Scalar` | — | — | — |
-| `tax:RedoxPotential` | `rep:Scalar` | — | — | — |
-| `tax:StandardElectrodePotential` | `rep:Scalar` | — | — | — |
-| `tax:BandGapElectronicBowingCoefficient` | `rep:Scalar` | — | — | — |
-| `tax:BindingEnergyExciton` | `rep:Scalar` | — | — | — |
-| `tax:CarrierDensity` | `rep:Scalar` | — | — | — |
-| `tax:CoulombInteractions` | `rep:Scalar` | — | — | — |
-| `tax:DielectricStrength` | `rep:Scalar` | — | — | — |
-| `tax:EffectiveElectronMass` | `rep:Scalar` | — | — | — |
-| `tax:EffectiveHoleMass` | `rep:Scalar` | — | — | — |
-| `tax:ElectronicBandGap` | `rep:Scalar` | — | — | — |
-| `tax:ElectronicBandStructure` | `rep:3Dmap` | — | `qk:Energy` | 1: `rep:Label_kx`, `qk:Wavenumber`; 2: `rep:Label_ky`, `qk:Wavenumber`; 3: `rep:Label_kz`, `qk:Wavenumber` |
-| `tax:ElectronicCompressibility` | `rep:Scalar` | — | — | — |
-| `tax:ElectronicDensityOfStates` | `rep:Spectrum` | — | `qk:EnergyDensityOfStates` | 1: `qk:Energy` |
-| `tax:ElectronicGreensFunction` | `rep:Scalar` | — | — | — |
-| `tax:ElectronicSusceptibility` | `rep:Scalar` | — | — | — |
-| `tax:FermiLevel` | `rep:Scalar` | — | — | — |
-| `tax:FermiSurface` | `rep:3Dmap` | — | `qk:Energy` | 1: `rep:Label_kx`, `qk:Wavenumber`; 2: `rep:Label_ky`, `qk:Wavenumber`; 3: `rep:Label_kz`, `qk:Wavenumber` |
-| `tax:ElectricCoercitivity` | `rep:Scalar` | — | — | — |
-| `tax:ElectricCurieTemperature` | `rep:Scalar` | — | — | — |
-| `tax:ElectricHysteresis` | `rep:1Dmap` | — | `qk:ElectricPolarization` | 1: `rep:Label_E`, `qk:ElectricField` |
-| `tax:RemanentPolarization` | `rep:Scalar` | — | — | — |
-| `tax:SaturationPolarization` | `rep:Scalar` | — | — | — |
-| `tax:ElectromechanicalCouplingFactor` | `rep:Scalar` | — | — | — |
-| `tax:MechanicalQualityFactor` | `rep:Scalar` | — | — | — |
-| `tax:SpinOrbitCouplingConstant` | `rep:Scalar` | — | `qk:Energy` | — |
-| `tax:SuperconductingCoherenceLength` | `rep:Scalar` | — | `qk:Length` | — |
-| `tax:SuperconductingCriticalTemperature` | `rep:Scalar` | — | `qk:Temperature` | — |
-| `tax:SuperconductingGap` | `rep:Scalar` | — | `qk:Energy` | — |
-| `tax:MagneticAnisotropyField` | `rep:Vector` | 3 | `qk:MagneticFieldStrength` | — |
-| `tax:MagneticCoercitivity` | `rep:Scalar` | — | `qk:MagneticFieldStrength` | — |
-| `tax:MagneticCurieTemperature` | `rep:Scalar` | — | `qk:Temperature` | — |
-| `tax:MagneticSquareness` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:MaximumEnergyProduct` | `rep:Scalar` | — | `qk:EnergyDensity` | — |
-| `tax:Permeability` | `rep:Scalar` | — | `qk:ElectromagneticPermeability` | — |
-| `tax:RemanentMagnetization` | `rep:Vector` | 3 | `qk:MagneticFieldStrength` | — |
-| `tax:SaturationMagentization` | `rep:Vector` | 3 | `qk:MagneticFieldStrength` | — |
-| `tax:SpinExchangeInteractions` | `rep:Scalar` | — | `qk:Energy` | — |
-| `tax:BulkModulus` | `rep:Scalar` | — | `qk:Pressure` | — |
-| `tax:Compressibility` | `rep:Scalar` | — | `qk:Compressibility` | — |
-| `tax:CriticalResolvedShearStress` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-| `tax:FatigueCrackGrowthRate` | `rep:Scalar` | — | `qk:Length` | — |
-| `tax:FatigueLife` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:FatigueLimit` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-| `tax:CharpyImpactEnergy` | `rep:Scalar` | — | `qk:Energy` | — |
-| `tax:CrackTipOpeningDisplacement` | `rep:Scalar` | — | `qk:Length` | — |
-| `tax:DuctileToBrittleTransitionTemperature` | `rep:Scalar` | — | `qk:Temperature` | — |
-| `tax:ReductionArea` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:Hardness` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-| `tax:ImpactToughness` | `rep:Scalar` | — | `qk:Energy` | — |
-| `tax:ModulusOfResilience` | `rep:Scalar` | — | `qk:EnergyDensity` | — |
-| `tax:PoissonRatio` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:ShearModulus` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-| `tax:StrainHardeningExponent` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:StressStrainCurve` | `rep:1Dmap` | — | `qk:ForcePerArea` | 1: `qk:Dimensionless` |
-| `tax:TensileStrength` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-| `tax:TotalElongation` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:Toughness` | `rep:Scalar` | — | `qk:EnergyDensity` | — |
-| `tax:UniformElongation` | `rep:Scalar` | — | `qk:Dimensionless` | — |
-| `tax:Viscosity` | `rep:Scalar` | — | `qk:DynamicViscosity` | — |
-| `tax:YieldStrength` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-| `tax:YoungModulus` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
-
-### Mapped in part
-
-| Class | Mapped | Left out |
-|---|---|---|
-| `tax:EliashbergFunction` | `rep:Spectrum`, signal `qk:Dimensionless` | Axis quantity kind given as 'Energy or Frequency' (open choice); type and signal mapped, axis left unspecified. |
-| `tax:FatigueCrackGrowthThreshold` | `rep:Scalar` | Signal marked 'not in qudt'; type mapped, signal quantity kind left unspecified. |
-| `tax:FractureToughness` | `rep:Scalar` | Signal marked 'not in qudt'; type mapped, signal quantity kind left unspecified. |
-| `tax:StressIntensityFactor` | `rep:Scalar` | Signal marked 'not in qudt'; type mapped, signal quantity kind left unspecified. |
-
-### Not mapped
-
-| Class | Sheet entry | Reason |
-|---|---|---|
-| `tax:CorrosionProperty` | Scalar | Parent class (9 subclasses). A binding on it would be inherited by every subclass; only leaf classes are bound. |
-| `tax:Permittivity` | Not sure; signal: qudt:Permittivity | Scalar or rank-2 (3x3) tensor. The modelling choice (one IRI with Scalar ⊔ Tensor2, or two IRIs with the same label) is still open. |
-| `tax:PiezoelectricChargeCoefficient` | Not sure; signal: Not in qudt. It is effectively inverse ( | No QUDT quantity kind exists; scalar-or-tensor open; physically a rank-3 tensor (3x3x3 or 3x6 Voigt), not 3x3. |
-| `tax:PiezoelectricStrainCoefficient` | Not sure | Marked as the same quantity as PiezoelectricChargeCoefficient; no representation given. Merge or deprecation is a taxonomy decision. |
-| `tax:PiezoelectricVoltageCoefficient` | Not sure; signal: Not in qudt. It is effectively qudt:Elec | No QUDT quantity kind exists; scalar-or-tensor open; physically a rank-3 tensor. |
-| `tax:RelativePermittivity` | Not sure; signal: qudt:Dimensionless | Scalar or 3x3 tensor, like Permittivity; same open modelling choice. |
-| `tax:MagneticAnisotropyConstant` | Scalar; signal: qudt:MagneticFieldStrength | Given quantity kind MagneticFieldStrength contradicts the class description ('energy density difference'). |
-| `tax:MagneticHysteresis` | Not sure | Marked 'REMOVE THIS'. Removing a class is not a mapping operation. |
-| `tax:MagneticSusceptibility` | Not sure; signal: qudt:MagneticFieldStrength | Scalar or 3x3 tensor; same open modelling choice. The given quantity kind (MagneticFieldStrength) also conflicts with susceptibility being dimensionless. |
-
-### Verification
-
-| Check | Result |
-|---|---|
-| Every IRI used in the bindings was already defined in `main.ttl` | ✔ no new entity |
-| No new named individual, class or property | ✔ |
-| Mapped classes with a pre-existing direct `qudt:hasQuantityKind` restriction | ✔ none (no conflict) |
-| HermiT: unsatisfiable classes | ✔ none |
-| Inferred `qudt:hasQuantityKind` of each mapped class equals the sheet's signal quantity kind | ✔ 78/78 |
-| OWL 2 syntax: no intersection with fewer than two operands | ✔ |
-
-### Discussion: not mapped, open points and suggestions
-
-**Open modelling decisions**
-1. **Scalar-or-tensor quantities** (Permittivity, RelativePermittivity, MagneticSusceptibility). The choice is between one IRI with `Scalar ⊔ Tensor2`, or two IRIs with the same label. Either can be written with the existing module once decided. Permeability is mapped as Scalar only; it may belong to the same group.
-2. **CorrosionProperty** is a parent class. If all its subclasses are scalars, the 9 leaf bindings already cover it; a binding on the parent would be inherited by every subclass.
-3. **Piezoelectric coefficients**
-   - PiezoelectricChargeCoefficient and PiezoelectricVoltageCoefficient have no QUDT 3.5.2 quantity kind and need local FAIRmat kinds, which would be new individuals.
-   - They are physically rank-3 tensors (3×3×3, or 3×6 in Voigt notation) rather than 3×3.
-   - PiezoelectricStrainCoefficient is marked as the same quantity as PiezoelectricChargeCoefficient; merge or deprecate.
-4. **MagneticHysteresis** is marked for removal. Deprecation (`owl:deprecated true`) or deletion is a taxonomy change, not a mapping.
-
-**Quantity kinds to review**
-5. **MagneticAnisotropyConstant:** the sheet gives MagneticFieldStrength, but the description says energy density. `qk:EnergyDensity` would match the description.
-6. **MagneticSusceptibility:** the sheet gives MagneticFieldStrength, but susceptibility is dimensionless.
-7. **FatigueCrackGrowthThreshold, FractureToughness, StressIntensityFactor** are marked "not in qudt", but `qk:StressIntensityFactor` exists in QUDT 3.5.2 (already declared in `main.ttl`) with exactly the given dimension vector A0E0L-0.5I0M1H0T-2D0. If confirmed, the three signal quantity kinds can be mapped without adding anything.
-8. **RemanentMagnetization, SaturationMagentization** are mapped as MagneticFieldStrength, as given. `qk:Magnetization` has the same dimension and is the more specific kind (it would need to be declared).
-9. **StressStrainCurve** axis is mapped as Dimensionless, as given. `qk:Strain` is the more specific kind (it would need to be declared).
-10. **ElectricHysteresis** axis uses `qk:ElectricField`; the piezoelectric comments use `qk:ElectricFieldStrength`. Both exist in QUDT with the same dimension; one should be chosen for consistency.
-
-**Representation details to review**
-11. **EliashbergFunction** axis: "Energy or Frequency". The axis was left unspecified; choosing one (Energy is the Spectrum default) completes the mapping.
-12. **ElectronicBandStructure** is mapped as a 3Dmap k → Energy, as given. A band structure has several bands (E_n(k)), so the signal may need to be a vector over the band index. It currently has the same binding as FermiSurface.
-13. **Axis labels.** ElectronicDensityOfStates and StressStrainCurve axes have no label in the sheet. Labels such as "t" or "ε" don't exist yet as `rep:AxisLabelTerm` individuals.
-14. **30 Scalars have no signal quantity kind** yet (mostly ChemicalProperty and ElectronicProperty); their type is mapped and the quantity kind can be added later.
-
-**Sheet edits not applied (outside the mapping scope)**
-15. Label change Viscosity → DynamicViscosity (IRI stays `/Viscosity`); the binding is on `tax:Viscosity`.
-16. Description addition for MagneticAnisotropyConstant (note on the first anisotropy constant).
-17. "Also listed under …" text on PiezoelectricProperty and SuperconductingProperty: these come from the sheet's tree layout and shouldn't go into `rdfs:comment`.
-18. The sheet's "Representation types" tab still lists Profile, DepthProfile, Image and VolumeData and a units table; it should be updated to the current types.
-19. 92 rows (OpticalProperty, SpectroscopicProperty, StructuralProperty, ThermodynamicProperty, TransportProperty, VibrationalProperty) aren't reviewed in the sheet yet.
-
-
-## RDF Data Cube (qb) layer removed, 2026-10-25
-
-The optional qb layer was removed from the representation module, and therefore from `main.ttl`. The taxonomy bindings didn't use qb, so they are unchanged.
-
-### Removed
-
-| Item | Count |
-|---|---|
-| `qb:` prefix and declarations of qb classes and properties | 13 declarations |
-| Subclass links to qb: representation types ⊑ `qb:DataSet`; `rep:ComponentProperty` ⊑ `qb:ComponentProperty`; `rep:Signal` ⊑ `qb:MeasureProperty`; `rep:Axis` ⊑ `qb:DimensionProperty` | 9 links |
-| DSD-layer axioms: strict roles, one dimension per specification, measure-only DSD (Scalar, Vector, Tensor2), maximum dimensions (1D/2D/3D map), TimeSeries dimensions | 9 axioms |
-| `rep:DataStructureDefinition`, `rep:Observation`, `rep:Extent` | 3 entities |
-| Deprecated `rep:HasDataStructureDefinition`, `rep:HasComponent` (referenced the DSD only) | 2 properties |
-
-Unchanged: `rep:Signal`, `rep:Axis`, all representation types, their axioms, the axis labels, the quantity kinds, the property chain and the 78 bindings.
-
-### Files
-
-| File | Triples |
-|---|---:|
-| `representation.ttl` | 357 |
-| `main.ttl` (taxonomy + module + bindings) | 2300 |
-
-### Verification
-
-| Check | Result |
-|---|---|
-| qb IRIs left in `representation.ttl` / `main.ttl` | ✔ 0 / 0 |
-| Original taxonomy triples missing in `main.ttl` | ✔ none |
-| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
-| Invalid test bindings still flagged (wrong TimeSeries axis, Scalar with axis, wrong axis count, two labelled axes on a 1Dmap, Scalar and Tensor2 together) | ✔ |
-| Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
-
-### Consequences
-
-- No Data Cube structures for flat SPARQL or qb-style validation of future datasets. If needed later, a separate alignment file can add the qb subclass links and DSD axioms again without changing any binding.
-- The README no longer describes a derived layer; its sections were renumbered.
-
-## Distinctness of quantity kinds, 2026-10-25
-
-One axiom added: the quantity kinds are declared pairwise different (`owl:AllDifferent`).
-
-### Reason
-
-OWL makes no unique-name assumption: `qk:Length` and `qk:Time` may denote the same individual unless stated otherwise. Without this axiom, the functional `rep:HasQuantityKind` and the TimeSeries rule (`∀ HasAxis . (HasQuantityKind value qk:Time)`) only add facts and never detect an error. A TimeSeries axis given `qk:Length` was read as `qk:Length = qk:Time`, not flagged.
-
-The earlier verification ("wrong TimeSeries axis flagged") passed only because the test file declared its own `owl:AllDifferent` over the test quantity kinds. The tests now run without it.
-
-### Added
-
-| File | Where | Content |
-|---|---|---|
-| `representation.ttl` | end of section 4b (quantity kinds) | `owl:AllDifferent` over the 23 module quantity kinds |
-| `main.ttl` | the same position in the appended module section | the same axiom, also listing the five kinds the taxonomy already used (ChemicalPotential, Fugacity, HeatCapacity, ThermalExpansionCoefficient, Volume): 28 members |
-
-Unchanged: the original taxonomy part of `main.ttl`, `qudt:hasQuantityKind`, the 11 direct restrictions, all properties, types and the 78 bindings. The original taxonomy has no functional property over quantity kinds, so the axiom has no effect there.
-
-Upkeep: a quantity kind added later must also be added to this list.
-
-### Files
-
-| File | Triples |
-|---|---:|
-| `representation.ttl` | 405 (was 357) |
-| `main.ttl` | 2358 (was 2300) |
-
-### Verification
-
-| Check | Result |
-|---|---|
-| `main.ttl` diff against the previous version | ✔ only the new axiom (16 lines) |
-| List members = all declared `qudt:QuantityKind` individuals; covers every kind used in a restriction | ✔ 28 / ✔ |
-| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
-| Test bindings **without** their own distinctness axiom: TimeSeries with a Length axis | ✔ unsatisfiable (was satisfiable before this change) |
-| Other invalid test bindings (Scalar with axis, Scalar and Tensor2, two axes same index, 2Dmap with three axes) | ✔ unsatisfiable |
-| README Turtle examples | ✔ 9 parse, all satisfiable |
-| Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
-
-## `rep:HasQuantityKind` renamed to `rep:HasComponentQuantityKind`, 2026-10-25
-
-The module's quantity-kind property for signals and axes was renamed so it can no longer be confused with QUDT's `qudt:hasQuantityKind`. The two names differed only in prefix and capitalisation, which made them hard to tell apart in viewers, queries and hand-written bindings.
-
-| | `qudt:hasQuantityKind` | `rep:HasComponentQuantityKind` |
-|---|---|---|
-| Owner | QUDT | representation module |
-| Used on | taxonomy property classes | signal and axis nodes |
-| Characteristics | not functional, no domain | functional, domain `rep:ComponentProperty` |
-| Link | derived from the signal's kind through the property chain | — |
-
-The name keeps the module's UpperCamelCase convention (`rep:HasSignal`, `rep:HasAxis`).
-
-### Changed
-
-| File | Occurrences renamed |
-|---|---:|
-| `representation.ttl` (declaration, label, ontology comment, label-term definition, property chain, TimeSeries axiom, distinctness comment) | 7 |
-| `main.ttl` (module section and the 78 bindings) | 60 |
-| README (tables, diagrams, RDF examples, DL) | 53 |
-
-The original taxonomy part of `main.ttl` never used this property and is unchanged. Meaning is unchanged: same characteristics, same axioms, same bindings.
-
-### Files
-
-| File | Triples |
-|---|---:|
-| `representation.ttl` | 405 (unchanged) |
-| `main.ttl` | 2358 (unchanged) |
-
-### Verification
-
-| Check | Result |
-|---|---|
-| `rep:HasQuantityKind` left in `representation.ttl` / `main.ttl` / README | ✔ 0 / 0 / 0 |
-| `main.ttl` diff against the previous version | ✔ only the rename (plus banner re-wrap) |
-| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
-| Invalid test bindings flagged (without the tests' own distinctness axiom) | ✔ all 5 |
-| README Turtle examples | ✔ 9 parse, all satisfiable |
-| Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
-
-## Quantity kinds on signal, axis and taxonomy class, 2026-10-26
-
-Supersedes the signal-only property chain described in "Representation module merge" and "`rep:HasQuantityKind` renamed …".
-
-Signal and axis carry their quantity kind as QUDT `qudt:hasQuantityKind`, and the taxonomy class gets the quantity kinds of its signal and of all its axes.
-
-### Changed in the representation module (`representation.ttl` and the module section of `main.ttl`)
-
-| Item | Before | After |
-|---|---|---|
-| New property `rep:HasComponent` | — | domain `rep:Representation`, range `rep:ComponentProperty`; super-property of `rep:HasSignal` and `rep:HasAxis`; not used in bindings |
-| `rep:HasSignal`, `rep:HasAxis` | — | `rdfs:subPropertyOf rep:HasComponent` |
-| `rep:HasComponentQuantityKind` | functional, domain `rep:ComponentProperty` | unchanged, plus `rdfs:subPropertyOf qudt:hasQuantityKind` |
-| Property chain on `qudt:hasQuantityKind` | `HasRepresentation ∘ HasSignal ∘ HasComponentQuantityKind` | `HasRepresentation ∘ HasComponent ∘ HasComponentQuantityKind` |
-
-### Effect
-
-```
-[signal] ─HasComponentQuantityKind─▶ qk:A    ┄qudt:hasQuantityKind┄▶ qk:A      (sub-property)
-[axis]   ─HasComponentQuantityKind─▶ qk:B    ┄qudt:hasQuantityKind┄▶ qk:B      (sub-property)
-tax:C    ┄qudt:hasQuantityKind┄▶ qk:A, qk:B                                   (chain)
-```
-
-- Bindings are written exactly as before (`rep:HasSignal` / `rep:HasAxis` → `rep:HasComponentQuantityKind`).
-- `rep:HasComponentQuantityKind` stays a simple property, so it remains functional in OWL 2 DL; together with the quantity-kind distinctness axiom the reasoner still rejects two kinds on one signal or axis and a non-Time TimeSeries axis.
-- On a taxonomy class, `qudt:hasQuantityKind` now means "quantity kinds of its data" (signal and axes), not only the signal kind. Which kind belongs to the signal is still stated in the binding. A query such as `?c qudt:hasQuantityKind qk:Energy` also returns classes that have Energy only on an axis.
-- `qudt:hasQuantityKind` itself gets no new axioms (no domain, not functional), so QUDT's own use of it is unaffected.
+- `main.ttl`: taxonomy + representation module + **137 bindings** from the reviewed HasRepresentation_Adhoc sheet.
+- Signal and axis carry `qudt:hasQuantityKind` (via `rep:HasComponentQuantityKind`); a taxonomy class gets the kinds of its signal and all axes (chain via `rep:HasComponent`).
+- Quantity kinds: 38 in the module, 41 in the distinctness list of `main.ttl`.
 
 ## Representation bindings remapped from the reviewed HasRepresentation_Adhoc sheet, 2026-10-26
 
@@ -655,3 +282,386 @@ A side check confirmed the functional quantity-kind property works as intended: 
 10. **CorrosionProperty** (parent of 9 classes) is marked Scalar in the sheet; only its leaf classes are bound, so the parent stays unbound.
 11. **Sheet typos read as intended:** `qudtDimensionless` (5 rows: OpticalReflectance, OpticalTransmittance, GrainAspectRatio, Porosity, RadialDistributionFunction) read as `qudt:Dimensionless`.
 12. **Taxonomy label and IRI observations (not changed):** IRI `…/FracturesProperty` for FractureProperty, IRI `…/Viscosity` for DynamicViscosity, labels SaturationMagentization, PoralizedPotential, ElectricCoercitivity, MagneticCoercitivity.
+
+## Quantity kinds on signal, axis and taxonomy class, 2026-10-26
+
+Supersedes the signal-only property chain described in "Representation module merge" and "`rep:HasQuantityKind` renamed …".
+
+Signal and axis carry their quantity kind as QUDT `qudt:hasQuantityKind`, and the taxonomy class gets the quantity kinds of its signal and of all its axes.
+
+### Changed in the representation module (`representation.ttl` and the module section of `main.ttl`)
+
+| Item | Before | After |
+|---|---|---|
+| New property `rep:HasComponent` | — | domain `rep:Representation`, range `rep:ComponentProperty`; super-property of `rep:HasSignal` and `rep:HasAxis`; not used in bindings |
+| `rep:HasSignal`, `rep:HasAxis` | — | `rdfs:subPropertyOf rep:HasComponent` |
+| `rep:HasComponentQuantityKind` | functional, domain `rep:ComponentProperty` | unchanged, plus `rdfs:subPropertyOf qudt:hasQuantityKind` |
+| Property chain on `qudt:hasQuantityKind` | `HasRepresentation ∘ HasSignal ∘ HasComponentQuantityKind` | `HasRepresentation ∘ HasComponent ∘ HasComponentQuantityKind` |
+
+### Effect
+
+```
+[signal] ─HasComponentQuantityKind─▶ qk:A    ┄qudt:hasQuantityKind┄▶ qk:A      (sub-property)
+[axis]   ─HasComponentQuantityKind─▶ qk:B    ┄qudt:hasQuantityKind┄▶ qk:B      (sub-property)
+tax:C    ┄qudt:hasQuantityKind┄▶ qk:A, qk:B                                   (chain)
+```
+
+- Bindings are written exactly as before (`rep:HasSignal` / `rep:HasAxis` → `rep:HasComponentQuantityKind`).
+- `rep:HasComponentQuantityKind` stays a simple property, so it remains functional in OWL 2 DL; together with the quantity-kind distinctness axiom the reasoner still rejects two kinds on one signal or axis and a non-Time TimeSeries axis.
+- On a taxonomy class, `qudt:hasQuantityKind` now means "quantity kinds of its data" (signal and axes), not only the signal kind. Which kind belongs to the signal is still stated in the binding. A query such as `?c qudt:hasQuantityKind qk:Energy` also returns classes that have Energy only on an axis.
+- `qudt:hasQuantityKind` itself gets no new axioms (no domain, not functional), so QUDT's own use of it is unaffected.
+
+---
+
+# History
+
+## `rep:HasQuantityKind` renamed to `rep:HasComponentQuantityKind`, 2026-10-25
+
+The module's quantity-kind property for signals and axes was renamed so it can no longer be confused with QUDT's `qudt:hasQuantityKind`. The two names differed only in prefix and capitalisation, which made them hard to tell apart in viewers, queries and hand-written bindings.
+
+| | `qudt:hasQuantityKind` | `rep:HasComponentQuantityKind` |
+|---|---|---|
+| Owner | QUDT | representation module |
+| Used on | taxonomy property classes | signal and axis nodes |
+| Characteristics | not functional, no domain | functional, domain `rep:ComponentProperty` |
+| Link | derived from the signal's kind through the property chain | — |
+
+The name keeps the module's UpperCamelCase convention (`rep:HasSignal`, `rep:HasAxis`).
+
+### Changed
+
+| File | Occurrences renamed |
+|---|---:|
+| `representation.ttl` (declaration, label, ontology comment, label-term definition, property chain, TimeSeries axiom, distinctness comment) | 7 |
+| `main.ttl` (module section and the 78 bindings) | 60 |
+| README (tables, diagrams, RDF examples, DL) | 53 |
+
+The original taxonomy part of `main.ttl` never used this property and is unchanged. Meaning is unchanged: same characteristics, same axioms, same bindings.
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 405 (unchanged) |
+| `main.ttl` | 2358 (unchanged) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `rep:HasQuantityKind` left in `representation.ttl` / `main.ttl` / README | ✔ 0 / 0 / 0 |
+| `main.ttl` diff against the previous version | ✔ only the rename (plus banner re-wrap) |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| Invalid test bindings flagged (without the tests' own distinctness axiom) | ✔ all 5 |
+| README Turtle examples | ✔ 9 parse, all satisfiable |
+| Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
+
+## Distinctness of quantity kinds, 2026-10-25
+
+One axiom added: the quantity kinds are declared pairwise different (`owl:AllDifferent`).
+
+### Reason
+
+OWL makes no unique-name assumption: `qk:Length` and `qk:Time` may denote the same individual unless stated otherwise. Without this axiom, the functional `rep:HasQuantityKind` and the TimeSeries rule (`∀ HasAxis . (HasQuantityKind value qk:Time)`) only add facts and never detect an error. A TimeSeries axis given `qk:Length` was read as `qk:Length = qk:Time`, not flagged.
+
+The earlier verification ("wrong TimeSeries axis flagged") passed only because the test file declared its own `owl:AllDifferent` over the test quantity kinds. The tests now run without it.
+
+### Added
+
+| File | Where | Content |
+|---|---|---|
+| `representation.ttl` | end of section 4b (quantity kinds) | `owl:AllDifferent` over the 23 module quantity kinds |
+| `main.ttl` | the same position in the appended module section | the same axiom, also listing the five kinds the taxonomy already used (ChemicalPotential, Fugacity, HeatCapacity, ThermalExpansionCoefficient, Volume): 28 members |
+
+Unchanged: the original taxonomy part of `main.ttl`, `qudt:hasQuantityKind`, the 11 direct restrictions, all properties, types and the 78 bindings. The original taxonomy has no functional property over quantity kinds, so the axiom has no effect there.
+
+Upkeep: a quantity kind added later must also be added to this list.
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 405 (was 357) |
+| `main.ttl` | 2358 (was 2300) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `main.ttl` diff against the previous version | ✔ only the new axiom (16 lines) |
+| List members = all declared `qudt:QuantityKind` individuals; covers every kind used in a restriction | ✔ 28 / ✔ |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| Test bindings **without** their own distinctness axiom: TimeSeries with a Length axis | ✔ unsatisfiable (was satisfiable before this change) |
+| Other invalid test bindings (Scalar with axis, Scalar and Tensor2, two axes same index, 2Dmap with three axes) | ✔ unsatisfiable |
+| README Turtle examples | ✔ 9 parse, all satisfiable |
+| Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
+
+## RDF Data Cube (qb) layer removed, 2026-10-25
+
+The optional qb layer was removed from the representation module, and therefore from `main.ttl`. The taxonomy bindings didn't use qb, so they are unchanged.
+
+### Removed
+
+| Item | Count |
+|---|---|
+| `qb:` prefix and declarations of qb classes and properties | 13 declarations |
+| Subclass links to qb: representation types ⊑ `qb:DataSet`; `rep:ComponentProperty` ⊑ `qb:ComponentProperty`; `rep:Signal` ⊑ `qb:MeasureProperty`; `rep:Axis` ⊑ `qb:DimensionProperty` | 9 links |
+| DSD-layer axioms: strict roles, one dimension per specification, measure-only DSD (Scalar, Vector, Tensor2), maximum dimensions (1D/2D/3D map), TimeSeries dimensions | 9 axioms |
+| `rep:DataStructureDefinition`, `rep:Observation`, `rep:Extent` | 3 entities |
+| Deprecated `rep:HasDataStructureDefinition`, `rep:HasComponent` (referenced the DSD only) | 2 properties |
+
+Unchanged: `rep:Signal`, `rep:Axis`, all representation types, their axioms, the axis labels, the quantity kinds, the property chain and the 78 bindings.
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 357 |
+| `main.ttl` (taxonomy + module + bindings) | 2300 |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| qb IRIs left in `representation.ttl` / `main.ttl` | ✔ 0 / 0 |
+| Original taxonomy triples missing in `main.ttl` | ✔ none |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| Invalid test bindings still flagged (wrong TimeSeries axis, Scalar with axis, wrong axis count, two labelled axes on a 1Dmap, Scalar and Tensor2 together) | ✔ |
+| Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
+
+### Consequences
+
+- No Data Cube structures for flat SPARQL or qb-style validation of future datasets. If needed later, a separate alignment file can add the qb subclass links and DSD axioms again without changing any binding.
+- The README no longer describes a derived layer; its sections were renumbered.
+
+## Representation bindings from HasRepresentation_Adhoc, 2026-10-25
+
+> **Superseded** by "Representation bindings remapped from the reviewed HasRepresentation_Adhoc sheet, 2026-10-26" at the top of this file. The tables below describe the first, partly reviewed sheet and are kept as history.
+
+Rows of the HasRepresentation_Adhoc sheet mapped onto `main.ttl` as `rep:HasRepresentation` bindings. This is a mapping operation only: no class, property, individual or axiom was added to the representation module, and the taxonomy classes themselves are unchanged.
+
+### Summary
+
+| | Count |
+|---|---:|
+| Sheet rows with an entry | 88 |
+| Mapped fully | 74 |
+| Mapped in part | 4 |
+| Not mapped (see Discussion) | 9 |
+| Comment only, nothing to map (PiezoelectricProperty, tree duplicate) | 1 |
+| Rows not yet reviewed in the sheet | 92 |
+| Triples added | 1055 |
+
+### Appended to `main.ttl`
+
+One `rdfs:subClassOf` restriction per mapped class, written as a separate statement below the banner `REPRESENTATION BINDINGS (mapped from HasRepresentation_Adhoc)` at the end of the file. The existing class blocks aren't edited.
+
+### Mapping rules applied
+
+| Sheet entry | Mapped to |
+|---|---|
+| Representation `Scalar` / `Spectrum` | `rep:Scalar` / `rep:Spectrum` |
+| Representation `VolumeData` | `rep:3Dmap` (VolumeData is renamed 3Dmap in the representation module) |
+| `Not sure` + comment "vector of dimension 3" | `rep:Vector` with `rep:Shape "3"` |
+| `Not sure` + comment "rep:1Dmap Stress(Strain)" | `rep:1Dmap` |
+| `Not sure` for ElectricHysteresis (comment: a map P(E)) | `rep:1Dmap`, the generic 1D map introduced for exactly this case in the 21/10 thread |
+| `qudt:<Name>` in Signal / Axis | `qk:<Name>` (QUDT quantity-kind namespace); every kind used is already declared in `main.ttl` |
+| Axis label `kx`, `ky`, `kz`, `E` | existing individuals `rep:Label_kx`, `rep:Label_ky`, `rep:Label_kz`, `rep:Label_E` |
+| Axis without a label | axis bound by index and quantity kind only |
+| Order of axes in the cell | `rep:AxisIndex` 1, 2, 3 |
+| Representation without a signal quantity kind | type only: `rep:HasRepresentation some rep:<Type>` |
+
+### Mapped
+
+| Class | Type | Shape | Signal | Axes (index: label, quantity kind) |
+|---|---|---|---|---|
+| `tax:AnodicPartialCurrent` | `rep:Scalar` | — | — | — |
+| `tax:CathodicPartialCurrent` | `rep:Scalar` | — | — | — |
+| `tax:AnodicPartialCurrentCorrosion` | `rep:Scalar` | — | — | — |
+| `tax:CorrosionPotential` | `rep:Scalar` | — | `qk:Voltage` | — |
+| `tax:CorrosionRate` | `rep:Scalar` | — | — | — |
+| `tax:FreeCorrosionCurrent` | `rep:Scalar` | — | — | — |
+| `tax:FreeCorrosionPotential` | `rep:Scalar` | — | — | — |
+| `tax:PassivationCurrent` | `rep:Scalar` | — | — | — |
+| `tax:PassivationPotential` | `rep:Scalar` | — | `qk:Voltage` | — |
+| `tax:PittingInitiationPotential` | `rep:Scalar` | — | `qk:Voltage` | — |
+| `tax:PoralizedPotential` | `rep:Scalar` | — | — | — |
+| `tax:ReactivationPotential` | `rep:Scalar` | — | — | — |
+| `tax:TranspassivationPotential` | `rep:Scalar` | — | — | — |
+| `tax:RedoxPotential` | `rep:Scalar` | — | — | — |
+| `tax:StandardElectrodePotential` | `rep:Scalar` | — | — | — |
+| `tax:BandGapElectronicBowingCoefficient` | `rep:Scalar` | — | — | — |
+| `tax:BindingEnergyExciton` | `rep:Scalar` | — | — | — |
+| `tax:CarrierDensity` | `rep:Scalar` | — | — | — |
+| `tax:CoulombInteractions` | `rep:Scalar` | — | — | — |
+| `tax:DielectricStrength` | `rep:Scalar` | — | — | — |
+| `tax:EffectiveElectronMass` | `rep:Scalar` | — | — | — |
+| `tax:EffectiveHoleMass` | `rep:Scalar` | — | — | — |
+| `tax:ElectronicBandGap` | `rep:Scalar` | — | — | — |
+| `tax:ElectronicBandStructure` | `rep:3Dmap` | — | `qk:Energy` | 1: `rep:Label_kx`, `qk:Wavenumber`; 2: `rep:Label_ky`, `qk:Wavenumber`; 3: `rep:Label_kz`, `qk:Wavenumber` |
+| `tax:ElectronicCompressibility` | `rep:Scalar` | — | — | — |
+| `tax:ElectronicDensityOfStates` | `rep:Spectrum` | — | `qk:EnergyDensityOfStates` | 1: `qk:Energy` |
+| `tax:ElectronicGreensFunction` | `rep:Scalar` | — | — | — |
+| `tax:ElectronicSusceptibility` | `rep:Scalar` | — | — | — |
+| `tax:FermiLevel` | `rep:Scalar` | — | — | — |
+| `tax:FermiSurface` | `rep:3Dmap` | — | `qk:Energy` | 1: `rep:Label_kx`, `qk:Wavenumber`; 2: `rep:Label_ky`, `qk:Wavenumber`; 3: `rep:Label_kz`, `qk:Wavenumber` |
+| `tax:ElectricCoercitivity` | `rep:Scalar` | — | — | — |
+| `tax:ElectricCurieTemperature` | `rep:Scalar` | — | — | — |
+| `tax:ElectricHysteresis` | `rep:1Dmap` | — | `qk:ElectricPolarization` | 1: `rep:Label_E`, `qk:ElectricField` |
+| `tax:RemanentPolarization` | `rep:Scalar` | — | — | — |
+| `tax:SaturationPolarization` | `rep:Scalar` | — | — | — |
+| `tax:ElectromechanicalCouplingFactor` | `rep:Scalar` | — | — | — |
+| `tax:MechanicalQualityFactor` | `rep:Scalar` | — | — | — |
+| `tax:SpinOrbitCouplingConstant` | `rep:Scalar` | — | `qk:Energy` | — |
+| `tax:SuperconductingCoherenceLength` | `rep:Scalar` | — | `qk:Length` | — |
+| `tax:SuperconductingCriticalTemperature` | `rep:Scalar` | — | `qk:Temperature` | — |
+| `tax:SuperconductingGap` | `rep:Scalar` | — | `qk:Energy` | — |
+| `tax:MagneticAnisotropyField` | `rep:Vector` | 3 | `qk:MagneticFieldStrength` | — |
+| `tax:MagneticCoercitivity` | `rep:Scalar` | — | `qk:MagneticFieldStrength` | — |
+| `tax:MagneticCurieTemperature` | `rep:Scalar` | — | `qk:Temperature` | — |
+| `tax:MagneticSquareness` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:MaximumEnergyProduct` | `rep:Scalar` | — | `qk:EnergyDensity` | — |
+| `tax:Permeability` | `rep:Scalar` | — | `qk:ElectromagneticPermeability` | — |
+| `tax:RemanentMagnetization` | `rep:Vector` | 3 | `qk:MagneticFieldStrength` | — |
+| `tax:SaturationMagentization` | `rep:Vector` | 3 | `qk:MagneticFieldStrength` | — |
+| `tax:SpinExchangeInteractions` | `rep:Scalar` | — | `qk:Energy` | — |
+| `tax:BulkModulus` | `rep:Scalar` | — | `qk:Pressure` | — |
+| `tax:Compressibility` | `rep:Scalar` | — | `qk:Compressibility` | — |
+| `tax:CriticalResolvedShearStress` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+| `tax:FatigueCrackGrowthRate` | `rep:Scalar` | — | `qk:Length` | — |
+| `tax:FatigueLife` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:FatigueLimit` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+| `tax:CharpyImpactEnergy` | `rep:Scalar` | — | `qk:Energy` | — |
+| `tax:CrackTipOpeningDisplacement` | `rep:Scalar` | — | `qk:Length` | — |
+| `tax:DuctileToBrittleTransitionTemperature` | `rep:Scalar` | — | `qk:Temperature` | — |
+| `tax:ReductionArea` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:Hardness` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+| `tax:ImpactToughness` | `rep:Scalar` | — | `qk:Energy` | — |
+| `tax:ModulusOfResilience` | `rep:Scalar` | — | `qk:EnergyDensity` | — |
+| `tax:PoissonRatio` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:ShearModulus` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+| `tax:StrainHardeningExponent` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:StressStrainCurve` | `rep:1Dmap` | — | `qk:ForcePerArea` | 1: `qk:Dimensionless` |
+| `tax:TensileStrength` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+| `tax:TotalElongation` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:Toughness` | `rep:Scalar` | — | `qk:EnergyDensity` | — |
+| `tax:UniformElongation` | `rep:Scalar` | — | `qk:Dimensionless` | — |
+| `tax:Viscosity` | `rep:Scalar` | — | `qk:DynamicViscosity` | — |
+| `tax:YieldStrength` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+| `tax:YoungModulus` | `rep:Scalar` | — | `qk:ForcePerArea` | — |
+
+### Mapped in part
+
+| Class | Mapped | Left out |
+|---|---|---|
+| `tax:EliashbergFunction` | `rep:Spectrum`, signal `qk:Dimensionless` | Axis quantity kind given as 'Energy or Frequency' (open choice); type and signal mapped, axis left unspecified. |
+| `tax:FatigueCrackGrowthThreshold` | `rep:Scalar` | Signal marked 'not in qudt'; type mapped, signal quantity kind left unspecified. |
+| `tax:FractureToughness` | `rep:Scalar` | Signal marked 'not in qudt'; type mapped, signal quantity kind left unspecified. |
+| `tax:StressIntensityFactor` | `rep:Scalar` | Signal marked 'not in qudt'; type mapped, signal quantity kind left unspecified. |
+
+### Not mapped
+
+| Class | Sheet entry | Reason |
+|---|---|---|
+| `tax:CorrosionProperty` | Scalar | Parent class (9 subclasses). A binding on it would be inherited by every subclass; only leaf classes are bound. |
+| `tax:Permittivity` | Not sure; signal: qudt:Permittivity | Scalar or rank-2 (3x3) tensor. The modelling choice (one IRI with Scalar ⊔ Tensor2, or two IRIs with the same label) is still open. |
+| `tax:PiezoelectricChargeCoefficient` | Not sure; signal: Not in qudt. It is effectively inverse ( | No QUDT quantity kind exists; scalar-or-tensor open; physically a rank-3 tensor (3x3x3 or 3x6 Voigt), not 3x3. |
+| `tax:PiezoelectricStrainCoefficient` | Not sure | Marked as the same quantity as PiezoelectricChargeCoefficient; no representation given. Merge or deprecation is a taxonomy decision. |
+| `tax:PiezoelectricVoltageCoefficient` | Not sure; signal: Not in qudt. It is effectively qudt:Elec | No QUDT quantity kind exists; scalar-or-tensor open; physically a rank-3 tensor. |
+| `tax:RelativePermittivity` | Not sure; signal: qudt:Dimensionless | Scalar or 3x3 tensor, like Permittivity; same open modelling choice. |
+| `tax:MagneticAnisotropyConstant` | Scalar; signal: qudt:MagneticFieldStrength | Given quantity kind MagneticFieldStrength contradicts the class description ('energy density difference'). |
+| `tax:MagneticHysteresis` | Not sure | Marked 'REMOVE THIS'. Removing a class is not a mapping operation. |
+| `tax:MagneticSusceptibility` | Not sure; signal: qudt:MagneticFieldStrength | Scalar or 3x3 tensor; same open modelling choice. The given quantity kind (MagneticFieldStrength) also conflicts with susceptibility being dimensionless. |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Every IRI used in the bindings was already defined in `main.ttl` | ✔ no new entity |
+| No new named individual, class or property | ✔ |
+| Mapped classes with a pre-existing direct `qudt:hasQuantityKind` restriction | ✔ none (no conflict) |
+| HermiT: unsatisfiable classes | ✔ none |
+| Inferred `qudt:hasQuantityKind` of each mapped class equals the sheet's signal quantity kind | ✔ 78/78 |
+| OWL 2 syntax: no intersection with fewer than two operands | ✔ |
+
+### Discussion: not mapped, open points and suggestions
+
+**Open modelling decisions**
+1. **Scalar-or-tensor quantities** (Permittivity, RelativePermittivity, MagneticSusceptibility). The choice is between one IRI with `Scalar ⊔ Tensor2`, or two IRIs with the same label. Either can be written with the existing module once decided. Permeability is mapped as Scalar only; it may belong to the same group.
+2. **CorrosionProperty** is a parent class. If all its subclasses are scalars, the 9 leaf bindings already cover it; a binding on the parent would be inherited by every subclass.
+3. **Piezoelectric coefficients**
+   - PiezoelectricChargeCoefficient and PiezoelectricVoltageCoefficient have no QUDT 3.5.2 quantity kind and need local FAIRmat kinds, which would be new individuals.
+   - They are physically rank-3 tensors (3×3×3, or 3×6 in Voigt notation) rather than 3×3.
+   - PiezoelectricStrainCoefficient is marked as the same quantity as PiezoelectricChargeCoefficient; merge or deprecate.
+4. **MagneticHysteresis** is marked for removal. Deprecation (`owl:deprecated true`) or deletion is a taxonomy change, not a mapping.
+
+**Quantity kinds to review**
+5. **MagneticAnisotropyConstant:** the sheet gives MagneticFieldStrength, but the description says energy density. `qk:EnergyDensity` would match the description.
+6. **MagneticSusceptibility:** the sheet gives MagneticFieldStrength, but susceptibility is dimensionless.
+7. **FatigueCrackGrowthThreshold, FractureToughness, StressIntensityFactor** are marked "not in qudt", but `qk:StressIntensityFactor` exists in QUDT 3.5.2 (already declared in `main.ttl`) with exactly the given dimension vector A0E0L-0.5I0M1H0T-2D0. If confirmed, the three signal quantity kinds can be mapped without adding anything.
+8. **RemanentMagnetization, SaturationMagentization** are mapped as MagneticFieldStrength, as given. `qk:Magnetization` has the same dimension and is the more specific kind (it would need to be declared).
+9. **StressStrainCurve** axis is mapped as Dimensionless, as given. `qk:Strain` is the more specific kind (it would need to be declared).
+10. **ElectricHysteresis** axis uses `qk:ElectricField`; the piezoelectric comments use `qk:ElectricFieldStrength`. Both exist in QUDT with the same dimension; one should be chosen for consistency.
+
+**Representation details to review**
+11. **EliashbergFunction** axis: "Energy or Frequency". The axis was left unspecified; choosing one (Energy is the Spectrum default) completes the mapping.
+12. **ElectronicBandStructure** is mapped as a 3Dmap k → Energy, as given. A band structure has several bands (E_n(k)), so the signal may need to be a vector over the band index. It currently has the same binding as FermiSurface.
+13. **Axis labels.** ElectronicDensityOfStates and StressStrainCurve axes have no label in the sheet. Labels such as "t" or "ε" don't exist yet as `rep:AxisLabelTerm` individuals.
+14. **30 Scalars have no signal quantity kind** yet (mostly ChemicalProperty and ElectronicProperty); their type is mapped and the quantity kind can be added later.
+
+**Sheet edits not applied (outside the mapping scope)**
+15. Label change Viscosity → DynamicViscosity (IRI stays `/Viscosity`); the binding is on `tax:Viscosity`.
+16. Description addition for MagneticAnisotropyConstant (note on the first anisotropy constant).
+17. "Also listed under …" text on PiezoelectricProperty and SuperconductingProperty: these come from the sheet's tree layout and shouldn't go into `rdfs:comment`.
+18. The sheet's "Representation types" tab still lists Profile, DepthProfile, Image and VolumeData and a units table; it should be updated to the current types.
+19. 92 rows (OpticalProperty, SpectroscopicProperty, StructuralProperty, ThermodynamicProperty, TransportProperty, VibrationalProperty) aren't reviewed in the sheet yet.
+
+## Representation module merge, 2026-10-25
+
+`representation.ttl` merged into `main.ttl`. No content from the HasRepresentation_Adhoc sheet is included in this change; taxonomy bindings follow in the next stage.
+
+### Changed in place (minor fixes)
+
+| Change | Where | Detail |
+|---|---|---|
+| QUDT schema namespace updated | line 3 (`@prefix qudt:`) | `http://qudt.org/2.1/schema/qudt/` → `http://qudt.org/schema/qudt/` (current, version-free). This moves all `qudt:` terms to the namespace used by the representation module, so `qudt:hasQuantityKind` and `qudt:QuantityKind` are one property and one class. No 2.1 IRIs remain. |
+| Duplicate restrictions collapsed | 11 classes | Each `qudt:hasQuantityKind` restriction appeared five times with the same value; four copies removed per class. The restriction set itself is unchanged (11 class / quantity-kind pairs before and after). |
+
+Classes with collapsed restrictions: BoilingTemperature, ChemicalPotential, DebyeTemperature, Fugacity, GibbsEnergy, HallVoltage, HeatCapacity, HelmholtzEnergy, MeltingTemperature, ThermalExpansionCoefficient, Volume.
+
+### Appended at the end of the file
+
+All new content sits below the banner `REPRESENTATION MODULE (merged from representation.ttl)`.
+
+| Addition | Content |
+|---|---|
+| Prefix declarations | `rep:`, `tax:`, `qb:`, `qudt:`, `qk:`, `owl:`, `rdf:`, `rdfs:`, `xsd:`, `skos:` (Turtle allows prefixes mid-file) |
+| Representation module | the full content of `representation.ttl`: classes, properties, representation types, axis labels, QUDT 3.5.2 quantity kinds, optional Data Cube (DSD) layer and deprecated properties |
+| Quantity-kind typing | `qk:ChemicalPotential`, `qk:Fugacity`, `qk:HeatCapacity`, `qk:ThermalExpansionCoefficient`, `qk:Volume`, already used by the taxonomy, typed as `qudt:QuantityKind` with `rdfs:isDefinedBy` QUDT 3.5.2. All five exist and are not deprecated in QUDT 3.5.2. |
+
+The module's own `owl:Ontology` header (`http://fairmat-nfdi.eu/taxonomy/representation`) was not copied, so `main.ttl` keeps a single ontology header, `http://fairmat-nfdi.eu/taxonomy`. Its description is kept as a comment in the banner.
+
+### Unchanged
+
+- All taxonomy classes, labels, alternative labels, comments and the class hierarchy. No named triple of the original file is missing in the merged file.
+- The existing `qudt:hasQuantityKind` restrictions on the 11 classes above (values unchanged; only the duplicates were removed).
+- Existing quantity-kind individuals and their `rdfs:label` values.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Merged file parses (rdflib) | ✔ 1387 triples |
+| Original named triples present in merged file | ✔ none missing |
+| Remaining `qudt.org/2.1` IRIs | ✔ 0 |
+| `owl:Ontology` headers | ✔ 1 |
+| HermiT: unsatisfiable classes in merged file | ✔ none |
+| HermiT with test bindings: valid bindings satisfiable, invalid ones unsatisfiable | ✔ |
+| Inference through the property chain (CorrosionPotential instance → `qk:Voltage`) | ✔ |
+
+### Next stage (not in this change)
+
+- Taxonomy bindings (`rep:HasRepresentation`) from the HasRepresentation_Adhoc sheet.
+- Label and description edits from the sheet (Viscosity → DynamicViscosity, MagneticAnisotropyConstant note).
+- Local FAIRmat quantity kinds for PiezoelectricChargeCoefficient and PiezoelectricVoltageCoefficient (no QUDT 3.5.2 kind exists).
+- For classes that get a binding: remove or align their direct `qudt:hasQuantityKind` restriction with the signal quantity kind.
