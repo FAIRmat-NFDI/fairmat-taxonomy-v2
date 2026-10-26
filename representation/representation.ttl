@@ -9,7 +9,7 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology ;
-    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT 3.5.2). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
+    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT 3.5.2; sub-property of qudt:hasQuantityKind). The material property has the quantity kinds of its signal and axes (property chain). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
 
 #################################################################
 # 0. External declarations (declarations only; no strengthening
@@ -55,23 +55,32 @@ rep:Axis a owl:Class ;
     skos:prefLabel "Axis"@en ;
     skos:definition "An independent coordinate of a representation."@en .
 
+rep:HasComponent a owl:ObjectProperty ;
+    rdfs:domain rep:Representation ;
+    rdfs:range rep:ComponentProperty ;
+    skos:prefLabel "HasComponent"@en ;
+    skos:definition "Links a representation to any of its components: its signal or one of its axes. Super-property of rep:HasSignal and rep:HasAxis; not used directly in bindings."@en .
+
 rep:HasSignal a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:subPropertyOf rep:HasComponent ;
     rdfs:domain rep:Representation ;
     rdfs:range rep:Signal ;
     skos:prefLabel "HasSignal"@en ;
     skos:definition "Links a representation to its single signal."@en .
 
 rep:HasAxis a owl:ObjectProperty ;
+    rdfs:subPropertyOf rep:HasComponent ;
     rdfs:domain rep:Representation ;
     rdfs:range rep:Axis ;
     skos:prefLabel "HasAxis"@en ;
     skos:definition "Links a representation to one of its axes (any number)."@en .
 
 rep:HasComponentQuantityKind a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:subPropertyOf qudt:hasQuantityKind ;
     rdfs:domain rep:ComponentProperty ;
     rdfs:range qudt:QuantityKind ;
     skos:prefLabel "HasComponentQuantityKind"@en ;
-    skos:definition "Physical quantity kind of a signal or an axis."@en .
+    skos:definition "Physical quantity kind of a signal or an axis (exactly one). Sub-property of qudt:hasQuantityKind, so the signal or axis also has it as its QUDT quantity kind."@en .
 
 rep:AxisIndex a owl:DatatypeProperty, owl:FunctionalProperty ;
     rdfs:domain rep:Axis ;
@@ -126,9 +135,9 @@ rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
   owl:distinctMembers ( rep:Label_x rep:Label_y rep:Label_z rep:Label_kx rep:Label_ky
                         rep:Label_kz rep:Label_E rep:Label_P rep:Label_rho ) ] .
 
-# The quantity kind of a property is the quantity kind of its signal,
-# never of its axes.
-qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasSignal rep:HasComponentQuantityKind ) .
+# A material property has the quantity kinds of all components of its
+# representation: its signal and each of its axes.
+qudt:hasQuantityKind owl:propertyChainAxiom ( rep:HasRepresentation rep:HasComponent rep:HasComponentQuantityKind ) .
 
 #################################################################
 # 3. Representation parameters
@@ -345,15 +354,98 @@ qk:StressIntensityFactor a owl:NamedIndividual, qudt:QuantityKind ;
     rdfs:label "Stress Intensity Factor"@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
 
+# Added for the HasRepresentation_Adhoc v2 mapping (kinds used by the
+# reviewed sheet that were not declared yet).
+
+qk:Angle a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Angle"@en ;
+    rdfs:label "Angle"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Area a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Area"@en ;
+    rdfs:label "Area"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ChemicalPotential a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ChemicalPotential"@en ;
+    rdfs:label "Chemical Potential"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectricCharge a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectricCharge"@en ;
+    rdfs:label "Electric Charge"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectricCurrent a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectricCurrent"@en ;
+    rdfs:label "Electric Current"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ElectricPotential a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ElectricPotential"@en ;
+    rdfs:label "Electric Potential"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:EnergyPerTemperature a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "EnergyPerTemperature"@en ;
+    rdfs:label "Energy per Temperature"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:InverseTemperature a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "InverseTemperature"@en ;
+    rdfs:label "Inverse Temperature"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Mass a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Mass"@en ;
+    rdfs:label "Mass"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:MolarEnergy a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "MolarEnergy"@en ;
+    rdfs:label "Molar Energy"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:NumberDensity a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "NumberDensity"@en ;
+    rdfs:label "Number Density"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:SpecificEnergy a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "SpecificEnergy"@en ;
+    rdfs:label "Specific Energy"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:SpecificHeatCapacity a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "SpecificHeatCapacity"@en ;
+    rdfs:label "Specific Heat Capacity"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:ThermodynamicTemperature a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "ThermodynamicTemperature"@en ;
+    rdfs:label "Thermodynamic Temperature"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:Volume a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "Volume"@en ;
+    rdfs:label "Volume"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
 # QUDT quantity kinds are distinct individuals. OWL makes no unique-name
 # assumption, so without this the functional rep:HasComponentQuantityKind cannot
 # detect two different kinds on one signal or axis (e.g. a TimeSeries
 # axis with qk:Length would be read as qk:Length = qk:Time).
 # Extend this list whenever a quantity kind is added.
 [ a owl:AllDifferent ;
-  owl:distinctMembers ( qk:Time qk:Compressibility qk:Density qk:Dimensionless
-      qk:DynamicViscosity qk:ElectricField qk:ElectricFieldStrength
-      qk:ElectricPolarization qk:ElectromagneticPermeability qk:Energy
-      qk:EnergyDensity qk:EnergyDensityOfStates qk:ForcePerArea qk:Frequency
-      qk:Length qk:MagneticFieldStrength qk:Permittivity qk:Pressure qk:Stress
-      qk:Temperature qk:Voltage qk:Wavenumber qk:StressIntensityFactor ) ] .
+  owl:distinctMembers (
+      qk:Time qk:Compressibility qk:Density qk:Dimensionless qk:DynamicViscosity
+      qk:ElectricField qk:ElectricFieldStrength qk:ElectricPolarization
+      qk:ElectromagneticPermeability qk:Energy qk:EnergyDensity
+      qk:EnergyDensityOfStates qk:ForcePerArea qk:Frequency qk:Length
+      qk:MagneticFieldStrength qk:Permittivity qk:Pressure qk:Stress
+      qk:Temperature qk:Voltage qk:Wavenumber qk:StressIntensityFactor qk:Angle
+      qk:Area qk:ChemicalPotential qk:ElectricCharge qk:ElectricCurrent
+      qk:ElectricPotential qk:EnergyPerTemperature qk:InverseTemperature qk:Mass
+      qk:MolarEnergy qk:NumberDensity qk:SpecificEnergy qk:SpecificHeatCapacity
+      qk:ThermodynamicTemperature qk:Volume ) ] .
