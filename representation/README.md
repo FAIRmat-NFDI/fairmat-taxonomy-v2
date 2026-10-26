@@ -411,7 +411,7 @@ tax:Morphology rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepre
             [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ) ] ]
     ) ] ] .
 ```
-Both axes have the quantity kind Length. They stay two axes because their index and label differ. (Illustration: Morphology is not bound in `main.ttl`; the reviewer marked it unclear.)
+Both axes have the quantity kind Length. They stay two axes because their index and label differ. (Illustration only: Morphology is deprecated in `main.ttl` and has no binding; the reviewer marked it unclear.)
 
 ### 5.10 3Dmap: example `tax:FermiSurface` (reciprocal space)
 
@@ -825,5 +825,7 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 | No matching representation type | 2 |
 | Parent class | 1 |
 | Contradicts class description | 1 |
+
+**Deprecated taxonomy classes.** MagneticHysteresis, Photoluminescence, Grain, Morphology and ParticleShape carry `owl:deprecated true` and a `skos:historyNote` (block `DEPRECATED TAXONOMY CLASSES` at the end of `main.ttl`). They keep their IRIs and have no binding.
 
 The full list, the mapping rules, the unmapped rows and the open points are in `CHANGELOG.md`.

@@ -2738,3 +2738,31 @@ qk:ThermalExpansionCoefficient a qudt:QuantityKind ;
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
             [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:SpecificHeatCapacity ] ]
     ) ] ] .
+
+
+#################################################################
+#################################################################
+##  DEPRECATED TAXONOMY CLASSES
+##  Marked deprecated on 2026-10-26 following the reviewer's
+##  comments in the HasRepresentation_Adhoc sheet. The classes and
+##  their IRIs are kept so that existing references still resolve;
+##  they carry no representation binding. See CHANGELOG.md.
+#################################################################
+#################################################################
+
+skos:historyNote a owl:AnnotationProperty .
+
+<http://fairmat-nfdi.eu/taxonomy/MagneticHysteresis> owl:deprecated "true"^^xsd:boolean ;
+    skos:historyNote "Deprecated 2026-10-26. Reviewer: 'REMOVE THIS. It can mean different things.'"@en .
+
+<http://fairmat-nfdi.eu/taxonomy/Photoluminescence> owl:deprecated "true"^^xsd:boolean ;
+    skos:historyNote "Deprecated 2026-10-26. Reviewer: a phenomenon, not a measurable property; 'REMOVE'."@en .
+
+<http://fairmat-nfdi.eu/taxonomy/Grain> owl:deprecated "true"^^xsd:boolean ;
+    skos:historyNote "Deprecated 2026-10-26. Reviewer: unclear; unclear entries are to be removed."@en .
+
+<http://fairmat-nfdi.eu/taxonomy/Morphology> owl:deprecated "true"^^xsd:boolean ;
+    skos:historyNote "Deprecated 2026-10-26. Reviewer: unclear; unclear entries are to be removed."@en .
+
+<http://fairmat-nfdi.eu/taxonomy/ParticleShape> owl:deprecated "true"^^xsd:boolean ;
+    skos:historyNote "Deprecated 2026-10-26. Reviewer: unclear; unclear entries are to be removed."@en .

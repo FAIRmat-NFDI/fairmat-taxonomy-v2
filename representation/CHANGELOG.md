@@ -6,8 +6,56 @@ Newest first. Entries under **History** describe earlier states and are supersed
 
 - `main.ttl`: taxonomy + representation module + **140 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (30 rows remain unmapped, see the discussions below).
 - Representation types: Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap, **ElementList**.
+- Deprecated taxonomy classes: MagneticHysteresis, Photoluminescence, Grain, Morphology, ParticleShape.
 - Signal and axis carry `qudt:hasQuantityKind` (via `rep:HasComponentQuantityKind`); a taxonomy class gets the kinds of its signal and all axes (chain via `rep:HasComponent`).
 - Quantity kinds: 42 in the module (41 QUDT, 1 local `fqk:CryoscopicConstant`), 45 in the distinctness list of `main.ttl`.
+
+## Five taxonomy classes deprecated, 2026-10-26
+
+Following the reviewer's comments in the HasRepresentation_Adhoc sheet ("REMOVE", or unclear entries to be removed), five classes are marked deprecated rather than deleted, so their IRIs keep resolving for anyone who already uses them.
+
+### Appended to `main.ttl`
+
+A new block `DEPRECATED TAXONOMY CLASSES` at the end of the file (after the bindings). The class blocks in the taxonomy part are not edited.
+
+| Class | Parent | Added | Reviewer comment |
+|---|---|---|---|
+| `tax:MagneticHysteresis` | MagneticProperty | `owl:deprecated true`, `skos:historyNote` | "REMOVE THIS. It can mean different things." |
+| `tax:Photoluminescence` | OpticalProperty | `owl:deprecated true`, `skos:historyNote` | phenomenon, not a measurable property; "REMOVE" |
+| `tax:Grain` | StructuralProperty | `owl:deprecated true`, `skos:historyNote` | unclear |
+| `tax:Morphology` | StructuralProperty | `owl:deprecated true`, `skos:historyNote` | unclear |
+| `tax:ParticleShape` | StructuralProperty | `owl:deprecated true`, `skos:historyNote` | unclear |
+
+Also declared: `skos:historyNote` as `owl:AnnotationProperty`.
+
+### Effect
+
+- `owl:deprecated` is an annotation: no logical consequence; the reasoner treats the classes as before. Tools such as Protégé show them struck through.
+- None of the five has subclasses, a representation binding or a reference from another class, so nothing else is affected.
+- The five rows stay "Not mapped"; their reason now says "deprecated" (also in the annotated sheet).
+- The README's Morphology 2Dmap example is kept as an illustration of the 2Dmap pattern and now says the class is deprecated.
+
+### Not deprecated (reviewer comments also suggest removal, kept for a decision)
+
+- SpectroscopicProperty (category; "obsolete catch-all", has subclasses).
+- Defect, PhaseComposition, PhaseCrystalStructure, StandardState (not a quantity or undecided).
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 610 (unchanged; taxonomy classes are not part of the module) |
+| `main.ttl` | 4194 (was 4183) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Taxonomy part of `main.ttl` unchanged; deprecations only appended | ✔ |
+| 5 classes with `owl:deprecated true` | ✔ |
+| HermiT: unsatisfiable classes | ✔ none |
+| Bindings and derived quantity kinds | ✔ unchanged, 140/140 |
+| Invalid test bindings | ✔ all still flagged |
 
 ## Element lists; ElementalComposition and Impurity bound, 2026-10-26
 
