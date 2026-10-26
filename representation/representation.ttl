@@ -11,7 +11,7 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://fairmat-nfdi.eu/taxonomy/representation> a owl:Ontology ;
-    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT 3.5.2; sub-property of qudt:hasQuantityKind). The material property has the quantity kinds of its signal and axes (property chain). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
+    rdfs:comment "FAIRmat representation module. A taxonomy property is bound to a representation type (Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap) through rep:HasRepresentation. The representation has one signal (rep:HasSignal) and any number of axes (rep:HasAxis); signal and axes carry their physical quantity kind through rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT 3.5.2; sub-property of qudt:hasQuantityKind). The material property has the quantity kinds of its signal and axes (property chain). Axes are identified by rep:AxisIndex and rep:AxisLabel. No unit handling is defined in this module."@en .
 
 #################################################################
 # 0. External declarations (declarations only; no strengthening
@@ -133,6 +133,10 @@ rep:Label_E a owl:NamedIndividual, rep:AxisLabelTerm ;
 rep:Label_P a owl:NamedIndividual, rep:AxisLabelTerm ;
     skos:prefLabel "P" ;
     rdfs:comment "Symbol P, e.g. pressure."@en .
+rep:Label_omega a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "omega" ;
+    skos:altLabel "\u03c9" ;
+    rdfs:comment "Symbol omega (\u03c9), e.g. angular frequency."@en .
 rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
     skos:prefLabel "rho" ;
     skos:altLabel "\u03c1" ;
@@ -141,7 +145,7 @@ rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
 # Labels are distinct, so two axes with different labels are two axes.
 [ a owl:AllDifferent ;
   owl:distinctMembers ( rep:Label_x rep:Label_y rep:Label_z rep:Label_kx rep:Label_ky
-                        rep:Label_kz rep:Label_E rep:Label_P rep:Label_rho ) ] .
+                        rep:Label_kz rep:Label_E rep:Label_P rep:Label_rho rep:Label_omega ) ] .
 
 # A material property has the quantity kinds of all components of its
 # representation: its signal and each of its axes.
@@ -237,6 +241,15 @@ rep:3Dmap a owl:Class ;
           owl:cardinality "3"^^xsd:nonNegativeInteger ] ;
     skos:prefLabel "3Dmap"@en ;
     rdfs:comment "Mapping from three axes to a signal."@en .
+
+rep:4Dmap a owl:Class ;
+    rdfs:subClassOf rep:Representation ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:cardinality "4"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "4Dmap"@en ;
+    rdfs:comment "Mapping from four axes to a signal, e.g. (kx, ky, kz, omega)."@en .
 
 #################################################################
 # 4b. Quantity kinds (QUDT v3.5.2)

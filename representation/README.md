@@ -8,11 +8,11 @@ The representation module describes **how a material property's data is shaped**
 
 - **Scalar, Vector or Tensor2** for a value without axes;
 - **1Dmap, Spectrum or TimeSeries** for a mapping from one axis to a signal;
-- **2Dmap or 3Dmap** for a mapping from two or three axes to a signal.
+- **2Dmap, 3Dmap or 4Dmap** for a mapping from two, three or four axes to a signal.
 
 A representation has **one signal** and **any number of axes**. Signal and axes carry their **physical quantity kind** from QUDT 3.5.2. Axes are identified by an **index** and a **label**. Signal, axes and the taxonomy property itself also get **`qudt:hasQuantityKind`**: signal and axes directly (sub-property), the taxonomy property from its signal and all its axes (property chain).
 
-The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabulary. The bindings of 137 taxonomy properties live in `main.ttl` (see §9).
+The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabulary. The bindings of 138 taxonomy properties live in `main.ttl` (see §9).
 
 ## 2. Namespaces
 
@@ -35,6 +35,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `rep:1Dmap` | 1Dmap | `rep:Representation` | Generic mapping from one axis to a signal; repeated axis values are allowed (e.g. hysteresis). |
 | `rep:2Dmap` | 2Dmap | `rep:Representation` | Mapping from two axes to a signal. |
 | `rep:3Dmap` | 3Dmap | `rep:Representation` | Mapping from three axes to a signal. |
+| `rep:4Dmap` | 4Dmap | `rep:Representation` | Mapping from four axes to a signal, e.g. (kx, ky, kz, omega). |
 | `rep:Axis` | Axis | `rep:ComponentProperty` | An independent coordinate of a representation. |
 | `rep:AxisLabelTerm` | AxisLabelTerm | — | A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasComponentQuantityKind; the label only names it. |
 | `rep:ComponentProperty` | ComponentProperty | `rep:Representation` | A component of a representation: either its signal or one of its axes. |
@@ -74,6 +75,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `rep:Label_kx` | kx |  | Reciprocal-space coordinate kx (e.g. electronic band structure, Fermi surface). |
 | `rep:Label_ky` | ky |  | Reciprocal-space coordinate ky. |
 | `rep:Label_kz` | kz |  | Reciprocal-space coordinate kz. |
+| `rep:Label_omega` | omega | ω | Symbol omega (ω), e.g. angular frequency. |
 | `rep:Label_rho` | rho | ρ | Symbol rho (ρ), e.g. density. |
 | `rep:Label_x` | x |  | Spatial coordinate x. |
 | `rep:Label_y` | y |  | Spatial coordinate y. |
@@ -183,6 +185,7 @@ rep:HasSignal, rep:HasAxis ⊑ rep:HasComponent        rep:HasComponentQuantityK
 | `rep:TimeSeries` | 1Dmap | open | 1 | 1 | Time (enforced) |
 | `rep:2Dmap` | Representation | open | 2 | 1 | any |
 | `rep:3Dmap` | Representation | open | 3 | 1 | any |
+| `rep:4Dmap` | Representation | open | 4 | 1 | any |
 
 ## 5. Details
 
@@ -503,6 +506,47 @@ tax:CryoscopicConstant rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:
 - QUDT 3.5.2 has no dimension-vector individual for K·kg/mol, so the local kind gives the ratio by numerator and denominator instead of `qudt:hasDimensionVector`.
 - A dimension vector doesn't identify a kind (Energy and Torque share one); the kind's IRI does.
 
+### 5.13 4Dmap: example `tax:ElectronicGreensFunction` (reciprocal space and frequency)
+
+**Structure**
+```
+tax:ElectronicGreensFunction
+ │ ···► qudt:hasQuantityKind ···► qk:Time, qk:Wavenumber, qk:Frequency
+ └─ rep:HasRepresentation ──► rep:4Dmap   [exactly 4 axes]
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, AxisLabel rep:Label_kx,    HasComponentQuantityKind ──► qk:Wavenumber
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 2, AxisLabel rep:Label_ky,    HasComponentQuantityKind ──► qk:Wavenumber
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 3, AxisLabel rep:Label_kz,    HasComponentQuantityKind ──► qk:Wavenumber
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 4, AxisLabel rep:Label_omega, HasComponentQuantityKind ──► qk:Frequency
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Time
+```
+
+**RDF**
+```turtle
+tax:ElectronicGreensFunction rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:4Dmap
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Time ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
+            [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kx ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "2"^^xsd:positiveInteger ]
+            [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_ky ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "3"^^xsd:positiveInteger ]
+            [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kz ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "4"^^xsd:positiveInteger ]
+            [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_omega ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Frequency ] ) ] ]
+    ) ] ] .
+```
+- G(k, ω) maps reciprocal space and frequency to a value with the dimension of time (1/frequency), as given in the sheet.
+- Higher maps (5D and up, or nD → mD) follow the same pattern: one class per axis count with `owl:cardinality n` on `rep:HasAxis`.
+
 ## 6. Axioms and rules
 
 ### 6.1 Per entity
@@ -547,8 +591,8 @@ tax:CryoscopicConstant rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:
 **`rep:Scalar`, `rep:Vector`, `rep:Tensor2`**
 - Rank 0, 1 or 2 respectively; at least one signal; no axis.
 
-**`rep:1Dmap`, `rep:2Dmap`, `rep:3Dmap`**
-- At least one signal; exactly 1, 2 or 3 axes.
+**`rep:1Dmap`, `rep:2Dmap`, `rep:3Dmap`, `rep:4Dmap`**
+- At least one signal; exactly 1, 2, 3 or 4 axes.
 
 **`rep:Spectrum`**
 - Subclass of `rep:1Dmap`; no extra axiom (the Energy axis is a note only).
@@ -557,7 +601,7 @@ tax:CryoscopicConstant rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:
 - Subclass of `rep:1Dmap`; every axis has quantity kind `qk:Time`.
 
 **Axis labels**
-- `rep:Label_x … rep:Label_rho` are pairwise different (`owl:AllDifferent`).
+- `rep:Label_x … rep:Label_rho`, `rep:Label_omega` are pairwise different (`owl:AllDifferent`).
 
 **Quantity kinds**
 - The 42 quantity kinds of the module (41 `qk:` from QUDT, 1 local `fqk:`) are pairwise different (`owl:AllDifferent`). In `main.ttl` the list also covers the three further kinds the taxonomy already used (Fugacity, HeatCapacity, ThermalExpansionCoefficient), so it has 45 members.
@@ -587,7 +631,7 @@ tax:CryoscopicConstant rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:
 | Rank = 0 / 1 / 2 | Scalar / Vector / Tensor2 | fixes signal rank |
 | ≥1 HasSignal | all types | every representation has a signal |
 | ≤0 HasAxis | Scalar, Vector, Tensor2 | no axes |
-| =1 / =2 / =3 HasAxis | 1Dmap / 2Dmap / 3Dmap | exact axis count |
+| =1 / =2 / =3 / =4 HasAxis | 1Dmap / 2Dmap / 3Dmap / 4Dmap | exact axis count |
 | ∀ HasAxis.(HasComponentQuantityKind ∋ Time) | TimeSeries | time axis enforced |
 | subclass | Spectrum, TimeSeries ⊑ 1Dmap | inherit 1 axis |
 | `owl:oneOf` filler (in a binding) | `rep:HasComponentQuantityKind` | a signal or axis whose kind is one of several (EliashbergFunction) |
@@ -613,7 +657,7 @@ HasRepresentation ∘ HasComponent ∘ HasComponentQuantityKind ⊑ qudt:hasQuan
 ```
 ComponentProperty ⊑ Representation
 ComponentProperty ≡ Signal ⊔ Axis          Signal ⊓ Axis ⊑ ⊥
-Label_x ≠ Label_y ≠ Label_z ≠ Label_kx ≠ Label_ky ≠ Label_kz ≠ Label_E ≠ Label_P ≠ Label_rho   (pairwise)
+Label_x ≠ Label_y ≠ Label_z ≠ Label_kx ≠ Label_ky ≠ Label_kz ≠ Label_E ≠ Label_P ≠ Label_rho ≠ Label_omega   (pairwise)
 qk:Time ≠ qk:Length ≠ qk:Energy ≠ …   (all quantity kinds, pairwise)
 ```
 
@@ -627,6 +671,7 @@ Spectrum   ⊑ 1Dmap
 TimeSeries ⊑ 1Dmap ⊓ ∀HasAxis.∃HasComponentQuantityKind.{qk:Time}
 2Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =2 HasAxis
 3Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =3 HasAxis
+4Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =4 HasAxis
 ```
 
 **Taxonomy binding pattern**
@@ -646,7 +691,7 @@ Alternative kinds:   ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃HasComponentQuantityKin
 |---|---|
 | Scalar, Vector and Tensor2 are pairwise disjoint | functional `rep:Rank` with different values |
 | Scalar, Vector and Tensor2 are disjoint from every map type | ≤0 axes vs ≥1 axis |
-| 1Dmap, 2Dmap and 3Dmap are pairwise disjoint | different exact axis counts |
+| 1Dmap, 2Dmap, 3Dmap and 4Dmap are pairwise disjoint | different exact axis counts |
 | `tax:C qudt:hasQuantityKind q` for the signal kind and every axis kind of a bound property | property chain on `qudt:hasQuantityKind` through `rep:HasComponent` |
 | `[signal or axis] qudt:hasQuantityKind q` for its own kind | `rep:HasComponentQuantityKind ⊑ qudt:hasQuantityKind` |
 | Two axes with different index or label are distinct | functional `AxisIndex` / `AxisLabel` + `AllDifferent` |
@@ -660,7 +705,7 @@ Alternative kinds:   ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃HasComponentQuantityKin
 | TimeSeries with a non-time axis | TimeSeries axis must have quantity kind `qk:Time`; `rep:HasComponentQuantityKind` is functional and quantity kinds are distinct |
 | Signal or axis with two different quantity kinds | `rep:HasComponentQuantityKind` is functional and quantity kinds are distinct |
 | Scalar, Vector or Tensor2 with an axis | Scalar, Vector and Tensor2 allow no axis |
-| 1Dmap, 2Dmap or 3Dmap with the wrong number of axes | exact axis count per map type, with axes kept distinct by index or label |
+| 1Dmap, 2Dmap, 3Dmap or 4Dmap with the wrong number of axes | exact axis count per map type, with axes kept distinct by index or label |
 | Two separate `HasRepresentation` restrictions with different types | `rep:HasRepresentation` is functional and the representation types are disjoint (§6.4) |
 | A node used as both signal and axis | Signal and Axis are disjoint |
 
@@ -689,9 +734,10 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 | 1Dmap with two axes of different labels | unsatisfiable | ✔ |
 | Scalar and Tensor2 as two separate restrictions | unsatisfiable | ✔ |
 | Instance of a Scalar test class with signal Voltage | infers `qudt:hasQuantityKind qk:Voltage` | ✔ |
-| Merged `main.ttl` (taxonomy + module + 137 bindings) | no unsatisfiable class | ✔ |
-| Each of the 137 bound classes | inferred `qudt:hasQuantityKind` = signal kind + axis kinds from the sheet (+ any direct restriction) | ✔ 137/137 |
-| Each of the 137 bound classes | its signal and axes carry `qudt:hasQuantityKind` for their own kind | ✔ 137/137 |
+| Merged `main.ttl` (taxonomy + module + 138 bindings) | no unsatisfiable class | ✔ |
+| Each of the 138 bound classes | inferred `qudt:hasQuantityKind` = signal kind + axis kinds from the sheet (+ any direct restriction) | ✔ 138/138 |
+| Each of the 138 bound classes | its signal and axes carry `qudt:hasQuantityKind` for their own kind | ✔ 138/138 |
+| 4Dmap ⊓ 3Dmap, 4Dmap ⊓ Scalar, ElectronicGreensFunction with a fifth axis | unsatisfiable | ✔ |
 | EliashbergFunction (axis `oneOf {Energy, Frequency}`) | class ⊑ `∃ qudt:hasQuantityKind.{Energy, Frequency}`; a Length axis is unsatisfiable | ✔ |
 
 ## 8. Merging into `main.ttl`
@@ -707,8 +753,8 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 
 | | Count |
 |---|---:|
-| Bound classes | 137 (137 fully, 0 in part) |
-| Not mapped | 33 |
+| Bound classes | 138 (138 fully, 0 in part) |
+| Not mapped | 32 |
 
 | Representation type | Bound classes |
 |---|---:|
@@ -718,13 +764,14 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 | `rep:Spectrum` | 3 |
 | `rep:Vector` | 3 |
 | `rep:TimeSeries` | 2 |
+| `rep:4Dmap` | 1 |
 
 | Not mapped, by reason | Rows |
 |---|---:|
 | Scalar or tensor (open modelling choice) | 13 |
 | Reviewer: remove / unclear / not a quantity | 11 |
 | No QUDT quantity kind / rank-3 tensor | 4 |
-| No matching representation type | 3 |
+| No matching representation type | 2 |
 | Parent class | 1 |
 | Contradicts class description | 1 |
 

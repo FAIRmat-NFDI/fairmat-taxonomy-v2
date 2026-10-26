@@ -1099,7 +1099,7 @@ qudt:hasQuantityKind a owl:ObjectProperty ;
 ##
 ##  FAIRmat representation module. A taxonomy property is bound to
 ##  a representation type (Scalar, Vector, Tensor2, 1Dmap,
-##  Spectrum, TimeSeries, 2Dmap, 3Dmap) through
+##  Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap) through
 ##  rep:HasRepresentation. The representation has one signal
 ##  (rep:HasSignal) and any number of axes (rep:HasAxis); signal
 ##  and axes carry their physical quantity kind through
@@ -1243,6 +1243,10 @@ rep:Label_E a owl:NamedIndividual, rep:AxisLabelTerm ;
 rep:Label_P a owl:NamedIndividual, rep:AxisLabelTerm ;
     skos:prefLabel "P" ;
     rdfs:comment "Symbol P, e.g. pressure."@en .
+rep:Label_omega a owl:NamedIndividual, rep:AxisLabelTerm ;
+    skos:prefLabel "omega" ;
+    skos:altLabel "\u03c9" ;
+    rdfs:comment "Symbol omega (\u03c9), e.g. angular frequency."@en .
 rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
     skos:prefLabel "rho" ;
     skos:altLabel "\u03c1" ;
@@ -1251,7 +1255,7 @@ rep:Label_rho a owl:NamedIndividual, rep:AxisLabelTerm ;
 # Labels are distinct, so two axes with different labels are two axes.
 [ a owl:AllDifferent ;
   owl:distinctMembers ( rep:Label_x rep:Label_y rep:Label_z rep:Label_kx rep:Label_ky
-                        rep:Label_kz rep:Label_E rep:Label_P rep:Label_rho ) ] .
+                        rep:Label_kz rep:Label_E rep:Label_P rep:Label_rho rep:Label_omega ) ] .
 
 # A material property has the quantity kinds of all components of its
 # representation: its signal and each of its axes.
@@ -1347,6 +1351,15 @@ rep:3Dmap a owl:Class ;
           owl:cardinality "3"^^xsd:nonNegativeInteger ] ;
     skos:prefLabel "3Dmap"@en ;
     rdfs:comment "Mapping from three axes to a signal."@en .
+
+rep:4Dmap a owl:Class ;
+    rdfs:subClassOf rep:Representation ,
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ;
+          owl:someValuesFrom rep:Signal ] ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:cardinality "4"^^xsd:nonNegativeInteger ] ;
+    skos:prefLabel "4Dmap"@en ;
+    rdfs:comment "Mapping from four axes to a signal, e.g. (kx, ky, kz, omega)."@en .
 
 #################################################################
 # 4b. Quantity kinds (QUDT v3.5.2)
@@ -1838,6 +1851,29 @@ qk:ThermalExpansionCoefficient a qudt:QuantityKind ;
         [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
                 [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
                 [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Energy ] ) ] ]
+    ) ] ] .
+
+<http://fairmat-nfdi.eu/taxonomy/ElectronicGreensFunction> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+        rep:4Dmap
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Time ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
+                [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kx ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "2"^^xsd:positiveInteger ]
+                [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_ky ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "3"^^xsd:positiveInteger ]
+                [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_kz ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Wavenumber ] ) ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+                [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "4"^^xsd:positiveInteger ]
+                [ a owl:Restriction ; owl:onProperty rep:AxisLabel ; owl:hasValue rep:Label_omega ]
+                [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Frequency ] ) ] ]
     ) ] ] .
 
 <http://fairmat-nfdi.eu/taxonomy/ElectronicSusceptibility> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;

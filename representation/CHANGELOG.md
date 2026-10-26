@@ -4,9 +4,57 @@ Newest first. Entries under **History** describe earlier states and are supersed
 
 ## Current state (2026-10-26)
 
-- `main.ttl`: taxonomy + representation module + **137 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (33 rows remain unmapped, see the discussion below).
+- `main.ttl`: taxonomy + representation module + **138 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (32 rows remain unmapped, see the discussions below).
+- Representation types: Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap, **4Dmap**.
 - Signal and axis carry `qudt:hasQuantityKind` (via `rep:HasComponentQuantityKind`); a taxonomy class gets the kinds of its signal and all axes (chain via `rep:HasComponent`).
 - Quantity kinds: 42 in the module (41 QUDT, 1 local `fqk:CryoscopicConstant`), 45 in the distinctness list of `main.ttl`.
+
+## 4D maps introduced; ElectronicGreensFunction bound, 2026-10-26
+
+### Added to the representation module
+
+| Item | Content |
+|---|---|
+| `rep:4Dmap` | ⊑ `rep:Representation`; at least one signal; `rep:HasAxis` exactly 4. Same pattern as 1Dmap–3Dmap |
+| `rep:Label_omega` | axis label "omega" (altLabel ω), e.g. angular frequency; added to the axis-label `owl:AllDifferent` list |
+| Ontology comment | lists 4Dmap among the representation types |
+
+Disjointness needs no new axiom: 4Dmap is disjoint from 1Dmap, 2Dmap, 3Dmap (different exact axis counts) and from Scalar, Vector, Tensor2 (no axes), derived by the reasoner.
+
+### Binding added
+
+| Class | Bound as |
+|---|---|
+| `tax:ElectronicGreensFunction` | `rep:4Dmap`; signal `qk:Time`; axes 1: `rep:Label_kx`, `qk:Wavenumber`; 2: `rep:Label_ky`, `qk:Wavenumber`; 3: `rep:Label_kz`, `qk:Wavenumber`; 4: `rep:Label_omega`, `qk:Frequency` |
+
+As suggested in the sheet ("rep:4Dmap G(kx,ky,kz,omega) → time"). The signal kind Time matches G(k, ω) having the dimension 1/frequency. The previous discussion point on new constructs is resolved for ElectronicGreensFunction.
+
+### Counts
+
+| | Before | After |
+|---|---:|---:|
+| Bindings | 137 | 138 |
+| Not mapped | 33 | 32 |
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 593 (was 574) |
+| `main.ttl` | 4158 (was 4035) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Taxonomy part of `main.ttl` unchanged | ✔ |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| 4Dmap ⊓ 3Dmap, 4Dmap ⊓ Scalar | ✔ unsatisfiable |
+| ElectronicGreensFunction with a fifth axis | ✔ unsatisfiable |
+| Earlier invalid test bindings | ✔ all 5 still flagged |
+| Derived `qudt:hasQuantityKind` = signal + axis kinds (+ direct restrictions) | ✔ 138/138 |
+| Signal and axis carry their own `qudt:hasQuantityKind` | ✔ 138/138 |
+| README Turtle examples (now 12, incl. §5.13) | ✔ all parse, all satisfiable |
 
 ## Remaining rows resolved by decision, 2026-10-26
 
