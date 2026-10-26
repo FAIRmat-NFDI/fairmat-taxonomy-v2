@@ -53,6 +53,8 @@ The module's own `owl:Ontology` header (`http://fairmat-nfdi.eu/taxonomy/represe
 
 ## Representation bindings from HasRepresentation_Adhoc, 2026-10-25
 
+> **Superseded** by "Representation bindings remapped from the reviewed HasRepresentation_Adhoc sheet, 2026-10-26" at the end of this file. The tables below describe the first, partly reviewed sheet and are kept as history.
+
 Rows of the HasRepresentation_Adhoc sheet mapped onto `main.ttl` as `rep:HasRepresentation` bindings. This is a mapping operation only: no class, property, individual or axiom was added to the representation module, and the taxonomy classes themselves are unchanged.
 
 ### Summary
@@ -352,6 +354,8 @@ The original taxonomy part of `main.ttl` never used this property and is unchang
 | Inferred `qudt:hasQuantityKind` of the 78 bound classes equals the sheet | ✔ 78/78 |
 
 ## Quantity kinds on signal, axis and taxonomy class, 2026-10-26
+
+Supersedes the signal-only property chain described in "Representation module merge" and "`rep:HasQuantityKind` renamed …".
 
 Signal and axis carry their quantity kind as QUDT `qudt:hasQuantityKind`, and the taxonomy class gets the quantity kinds of its signal and of all its axes.
 
