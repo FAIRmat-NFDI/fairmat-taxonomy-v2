@@ -1099,15 +1099,18 @@ qudt:hasQuantityKind a owl:ObjectProperty ;
 ##
 ##  FAIRmat representation module. A taxonomy property is bound to
 ##  a representation type (Scalar, Vector, Tensor2, 1Dmap,
-##  Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap) through
-##  rep:HasRepresentation. The representation has one signal
-##  (rep:HasSignal) and any number of axes (rep:HasAxis); signal
-##  and axes carry their physical quantity kind through
+##  Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap, ElementList)
+##  through rep:HasRepresentation. The representation has one
+##  signal (rep:HasSignal) and any number of axes (rep:HasAxis);
+##  signal and axes carry their physical quantity kind through
 ##  rep:HasComponentQuantityKind (range qudt:QuantityKind, QUDT
 ##  3.5.2; sub-property of qudt:hasQuantityKind). The material
 ##  property has the quantity kinds of its signal and axes
 ##  (property chain). Axes are identified by rep:AxisIndex and
-##  rep:AxisLabel. No unit handling is defined in this module.
+##  rep:AxisLabel. A rep:ElementList lists chemical elements
+##  (rep:HasChemicalElement, range table:Element) and has no
+##  signal, axis or quantity kind. No unit handling is defined in
+##  this module.
 #################################################################
 #################################################################
 
@@ -1117,6 +1120,7 @@ qudt:hasQuantityKind a owl:ObjectProperty ;
 @prefix qk:   <http://qudt.org/vocab/quantitykind/> .
 @prefix qkdv: <http://qudt.org/vocab/dimensionvector/> .
 @prefix fqk:  <http://fairmat-nfdi.eu/taxonomy/quantitykind/> .
+@prefix table: <http://www.daml.org/2003/01/periodictable/PeriodicTable#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -1130,6 +1134,7 @@ qudt:hasQuantityKind a owl:ObjectProperty ;
 qudt:QuantityKind a owl:Class .
 qudt:hasQuantityKind a owl:ObjectProperty .
 tax:MaterialProperty a owl:Class .
+table:Element a owl:Class .        # DAML Periodic Table; declared, not imported
 skos:prefLabel a owl:AnnotationProperty .
 skos:definition a owl:AnnotationProperty .
 skos:note a owl:AnnotationProperty .
@@ -1360,6 +1365,28 @@ rep:4Dmap a owl:Class ;
           owl:cardinality "4"^^xsd:nonNegativeInteger ] ;
     skos:prefLabel "4Dmap"@en ;
     rdfs:comment "Mapping from four axes to a signal, e.g. (kx, ky, kz, omega)."@en .
+
+#################################################################
+# 4d. Categorical representation: list of chemical elements
+# No signal, no axes, no quantity kind. The members are chemical
+# elements (table:Element, DAML Periodic Table; declared, not
+# imported). Not part of the quantity-kind chain: rep:HasChemicalElement
+# is deliberately not a sub-property of rep:HasComponent or
+# qudt:hasQuantityKind.
+#################################################################
+rep:ElementList a owl:Class ;
+    rdfs:subClassOf rep:Representation ,
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ;
+          owl:maxCardinality "0"^^xsd:nonNegativeInteger ] ;
+    owl:disjointWith rep:Scalar , rep:Vector , rep:Tensor2 ;
+    skos:prefLabel "ElementList"@en ;
+    rdfs:comment "A list of chemical elements (e.g. the elements of a composition). Categorical: no signal, no axes, no quantity kind."@en .
+
+rep:HasChemicalElement a owl:ObjectProperty ;
+    rdfs:domain rep:ElementList ;
+    rdfs:range table:Element ;
+    skos:prefLabel "HasChemicalElement"@en ;
+    skos:definition "Links an element list to one of its chemical elements (an individual of table:Element). The taxonomy states only the range; specific elements are given in instance data."@en .
 
 #################################################################
 # 4b. Quantity kinds (QUDT v3.5.2)
@@ -2363,6 +2390,9 @@ qk:ThermalExpansionCoefficient a qudt:QuantityKind ;
             [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Area ] ]
     ) ] ] .
 
+<http://fairmat-nfdi.eu/taxonomy/ElementalComposition> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:allValuesFrom rep:ElementList ] .
+
 <http://fairmat-nfdi.eu/taxonomy/GrainAspectRatio> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
         rep:Scalar
@@ -2376,6 +2406,9 @@ qk:ThermalExpansionCoefficient a qudt:QuantityKind ;
         [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
             [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Length ] ]
     ) ] ] .
+
+<http://fairmat-nfdi.eu/taxonomy/Impurity> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:allValuesFrom rep:ElementList ] .
 
 <http://fairmat-nfdi.eu/taxonomy/LangmuirSurfaceArea> rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
     owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (

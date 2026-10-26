@@ -4,10 +4,69 @@ Newest first. Entries under **History** describe earlier states and are supersed
 
 ## Current state (2026-10-26)
 
-- `main.ttl`: taxonomy + representation module + **138 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (32 rows remain unmapped, see the discussions below).
-- Representation types: Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap, **4Dmap**.
+- `main.ttl`: taxonomy + representation module + **140 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (30 rows remain unmapped, see the discussions below).
+- Representation types: Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap, **ElementList**.
 - Signal and axis carry `qudt:hasQuantityKind` (via `rep:HasComponentQuantityKind`); a taxonomy class gets the kinds of its signal and all axes (chain via `rep:HasComponent`).
 - Quantity kinds: 42 in the module (41 QUDT, 1 local `fqk:CryoscopicConstant`), 45 in the distinctness list of `main.ttl`.
+
+## Element lists; ElementalComposition and Impurity bound, 2026-10-26
+
+### Added to the representation module
+
+| Item | Content |
+|---|---|
+| Prefix `table:` | `http://www.daml.org/2003/01/periodictable/PeriodicTable#` (DAML Periodic Table) |
+| `table:Element` | declared as `owl:Class`; **not imported**. Chemical elements are individuals of it (e.g. `table:Fe`) |
+| `rep:ElementList` | ⊑ `rep:Representation`; `rep:HasAxis` max 0; `owl:disjointWith rep:Scalar, rep:Vector, rep:Tensor2`. No signal, no axes, no quantity kind |
+| `rep:HasChemicalElement` | object property; domain `rep:ElementList`; range `table:Element`. Not a sub-property of `rep:HasComponent` or `qudt:hasQuantityKind` |
+| Ontology comment | lists ElementList among the representation types |
+
+Disjointness is stated only between ElementList and Scalar, Vector, Tensor2 (`owl:disjointWith`); no axiom about the existing types among themselves was added. ElementList is disjoint from every map type automatically (maps need at least one axis).
+
+### Bindings added
+
+| Class | Binding | Note |
+|---|---|---|
+| `tax:ElementalComposition` | `rep:HasRepresentation only rep:ElementList` | range only: no specific element and no minimum number; elements are given in instance data |
+| `tax:Impurity` | `rep:HasRepresentation only rep:ElementList` | restricted to elements by decision; the description also mentions chemical substances (compounds) |
+
+The bindings use `owl:allValuesFrom` (a range statement), unlike the numeric bindings, which use `owl:someValuesFrom`.
+
+### Unchanged
+
+Scalar, Vector, Tensor2, all map types, TimeSeries rule, signals, axes, `rep:HasComponentQuantityKind`, the quantity-kind chain and distinctness list, the 138 existing bindings and their derived quantity kinds, and the taxonomy part of `main.ttl`. Element lists derive no `qudt:hasQuantityKind`.
+
+### Counts
+
+| | Before | After |
+|---|---:|---:|
+| Bindings | 138 | 140 |
+| Not mapped | 32 | 30 |
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 610 (was 593) |
+| `main.ttl` | 4183 (was 4158) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Taxonomy part of `main.ttl` unchanged | ✔ |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| Existing invalid tests (TimeSeries, Scalar with axis, axis counts, 4Dmap) | ✔ all still flagged |
+| ElementalComposition also bound as Scalar | ✔ unsatisfiable |
+| Instance data: an ElementalComposition listing `table:Fe`, `table:Cr` | ✔ consistent; the representation node is inferred to be a `rep:ElementList` |
+| Derived `qudt:hasQuantityKind` of all 140 bound classes as expected (none for element lists) | ✔ 140/140 |
+| README Turtle examples (now 14, incl. §5.14) | ✔ all parse, all satisfiable |
+
+### Open points
+
+- Amounts (at.%, wt.%) are not represented; a composition with fractions would be a 1Dmap over an element axis with a `qk:MoleFraction` / `qk:MassFraction` signal.
+- Impurity may need a broader range than elements (e.g. ChEBI "chemical entity") if compounds should be allowed.
+- The DAML Periodic Table dates from 2003; its coverage of the elements named later (113–118) should be checked before using it for data.
 
 ## 4D maps introduced; ElectronicGreensFunction bound, 2026-10-26
 

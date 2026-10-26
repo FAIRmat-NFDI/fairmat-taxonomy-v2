@@ -8,11 +8,12 @@ The representation module describes **how a material property's data is shaped**
 
 - **Scalar, Vector or Tensor2** for a value without axes;
 - **1Dmap, Spectrum or TimeSeries** for a mapping from one axis to a signal;
-- **2Dmap, 3Dmap or 4Dmap** for a mapping from two, three or four axes to a signal.
+- **2Dmap, 3Dmap or 4Dmap** for a mapping from two, three or four axes to a signal;
+- **ElementList** for a list of chemical elements (categorical: no signal, no axes, no quantity kind).
 
 A representation has **one signal** and **any number of axes**. Signal and axes carry their **physical quantity kind** from QUDT 3.5.2. Axes are identified by an **index** and a **label**. Signal, axes and the taxonomy property itself also get **`qudt:hasQuantityKind`**: signal and axes directly (sub-property), the taxonomy property from its signal and all its axes (property chain).
 
-The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabulary. The bindings of 138 taxonomy properties live in `main.ttl` (see §9).
+The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabulary. The bindings of 140 taxonomy properties live in `main.ttl` (see §9).
 
 ## 2. Namespaces
 
@@ -24,6 +25,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `qk:` | `http://qudt.org/vocab/quantitykind/` | QUDT quantity kinds (v3.5.2) |
 | `qkdv:` | `http://qudt.org/vocab/dimensionvector/` | QUDT dimension vectors (v3.5.2) |
 | `fqk:` | `http://fairmat-nfdi.eu/taxonomy/quantitykind/` | local FAIRmat quantity kinds (not in QUDT) |
+| `table:` | `http://www.daml.org/2003/01/periodictable/PeriodicTable#` | DAML Periodic Table: chemical elements (`table:Element` declared, not imported) |
 | `owl:`, `rdfs:`, `rdf:`, `xsd:`, `skos:` | standard W3C namespaces | — |
 
 ## 3. Entity index
@@ -39,6 +41,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `rep:Axis` | Axis | `rep:ComponentProperty` | An independent coordinate of a representation. |
 | `rep:AxisLabelTerm` | AxisLabelTerm | — | A reusable axis label (symbol). It carries no quantity kind: the meaning of an axis comes from its rep:HasComponentQuantityKind; the label only names it. |
 | `rep:ComponentProperty` | ComponentProperty | `rep:Representation` | A component of a representation: either its signal or one of its axes. |
+| `rep:ElementList` | ElementList | `rep:Representation` | A list of chemical elements (e.g. the elements of a composition). Categorical: no signal, no axes, no quantity kind. |
 | `rep:Representation` | Representation | — | Umbrella class for the representation module. |
 | `rep:Scalar` | Scalar | `rep:Representation` | Rank-0 signal: a single value without axes. |
 | `rep:Signal` | Signal | `rep:ComponentProperty` | The dependent, measured component of a representation. |
@@ -53,6 +56,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 |---|---|---|---|---|
 | `rep:AxisLabel` | `rep:Axis` | `rep:AxisLabelTerm` | functional | Case-specific label of an axis, chosen from the rep:AxisLabelTerm individuals (e.g. rep:Label_x, rep:Label_kx). New labels are added as new individuals. |
 | `rep:HasAxis` | `rep:Representation` | `rep:Axis` | — | Links a representation to one of its axes (any number). |
+| `rep:HasChemicalElement` | `rep:ElementList` | `table:Element` | — | Links an element list to one of its chemical elements (an individual of table:Element). The taxonomy states only the range; specific elements are given in instance data. |
 | `rep:HasComponent` | `rep:Representation` | `rep:ComponentProperty` | — | Links a representation to any of its components: its signal or one of its axes. Super-property of rep:HasSignal and rep:HasAxis; not used directly in bindings. |
 | `rep:HasComponentQuantityKind` | `rep:ComponentProperty` | `qudt:QuantityKind` | functional | Physical quantity kind of a signal or an axis (exactly one). Sub-property of qudt:hasQuantityKind, so the signal or axis also has it as its QUDT quantity kind. |
 | `rep:HasRepresentation` | `tax:MaterialProperty` | `rep:Representation` | functional | Links a material property to its single representation. A taxonomy class may allow alternative representations through owl:unionOf; each instance has exactly one. |
@@ -140,6 +144,7 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `qudt:latexDefinition` | `owl:DatatypeProperty` |
 | `qudt:qkdvDenominator` | `owl:ObjectProperty` |
 | `qudt:qkdvNumerator` | `owl:ObjectProperty` |
+| `table:Element` | `owl:Class` |
 | `skos:altLabel` | `owl:AnnotationProperty` |
 | `skos:definition` | `owl:AnnotationProperty` |
 | `skos:note` | `owl:AnnotationProperty` |
@@ -186,6 +191,7 @@ rep:HasSignal, rep:HasAxis ⊑ rep:HasComponent        rep:HasComponentQuantityK
 | `rep:2Dmap` | Representation | open | 2 | 1 | any |
 | `rep:3Dmap` | Representation | open | 3 | 1 | any |
 | `rep:4Dmap` | Representation | open | 4 | 1 | any |
+| `rep:ElementList` | Representation | — | 0 | 0 | — (members: `table:Element`) |
 
 ## 5. Details
 
@@ -547,6 +553,35 @@ tax:ElectronicGreensFunction rdfs:subClassOf [ a owl:Restriction ; owl:onPropert
 - G(k, ω) maps reciprocal space and frequency to a value with the dimension of time (1/frequency), as given in the sheet.
 - Higher maps (5D and up, or nD → mD) follow the same pattern: one class per axis count with `owl:cardinality n` on `rep:HasAxis`.
 
+### 5.14 ElementList: examples `tax:ElementalComposition`, `tax:Impurity`
+
+The taxonomy states only **what kind of values** these properties list: chemical elements. Which elements is a matter of instance data.
+
+**Structure (TBox)**
+```
+tax:ElementalComposition
+ └─ rep:HasRepresentation  only ──► [ rep:ElementList ]          (no signal, no axes, no quantity kind)
+                                       └─ rep:HasChemicalElement ──► table:Element   (range: any element)
+ ┄ qudt:hasQuantityKind: none
+```
+
+**RDF (TBox, as in `main.ttl`)**
+```turtle
+tax:ElementalComposition rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:allValuesFrom rep:ElementList ] .
+```
+
+**Instance data (ABox, elsewhere)**
+```turtle
+:steel_316L_composition a tax:ElementalComposition ;
+    rep:HasRepresentation :ec1 .
+:ec1 rep:HasChemicalElement table:Fe , table:Cr , table:Ni , table:Mo .   # :ec1 is inferred to be a rep:ElementList
+```
+- `only` (allValuesFrom) is a range statement: it names no element and doesn't even require one.
+- `table:Element` comes from the DAML Periodic Table (elements are individuals such as `table:Fe`). It is declared, not imported.
+- Impurity uses the same pattern, restricted to elements by decision (its description also mentions compounds).
+- Amounts (at.%, wt.%) are not covered; they would need a 1Dmap over an element axis with a MoleFraction or MassFraction signal.
+
 ## 6. Axioms and rules
 
 ### 6.1 Per entity
@@ -594,6 +629,13 @@ tax:ElectronicGreensFunction rdfs:subClassOf [ a owl:Restriction ; owl:onPropert
 **`rep:1Dmap`, `rep:2Dmap`, `rep:3Dmap`, `rep:4Dmap`**
 - At least one signal; exactly 1, 2, 3 or 4 axes.
 
+**`rep:ElementList`**
+- No axes; disjoint from Scalar, Vector and Tensor2 (and from every map type, which needs at least one axis).
+- No signal and no quantity kind; nothing is lifted to `qudt:hasQuantityKind`.
+
+**`rep:HasChemicalElement`**
+- Domain `rep:ElementList`; range `table:Element`. Not a sub-property of `rep:HasComponent` or `qudt:hasQuantityKind`, so elements never enter the quantity-kind chain.
+
 **`rep:Spectrum`**
 - Subclass of `rep:1Dmap`; no extra axiom (the Energy axis is a note only).
 
@@ -634,6 +676,8 @@ tax:ElectronicGreensFunction rdfs:subClassOf [ a owl:Restriction ; owl:onPropert
 | =1 / =2 / =3 / =4 HasAxis | 1Dmap / 2Dmap / 3Dmap / 4Dmap | exact axis count |
 | ∀ HasAxis.(HasComponentQuantityKind ∋ Time) | TimeSeries | time axis enforced |
 | subclass | Spectrum, TimeSeries ⊑ 1Dmap | inherit 1 axis |
+| ≤0 HasAxis, `owl:disjointWith` | ElementList | no axes; never a Scalar, Vector or Tensor2 |
+| domain / range | `rep:HasChemicalElement` | members are `table:Element` |
 | `owl:oneOf` filler (in a binding) | `rep:HasComponentQuantityKind` | a signal or axis whose kind is one of several (EliashbergFunction) |
 
 ### 6.3 Description Logic notation
@@ -672,6 +716,8 @@ TimeSeries ⊑ 1Dmap ⊓ ∀HasAxis.∃HasComponentQuantityKind.{qk:Time}
 2Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =2 HasAxis
 3Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =3 HasAxis
 4Dmap      ⊑ Representation ⊓ ∃HasSignal.Signal ⊓ =4 HasAxis
+ElementList ⊑ Representation ⊓ ≤0 HasAxis        ElementList ⊓ (Scalar ⊔ Vector ⊔ Tensor2) ⊑ ⊥
+∃HasChemicalElement.⊤ ⊑ ElementList               ⊤ ⊑ ∀HasChemicalElement.table:Element
 ```
 
 **Taxonomy binding pattern**
@@ -683,6 +729,7 @@ C ⊑ ∃HasRepresentation.( T
 
 Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasComponentQuantityKind.{q} ⊓ (T₁ ⊔ T₂ ⊔ …) )
 Alternative kinds:   ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃HasComponentQuantityKind.{k₁, k₂})
+Element lists:       C ⊑ ∀HasRepresentation.ElementList          (range only; no specific element)
 ```
 
 ### 6.4 Consequences the reasoner derives
@@ -708,6 +755,7 @@ Alternative kinds:   ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃HasComponentQuantityKin
 | 1Dmap, 2Dmap, 3Dmap or 4Dmap with the wrong number of axes | exact axis count per map type, with axes kept distinct by index or label |
 | Two separate `HasRepresentation` restrictions with different types | `rep:HasRepresentation` is functional and the representation types are disjoint (§6.4) |
 | A node used as both signal and axis | Signal and Axis are disjoint |
+| ElementalComposition or Impurity also bound as Scalar (or Vector, Tensor2, a map) | ElementList is disjoint from them |
 
 **Authoring conventions** (not enforced by OWL):
 1. **Bind leaf classes only.** Restrictions inherit, so a binding on a parent class forces every subclass.
@@ -734,10 +782,12 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 | 1Dmap with two axes of different labels | unsatisfiable | ✔ |
 | Scalar and Tensor2 as two separate restrictions | unsatisfiable | ✔ |
 | Instance of a Scalar test class with signal Voltage | infers `qudt:hasQuantityKind qk:Voltage` | ✔ |
-| Merged `main.ttl` (taxonomy + module + 138 bindings) | no unsatisfiable class | ✔ |
-| Each of the 138 bound classes | inferred `qudt:hasQuantityKind` = signal kind + axis kinds from the sheet (+ any direct restriction) | ✔ 138/138 |
-| Each of the 138 bound classes | its signal and axes carry `qudt:hasQuantityKind` for their own kind | ✔ 138/138 |
+| Merged `main.ttl` (taxonomy + module + 140 bindings) | no unsatisfiable class | ✔ |
+| Each of the 140 bound classes | inferred `qudt:hasQuantityKind` = signal kind + axis kinds from the sheet (+ any direct restriction; none for element lists) | ✔ 140/140 |
+| Each of the 140 bound classes | its signal and axes carry `qudt:hasQuantityKind` for their own kind | ✔ 140/140 |
 | 4Dmap ⊓ 3Dmap, 4Dmap ⊓ Scalar, ElectronicGreensFunction with a fifth axis | unsatisfiable | ✔ |
+| ElementalComposition also bound as Scalar | unsatisfiable | ✔ |
+| Instance data: an ElementalComposition listing `table:Fe`, `table:Cr` | consistent | ✔ |
 | EliashbergFunction (axis `oneOf {Energy, Frequency}`) | class ⊑ `∃ qudt:hasQuantityKind.{Energy, Frequency}`; a Length axis is unsatisfiable | ✔ |
 
 ## 8. Merging into `main.ttl`
@@ -753,8 +803,8 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 
 | | Count |
 |---|---:|
-| Bound classes | 138 (138 fully, 0 in part) |
-| Not mapped | 32 |
+| Bound classes | 140 (140 fully, 0 in part) |
+| Not mapped | 30 |
 
 | Representation type | Bound classes |
 |---|---:|
@@ -763,13 +813,14 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 | `rep:3Dmap` | 3 |
 | `rep:Spectrum` | 3 |
 | `rep:Vector` | 3 |
+| `rep:ElementList` | 2 |
 | `rep:TimeSeries` | 2 |
 | `rep:4Dmap` | 1 |
 
 | Not mapped, by reason | Rows |
 |---|---:|
 | Scalar or tensor (open modelling choice) | 13 |
-| Reviewer: remove / unclear / not a quantity | 11 |
+| Reviewer: remove / unclear / not a quantity | 9 |
 | No QUDT quantity kind / rank-3 tensor | 4 |
 | No matching representation type | 2 |
 | Parent class | 1 |
