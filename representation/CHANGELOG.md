@@ -4,9 +4,68 @@ Newest first. Entries under **History** describe earlier states and are supersed
 
 ## Current state (2026-10-26)
 
-- `main.ttl`: taxonomy + representation module + **137 bindings** from the reviewed HasRepresentation_Adhoc sheet.
+- `main.ttl`: taxonomy + representation module + **137 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (33 rows remain unmapped, see the discussion below).
 - Signal and axis carry `qudt:hasQuantityKind` (via `rep:HasComponentQuantityKind`); a taxonomy class gets the kinds of its signal and all axes (chain via `rep:HasComponent`).
-- Quantity kinds: 38 in the module, 41 in the distinctness list of `main.ttl`.
+- Quantity kinds: 42 in the module (41 QUDT, 1 local `fqk:CryoscopicConstant`), 45 in the distinctness list of `main.ttl`.
+
+## Remaining rows resolved by decision, 2026-10-26
+
+The 11 rows that were bound only in part are now bound fully, following decisions taken on 2026-10-26. All 137 bindings are complete; the 33 unmapped rows are unchanged.
+
+### Bindings changed
+
+| Class | Now bound as | Note |
+|---|---|---|
+| `tax:CorrosionRate` | `rep:Scalar`, signal `qk:LinearVelocity` | as given in the sheet |
+| `tax:EliashbergFunction` | `rep:Spectrum`, signal `qk:Dimensionless`, axis 1: one of {`qk:Energy`, `qk:Frequency`} | axis kind as `owl:oneOf`; each axis still has exactly one kind |
+| `tax:FatigueCrackGrowthThreshold` | `rep:Scalar`, signal `qk:StressIntensityFactor` | Stress × √Length; existing QUDT kind, dimension vector A0E0L-0dot5I0M1H0T-2D0 |
+| `tax:FractureToughness` | `rep:Scalar`, signal `qk:StressIntensityFactor` | as above |
+| `tax:StressIntensityFactor` | `rep:Scalar`, signal `qk:StressIntensityFactor` | as above |
+| `tax:AbsorptionCoefficient` | `rep:Scalar`, signal `qk:InverseLength` | as given in the sheet |
+| `tax:2DDefectInterfacialEnergy` | `rep:Scalar`, signal `qk:Energy` | as given in the sheet |
+| `tax:CryoscopicConstant` | `rep:Scalar`, signal `fqk:CryoscopicConstant` | local kind ThermodynamicTemperature / MolalityOfSolute (not in QUDT 3.5.2) |
+| `tax:HeatOfFusion` | `rep:Scalar`, signal `qk:MolarEnergy` | as given in the sheet |
+| `tax:MeanSquaredDisplacement` | `rep:TimeSeries`, signal `qk:Length`, axis 1: `qk:Time` | as given in the sheet |
+| `tax:Trajectory` | `rep:TimeSeries`, `rep:Shape "3"`, signal `qk:Length`, axis 1: `qk:Time` | three position components per time step |
+
+Previously open for CorrosionRate, HeatOfFusion, AbsorptionCoefficient, 2DDefectInterfacialEnergy and MeanSquaredDisplacement: the sheet's quantity kind seemed to contradict the class description. The sheet's kinds are now used as given; the descriptions are unchanged, so the wording of those descriptions may still need a review.
+
+### Added to the representation module
+
+| Item | Content |
+|---|---|
+| Prefixes | `qkdv:` (QUDT dimension vectors), `fqk:` (`http://fairmat-nfdi.eu/taxonomy/quantitykind/`, local kinds) |
+| External declarations | `qudt:QuantityKindDimensionVector` (class); `qudt:hasDimensionVector`, `qudt:qkdvNumerator`, `qudt:qkdvDenominator` (object properties); `qudt:latexDefinition` (datatype property); `skos:related` (annotation) |
+| QUDT quantity kinds | `qk:LinearVelocity`, `qk:InverseLength`, `qk:MolalityOfSolute` (all exist, not deprecated, in QUDT 3.5.2) |
+| Math on `qk:StressIntensityFactor` | `qudt:hasDimensionVector qkdv:A0E0L-0dot5I0M1H0T-2D0` (as in QUDT), `qudt:latexDefinition "$K = \sigma\sqrt{L}$"`, `skos:related qk:Stress, qk:Length`, note "Stress × √Length" |
+| Local kind `fqk:CryoscopicConstant` | `qudt:QuantityKind`; `qudt:qkdvNumerator qkdv:A0E0L0I0M0H1T0D0` (ThermodynamicTemperature), `qudt:qkdvDenominator qkdv:A1E0L0I0M-1H0T0D0` (MolalityOfSolute), `qudt:latexDefinition`, `skos:related` to both kinds. QUDT 3.5.2 has no dimension-vector individual for its dimension (A-1·M1·H1), so no `qudt:hasDimensionVector` |
+| Dimension vectors declared | the three `qkdv:` individuals above, typed `qudt:QuantityKindDimensionVector` (all exist in QUDT 3.5.2) |
+| Distinctness list | now 42 kinds in the module, 45 in `main.ttl` |
+
+OWL records these relations but doesn't compute them: nothing checks that the dimension vector equals Stress × √Length. Such a check would need SPARQL or code over the dimension exponents.
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 574 (was 518) |
+| `main.ttl` | 4035 (was 3847) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Taxonomy part of `main.ttl` unchanged | ✔ |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| Invalid test bindings flagged | ✔ all 5 |
+| Derived `qudt:hasQuantityKind` = signal + axis kinds (+ direct restrictions) for all bindings | ✔ 137/137 |
+| Signal and axis carry their own `qudt:hasQuantityKind` | ✔ 137/137 |
+| EliashbergFunction ⊑ `∃ qudt:hasQuantityKind.{Energy, Frequency}`; a Length axis would make it unsatisfiable | ✔ / ✔ |
+| README Turtle examples (now 11, incl. §5.11 and §5.12) | ✔ all parse, all satisfiable |
+
+### Discussion points resolved
+
+From the discussion of the previous entry: point 4 (stress intensity factor) and point 7 (EliashbergFunction axis) are resolved; point 5 is resolved for CryoscopicConstant (local kind), and HallCoefficient turns out to exist in QUDT 3.5.2 as `qk:HallCoefficient` (dimension A0E-1L3I0M0H0T-1D0, i.e. Volume / Charge), so only its rank-3 representation is open. Point 2 is resolved for the five rows listed above by using the sheet's kinds; MagneticAnisotropyConstant and MagneticSusceptibility stay unmapped. Point 6 is resolved for Trajectory (`rep:Shape "3"`).
 
 ## Representation bindings remapped from the reviewed HasRepresentation_Adhoc sheet, 2026-10-26
 
@@ -194,6 +253,8 @@ Seven module kinds are no longer used by any binding and are kept: ElectricField
 | `tax:PhononicSpecificHeatCapacity` | `rep:Scalar` | — | `qk:SpecificHeatCapacity` | — |
 
 ### Mapped in part
+
+> All 11 rows below were resolved later the same day; see "Remaining rows resolved by decision, 2026-10-26".
 
 | Class | Bound as | Left open, and why |
 |---|---|---|

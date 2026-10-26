@@ -22,6 +22,8 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `tax:` | `http://fairmat-nfdi.eu/taxonomy/` | FAIRmat taxonomy (`main.ttl`) |
 | `qudt:` | `http://qudt.org/schema/qudt/` | QUDT schema (current, version-free) |
 | `qk:` | `http://qudt.org/vocab/quantitykind/` | QUDT quantity kinds (v3.5.2) |
+| `qkdv:` | `http://qudt.org/vocab/dimensionvector/` | QUDT dimension vectors (v3.5.2) |
+| `fqk:` | `http://fairmat-nfdi.eu/taxonomy/quantitykind/` | local FAIRmat quantity kinds (not in QUDT) |
 | `owl:`, `rdfs:`, `rdf:`, `xsd:`, `skos:` | standard W3C namespaces | — |
 
 ## 3. Entity index
@@ -77,10 +79,11 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `rep:Label_y` | y |  | Spatial coordinate y. |
 | `rep:Label_z` | z |  | Spatial coordinate z. |
 
-### Named individuals: quantity kinds (`qudt:QuantityKind`, QUDT v3.5.2)
+### Named individuals: quantity kinds (`qudt:QuantityKind`; QUDT v3.5.2, plus local `fqk:` kinds)
 
 | Individual | Taxonomy name (`skos:prefLabel`) | QUDT label (`rdfs:label`) |
 |---|---|---|
+| `fqk:CryoscopicConstant` | CryoscopicConstant | Cryoscopic Constant |
 | `qk:Angle` | Angle | Angle |
 | `qk:Area` | Area | Area |
 | `qk:ChemicalPotential` | ChemicalPotential | Chemical Potential |
@@ -101,10 +104,13 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 | `qk:EnergyPerTemperature` | EnergyPerTemperature | Energy per Temperature |
 | `qk:ForcePerArea` | ForcePerArea | Force per Area |
 | `qk:Frequency` | Frequency | Frequency |
+| `qk:InverseLength` | InverseLength | Inverse Length |
 | `qk:InverseTemperature` | InverseTemperature | Inverse Temperature |
 | `qk:Length` | Length | Length |
+| `qk:LinearVelocity` | LinearVelocity | Linear Velocity |
 | `qk:MagneticFieldStrength` | MagneticFieldStrength | Magnetic Field Strength |
 | `qk:Mass` | Mass | Mass |
+| `qk:MolalityOfSolute` | MolalityOfSolute | Molality of Solute |
 | `qk:MolarEnergy` | MolarEnergy | Molar Energy |
 | `qk:NumberDensity` | NumberDensity | Number Density |
 | `qk:Permittivity` | Permittivity | Permittivity |
@@ -126,11 +132,17 @@ The module defines no units and doesn't depend on the RDF Data Cube (qb) vocabul
 |---|---|
 | `tax:MaterialProperty` | `owl:Class` |
 | `qudt:QuantityKind` | `owl:Class` |
+| `qudt:QuantityKindDimensionVector` | `owl:Class` |
+| `qudt:hasDimensionVector` | `owl:ObjectProperty` |
 | `qudt:hasQuantityKind` | `owl:ObjectProperty` |
+| `qudt:latexDefinition` | `owl:DatatypeProperty` |
+| `qudt:qkdvDenominator` | `owl:ObjectProperty` |
+| `qudt:qkdvNumerator` | `owl:ObjectProperty` |
 | `skos:altLabel` | `owl:AnnotationProperty` |
 | `skos:definition` | `owl:AnnotationProperty` |
 | `skos:note` | `owl:AnnotationProperty` |
 | `skos:prefLabel` | `owl:AnnotationProperty` |
+| `skos:related` | `owl:AnnotationProperty` |
 
 ## 4. Model overview
 
@@ -174,7 +186,7 @@ rep:HasSignal, rep:HasAxis ⊑ rep:HasComponent        rep:HasComponentQuantityK
 
 ## 5. Details
 
-Each subsection shows the **structure** and the **RDF** binding a taxonomy class carries. Examples use real taxonomy properties. Most match the bindings in `main.ttl`; ThermalConductivity, Permittivity, MeanSquaredDisplacement (signal) and Morphology are illustrations of patterns whose bindings are still open (see `CHANGELOG.md`). In the structures, `···►` on the class lists the kinds of the signal and of all axes; signal and axis nodes also carry `qudt:hasQuantityKind` for their own kind (not drawn).
+Each subsection shows the **structure** and the **RDF** binding a taxonomy class carries. Examples use real taxonomy properties. Most match the bindings in `main.ttl`; ThermalConductivity, Permittivity and Morphology are illustrations of patterns whose bindings are still open, and the MeanSquaredDisplacement example shows the physically expected signal kind (see the note there and `CHANGELOG.md`). In the structures, `···►` on the class lists the kinds of the signal and of all axes; signal and axis nodes also carry `qudt:hasQuantityKind` for their own kind (not drawn).
 
 ### 5.1 Components: signal, axis, label, quantity kind
 
@@ -360,7 +372,7 @@ tax:MeanSquaredDisplacement rdfs:subClassOf [ a owl:Restriction ; owl:onProperty
 ```
 - **The axis label is optional.** None is given here because no time label individual exists yet.
 - **Write `qk:Time` explicitly** even though `rep:TimeSeries` implies it, so that tools reading only asserted triples (GUI, SPARQL) see it.
-- `qk:Area` is declared in the module. In `main.ttl` the MeanSquaredDisplacement binding has the TimeSeries type and the Time axis, but leaves the signal open: the sheet gives Length, while a squared displacement is an area (see `CHANGELOG.md`).
+- `qk:Area` is declared in the module. In `main.ttl` the MeanSquaredDisplacement binding uses signal `qk:Length`, as given in the sheet and decided on 2026-10-26; physically a squared displacement has the dimension of an area (see `CHANGELOG.md`).
 
 ### 5.9 2Dmap: example `tax:Morphology` (height map)
 
@@ -426,6 +438,71 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
     ) ] ] .
 ```
 
+### 5.11 Axis with alternative quantity kinds: example `tax:EliashbergFunction`
+
+**Structure**
+```
+tax:EliashbergFunction
+ │ ···► qudt:hasQuantityKind ···► qk:Dimensionless
+ │ ···► qudt:hasQuantityKind ···► some of { qk:Energy, qk:Frequency }      (not a specific one)
+ └─ rep:HasRepresentation ──► rep:Spectrum ⊑ rep:1Dmap
+       ├─ rep:HasAxis   ──► [Axis]   ─ AxisIndex 1, HasComponentQuantityKind ──► one of { qk:Energy, qk:Frequency }
+       └─ rep:HasSignal ──► [Signal] ─ rep:HasComponentQuantityKind ──► qk:Dimensionless
+```
+
+**RDF**
+```turtle
+tax:EliashbergFunction rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:Spectrum
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue qk:Dimensionless ] ]
+        [ a owl:Restriction ; owl:onProperty rep:HasAxis ; owl:someValuesFrom [ a owl:Class ; owl:intersectionOf (
+            [ a owl:Restriction ; owl:onProperty rep:AxisIndex ; owl:hasValue "1"^^xsd:positiveInteger ]
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ;
+              owl:someValuesFrom [ a owl:Class ; owl:oneOf ( qk:Energy qk:Frequency ) ] ] ) ] ]
+    ) ] ] .
+```
+- Each axis still has exactly one kind (functional property); it is Energy or Frequency. Any other kind makes the class unsatisfiable.
+- At the class level the reasoner derives `∃ qudt:hasQuantityKind . {Energy, Frequency}`, not Energy or Frequency individually, so a query for `qudt:hasQuantityKind value qk:Energy` does not return this class.
+
+### 5.12 Derived and local quantity kinds: `qk:StressIntensityFactor`, `fqk:CryoscopicConstant`
+
+OWL can't compute products, powers or ratios of quantity kinds. The formula is recorded with QUDT's own properties on the kind; bindings just point to the kind.
+
+**Structure**
+```
+qk:StressIntensityFactor   (QUDT 3.5.2)              = Stress × √Length
+   ─ qudt:hasDimensionVector ──► qkdv:A0E0L-0dot5I0M1H0T-2D0     (M·L^-0.5·T^-2)
+   ─ skos:related ──► qk:Stress, qk:Length
+
+fqk:CryoscopicConstant     (local, not in QUDT)      = ThermodynamicTemperature / MolalityOfSolute
+   ─ qudt:qkdvNumerator   ──► qkdv:A0E0L0I0M0H1T0D0            (dimension of ThermodynamicTemperature)
+   ─ qudt:qkdvDenominator ──► qkdv:A1E0L0I0M-1H0T0D0           (dimension of MolalityOfSolute)
+   ─ skos:related ──► qk:ThermodynamicTemperature, qk:MolalityOfSolute
+
+tax:FractureToughness ─ HasRepresentation ─► [Scalar] ─ HasSignal ─► [Signal] ─ HasComponentQuantityKind ─► qk:StressIntensityFactor
+tax:CryoscopicConstant ─ HasRepresentation ─► [Scalar] ─ HasSignal ─► [Signal] ─ HasComponentQuantityKind ─► fqk:CryoscopicConstant
+```
+
+**RDF**
+```turtle
+fqk:CryoscopicConstant a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "CryoscopicConstant"@en ;
+    qudt:qkdvNumerator qkdv:A0E0L0I0M0H1T0D0 ;
+    qudt:qkdvDenominator qkdv:A1E0L0I0M-1H0T0D0 ;
+    qudt:latexDefinition "$K_f = \\Delta T_f / b$" ;
+    skos:related qk:ThermodynamicTemperature, qk:MolalityOfSolute .
+
+tax:CryoscopicConstant rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRepresentation ;
+    owl:someValuesFrom [ a owl:Class ; owl:intersectionOf ( rep:Scalar
+        [ a owl:Restriction ; owl:onProperty rep:HasSignal ; owl:someValuesFrom
+            [ a owl:Restriction ; owl:onProperty rep:HasComponentQuantityKind ; owl:hasValue fqk:CryoscopicConstant ] ]
+    ) ] ] .
+```
+- Check QUDT first: Stress × √Length already exists as `qk:StressIntensityFactor`, so no local kind was needed for it.
+- QUDT 3.5.2 has no dimension-vector individual for K·kg/mol, so the local kind gives the ratio by numerator and denominator instead of `qudt:hasDimensionVector`.
+- A dimension vector doesn't identify a kind (Energy and Torque share one); the kind's IRI does.
+
 ## 6. Axioms and rules
 
 ### 6.1 Per entity
@@ -483,7 +560,12 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 - `rep:Label_x … rep:Label_rho` are pairwise different (`owl:AllDifferent`).
 
 **Quantity kinds**
-- The 38 `qk:` individuals of the module are pairwise different (`owl:AllDifferent`). In `main.ttl` the list also covers the three further kinds the taxonomy already used (Fugacity, HeatCapacity, ThermalExpansionCoefficient), so it has 41 members.
+- The 42 quantity kinds of the module (41 `qk:` from QUDT, 1 local `fqk:`) are pairwise different (`owl:AllDifferent`). In `main.ttl` the list also covers the three further kinds the taxonomy already used (Fugacity, HeatCapacity, ThermalExpansionCoefficient), so it has 45 members.
+
+**Derived and local quantity kinds**
+- `qk:StressIntensityFactor` (QUDT) carries its QUDT dimension vector `qkdv:A0E0L-0dot5I0M1H0T-2D0` and the formula Stress × √Length (`qudt:latexDefinition`, `skos:related` Stress and Length).
+- `fqk:CryoscopicConstant` (local) is ThermodynamicTemperature / MolalityOfSolute, given by `qudt:qkdvNumerator` and `qudt:qkdvDenominator`.
+- These are descriptive: OWL records the relations but doesn't compute or check dimensions.
 
 ### 6.2 Summary table
 
@@ -508,6 +590,7 @@ tax:FermiSurface rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
 | =1 / =2 / =3 HasAxis | 1Dmap / 2Dmap / 3Dmap | exact axis count |
 | ∀ HasAxis.(HasComponentQuantityKind ∋ Time) | TimeSeries | time axis enforced |
 | subclass | Spectrum, TimeSeries ⊑ 1Dmap | inherit 1 axis |
+| `owl:oneOf` filler (in a binding) | `rep:HasComponentQuantityKind` | a signal or axis whose kind is one of several (EliashbergFunction) |
 
 ### 6.3 Description Logic notation
 
@@ -554,6 +637,7 @@ C ⊑ ∃HasRepresentation.( T
         ⊓ ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃AxisLabel.{ℓ} ⊓ ∃HasComponentQuantityKind.{k})   × number of axes )
 
 Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasComponentQuantityKind.{q} ⊓ (T₁ ⊔ T₂ ⊔ …) )
+Alternative kinds:   ∃HasAxis.(∃AxisIndex.{i} ⊓ ∃HasComponentQuantityKind.{k₁, k₂})
 ```
 
 ### 6.4 Consequences the reasoner derives
@@ -586,8 +670,11 @@ Alternatives:   C ⊑ ∃HasRepresentation.( ∃HasSignal.∃HasComponentQuantit
 3. **Write implied quantity kinds explicitly** (for example `qk:Time` on a TimeSeries axis), so tools that read asserted triples see them.
 4. **Write alternatives as one `owl:unionOf`,** never as two separate restrictions.
 5. **New labels:** add a `rep:AxisLabelTerm` individual and include it in the `owl:AllDifferent` list.
-6. **New quantity kinds:** use the version-free QUDT IRI (`qk:<Name>`), check that it exists in QUDT 3.5.2, declare it as `owl:NamedIndividual, qudt:QuantityKind`, and add it to the quantity-kind `owl:AllDifferent` list (in `representation.ttl` and `main.ttl`).
+6. **New quantity kinds:** use the version-free QUDT IRI (`qk:<Name>`), check that it exists in QUDT 3.5.2, declare it as `owl:NamedIndividual, qudt:QuantityKind`, and add it to the quantity-kind `owl:AllDifferent` list (in `representation.ttl` and `main.ttl`). Check QUDT before defining a local kind: StressIntensityFactor and HallCoefficient, for example, exist there.
 7. **`qudt:hasQuantityKind` must not get cardinality or functional axioms.** The property chain makes it non-simple in OWL 2 DL.
+8. **Kinds missing from QUDT:** define them as `fqk:<Name>` (`owl:NamedIndividual, qudt:QuantityKind`) with `qudt:hasDimensionVector` when QUDT has the vector, otherwise `qudt:qkdvNumerator` / `qudt:qkdvDenominator` for a ratio, plus `qudt:latexDefinition`, `skos:definition` and `skos:related` to the constituent kinds; add them to the distinctness list.
+9. **Alternative kinds for one signal or axis:** `rep:HasComponentQuantityKind some [ owl:oneOf ( qk:A qk:B ) ]` instead of `hasValue` (§5.11).
+10. **Vector-valued map signal:** `rep:Shape` may also be given on a map (e.g. Trajectory: TimeSeries with `rep:Shape "3"`, three position components per time step).
 
 ## 7. Verification
 
@@ -605,6 +692,7 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 | Merged `main.ttl` (taxonomy + module + 137 bindings) | no unsatisfiable class | ✔ |
 | Each of the 137 bound classes | inferred `qudt:hasQuantityKind` = signal kind + axis kinds from the sheet (+ any direct restriction) | ✔ 137/137 |
 | Each of the 137 bound classes | its signal and axes carry `qudt:hasQuantityKind` for their own kind | ✔ 137/137 |
+| EliashbergFunction (axis `oneOf {Energy, Frequency}`) | class ⊑ `∃ qudt:hasQuantityKind.{Energy, Frequency}`; a Length axis is unsatisfiable | ✔ |
 
 ## 8. Merging into `main.ttl`
 
@@ -619,7 +707,7 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 
 | | Count |
 |---|---:|
-| Bound classes | 137 (126 fully, 11 in part) |
+| Bound classes | 137 (137 fully, 0 in part) |
 | Not mapped | 33 |
 
 | Representation type | Bound classes |

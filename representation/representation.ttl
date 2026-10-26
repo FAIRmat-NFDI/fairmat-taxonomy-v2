@@ -2,6 +2,8 @@
 @prefix tax:  <http://fairmat-nfdi.eu/taxonomy/> .
 @prefix qudt: <http://qudt.org/schema/qudt/> .
 @prefix qk:   <http://qudt.org/vocab/quantitykind/> .
+@prefix qkdv: <http://qudt.org/vocab/dimensionvector/> .
+@prefix fqk:  <http://fairmat-nfdi.eu/taxonomy/quantitykind/> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -22,6 +24,12 @@ skos:prefLabel a owl:AnnotationProperty .
 skos:definition a owl:AnnotationProperty .
 skos:note a owl:AnnotationProperty .
 skos:altLabel a owl:AnnotationProperty .
+skos:related a owl:AnnotationProperty .
+qudt:QuantityKindDimensionVector a owl:Class .
+qudt:hasDimensionVector a owl:ObjectProperty .
+qudt:qkdvNumerator a owl:ObjectProperty .
+qudt:qkdvDenominator a owl:ObjectProperty .
+qudt:latexDefinition a owl:DatatypeProperty .
 
 #################################################################
 # 1. Umbrella and taxonomy connection
@@ -347,11 +355,15 @@ qk:Wavenumber a owl:NamedIndividual, qudt:QuantityKind ;
     rdfs:label "Wavenumber"@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
 
-# Stress intensity factor: dimension vector A0E0L-0.5I0M1H0T-2D0
-# (stress times square root of length).
+# Stress intensity factor = Stress × √Length. Dimension vector as in
+# QUDT 3.5.2: A0E0L-0dot5I0M1H0T-2D0 (M·L^-0.5·T^-2).
 qk:StressIntensityFactor a owl:NamedIndividual, qudt:QuantityKind ;
     skos:prefLabel "StressIntensityFactor"@en ;
     rdfs:label "Stress Intensity Factor"@en ;
+    qudt:hasDimensionVector qkdv:A0E0L-0dot5I0M1H0T-2D0 ;
+    qudt:latexDefinition "$K = \\sigma\\sqrt{L}$" ;
+    skos:related qk:Stress, qk:Length ;
+    skos:note "Derived kind: Stress × √Length. The product and square root are recorded in the dimension vector and the LaTeX definition; OWL does not compute them."@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
 
 # Added for the HasRepresentation_Adhoc v2 mapping (kinds used by the
@@ -432,6 +444,53 @@ qk:Volume a owl:NamedIndividual, qudt:QuantityKind ;
     rdfs:label "Volume"@en ;
     rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
 
+# Added for the decisions of 2026-10-26 (kinds used by the remaining
+# bindings or by the definition of a local kind).
+
+qk:LinearVelocity a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "LinearVelocity"@en ;
+    rdfs:label "Linear Velocity"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:InverseLength a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "InverseLength"@en ;
+    rdfs:label "Inverse Length"@en ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+qk:MolalityOfSolute a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "MolalityOfSolute"@en ;
+    rdfs:label "Molality of Solute"@en ;
+    qudt:hasDimensionVector qkdv:A1E0L0I0M-1H0T0D0 ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/quantitykind> .
+
+#################################################################
+# 4c. Local (FAIRmat) quantity kinds
+# Kinds needed by the taxonomy that QUDT 3.5.2 does not define.
+# Typed qudt:QuantityKind and described with QUDT's own properties:
+# qudt:qkdvNumerator / qudt:qkdvDenominator for a ratio, and
+# qudt:latexDefinition for the formula. OWL records but does not
+# compute these relations.
+#################################################################
+
+fqk:CryoscopicConstant a owl:NamedIndividual, qudt:QuantityKind ;
+    skos:prefLabel "CryoscopicConstant"@en ;
+    rdfs:label "Cryoscopic Constant"@en ;
+    skos:definition "Decrease in the freezing point per unit molality of solute: ThermodynamicTemperature / MolalityOfSolute (K·kg/mol)."@en ;
+    qudt:qkdvNumerator qkdv:A0E0L0I0M0H1T0D0 ;
+    qudt:qkdvDenominator qkdv:A1E0L0I0M-1H0T0D0 ;
+    qudt:latexDefinition "$K_f = \\Delta T_f / b$" ;
+    skos:related qk:ThermodynamicTemperature, qk:MolalityOfSolute ;
+    skos:note "Local FAIRmat quantity kind (not in QUDT 3.5.2). Dimension A-1·M1·H1; QUDT 3.5.2 has no dimension-vector individual for it, so the ratio is given by numerator and denominator."@en ;
+    rdfs:isDefinedBy <http://fairmat-nfdi.eu/taxonomy/representation> .
+
+# QUDT dimension vectors referenced above (declared, not redefined).
+qkdv:A0E0L-0dot5I0M1H0T-2D0 a owl:NamedIndividual, qudt:QuantityKindDimensionVector ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/dimensionvector> .
+qkdv:A0E0L0I0M0H1T0D0 a owl:NamedIndividual, qudt:QuantityKindDimensionVector ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/dimensionvector> .
+qkdv:A1E0L0I0M-1H0T0D0 a owl:NamedIndividual, qudt:QuantityKindDimensionVector ;
+    rdfs:isDefinedBy <http://qudt.org/3.5.2/vocab/dimensionvector> .
+
 # QUDT quantity kinds are distinct individuals. OWL makes no unique-name
 # assumption, so without this the functional rep:HasComponentQuantityKind cannot
 # detect two different kinds on one signal or axis (e.g. a TimeSeries
@@ -448,4 +507,5 @@ qk:Volume a owl:NamedIndividual, qudt:QuantityKind ;
       qk:Area qk:ChemicalPotential qk:ElectricCharge qk:ElectricCurrent
       qk:ElectricPotential qk:EnergyPerTemperature qk:InverseTemperature qk:Mass
       qk:MolarEnergy qk:NumberDensity qk:SpecificEnergy qk:SpecificHeatCapacity
-      qk:ThermodynamicTemperature qk:Volume ) ] .
+      qk:ThermodynamicTemperature qk:Volume qk:LinearVelocity qk:InverseLength
+      qk:MolalityOfSolute fqk:CryoscopicConstant ) ] .
