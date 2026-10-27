@@ -2,13 +2,64 @@
 
 Newest first. Entries under **History** describe earlier states and are superseded where noted.
 
-## Current state (2026-10-26)
+## Current state (2026-10-27)
 
 - `main.ttl`: taxonomy + representation module + **140 bindings** from the reviewed HasRepresentation_Adhoc sheet, all mapped fully (30 rows remain unmapped, see the discussions below).
 - Representation types: Scalar, Vector, Tensor2, 1Dmap, Spectrum, TimeSeries, 2Dmap, 3Dmap, 4Dmap, **ElementList**.
 - Deprecated taxonomy classes: MagneticHysteresis, Photoluminescence, Grain, Morphology, ParticleShape.
+- Removed taxonomy class: SpectroscopicProperty (Spectra re-parented to MaterialProperty).
+- Scalar-or-tensor properties (13): two-IRI approach decided; IRIs not created yet (TBD).
 - Signal and axis carry `qudt:hasQuantityKind` (via `rep:HasComponentQuantityKind`); a taxonomy class gets the kinds of its signal and all axes (chain via `rep:HasComponent`).
 - Quantity kinds: 42 in the module (41 QUDT, 1 local `fqk:CryoscopicConstant`), 45 in the distinctness list of `main.ttl`.
+
+## SpectroscopicProperty removed; scalar-or-tensor decision recorded, 2026-10-27
+
+### SpectroscopicProperty removed
+
+The reviewer called it an obsolete catch-all term. Its class block in the taxonomy part of `main.ttl` is **commented out** (kept as text for reference, with a note), so the class no longer exists in the ontology.
+
+| Item | Before | After |
+|---|---|---|
+| `tax:SpectroscopicProperty` | class ⊑ MaterialProperty, with label and comment | commented out (0 triples) |
+| `tax:Spectra` (its only subclass) | ⊑ SpectroscopicProperty | ⊑ MaterialProperty, i.e. SpectroscopicProperty's own parent |
+
+Re-parenting Spectra keeps it in the hierarchy. Without it, Spectra would point to a class that no longer exists. Spectra is still a MaterialProperty, as before. Nothing else referred to SpectroscopicProperty: no binding, no other subclass, no restriction.
+
+Named-triple diff of `main.ttl`: 5 triples removed (the class's type, label, comment, parent, and Spectra's old parent link) and 1 added (Spectra ⊑ MaterialProperty).
+
+### Scalar-or-tensor properties: two-IRI approach (TBD)
+
+Decision: the 13 scalar-or-tensor properties will use **two IRIs with the same label** (one scalar, one tensor) for now, rather than one IRI with `Scalar ⊔ Tensor2`. The tensor IRIs are not created yet, so these rows stay without a binding and are marked **TBD** in the annotated sheet:
+
+Permittivity, RelativePermittivity, RefractiveIndex, MagneticSusceptibility, ElectricalConductivity, ElectricalResistivity, ElectronMobility, HoleMobility, IonicConductivity, IonicMobility, ThermalConductivity, ThermalDiffusivity, PhononicThermalConductivity.
+
+MagneticSusceptibility additionally needs its quantity kind corrected (dimensionless, not MagneticFieldStrength).
+
+The README keeps the union pattern (§5.5) for reference and now shows the two-IRI pattern next to it.
+
+### Sheet
+
+| Row | Status |
+|---|---|
+| 13 scalar-or-tensor rows | TBD (new status), with the decision in the comment |
+| SpectroscopicProperty | Removed (new status) |
+| Spectra | No entry; comment notes the new parent |
+
+### Files
+
+| File | Triples |
+|---|---:|
+| `representation.ttl` | 610 (unchanged) |
+| `main.ttl` | 4190 (was 4194) |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Named-triple diff limited to SpectroscopicProperty and Spectra's parent | ✔ |
+| HermiT: unsatisfiable classes in `main.ttl` | ✔ none |
+| Invalid test bindings | ✔ all still flagged |
+| Bindings and derived quantity kinds | ✔ unchanged, 140/140 |
 
 ## Five taxonomy classes deprecated, 2026-10-26
 

@@ -794,7 +794,7 @@
 
 <http://fairmat-nfdi.eu/taxonomy/Spectra> a owl:Class ;
     rdfs:comment "Intensity of a signal with respect to a continuous variable (typically energies or wavelengths) that describes the interaction of the material with an incoming electromagnetic wave."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/SpectroscopicProperty> ;
+    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/MaterialProperty> ;   # was SpectroscopicProperty (removed 2026-10-27)
     skos:prefLabel "Spectra"@en .
 
 <http://fairmat-nfdi.eu/taxonomy/SpinExchangeInteractions> a owl:Class ;
@@ -959,10 +959,12 @@ skos:prefLabel a owl:AnnotationProperty .
     rdfs:comment "Description of material to be milled."@en ;
     skos:prefLabel "Material"@en .
 
-<http://fairmat-nfdi.eu/taxonomy/SpectroscopicProperty> a owl:Class ;
-    rdfs:comment "Property that describes the interaction between light and a given material."@en ;
-    rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/MaterialProperty> ;
-    skos:prefLabel "SpectroscopicProperty"@en .
+# REMOVED 2026-10-27 (reviewer: obsolete catch-all term). Spectra re-parented to
+# MaterialProperty. See CHANGELOG.md.
+# <http://fairmat-nfdi.eu/taxonomy/SpectroscopicProperty> a owl:Class ;
+#     rdfs:comment "Property that describes the interaction between light and a given material."@en ;
+#     rdfs:subClassOf <http://fairmat-nfdi.eu/taxonomy/MaterialProperty> ;
+#     skos:prefLabel "SpectroscopicProperty"@en .
 
 qudt:QuantityKind a owl:Class ;
     rdfs:label "QuantityKind"@en .

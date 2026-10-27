@@ -281,7 +281,9 @@ tax:ThermalConductivity rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep
 
 ### 5.5 Alternative representations (Scalar or Tensor2): example `tax:Permittivity`
 
-Permittivity has one IRI and one label. Each instance uses exactly one of the alternatives.
+**Decision (2026-10-27): the two-IRI approach is used for now**: a scalar IRI and a tensor IRI with the same label, each with one definite representation. The IRIs aren't created yet, so Permittivity and the other 12 scalar-or-tensor properties have no binding in `main.ttl` (marked TBD in the sheet). The union below remains a valid alternative and is kept for reference.
+
+With the union, Permittivity has one IRI and one label, and each instance uses exactly one of the alternatives.
 
 **Structure**
 ```
@@ -306,6 +308,12 @@ tax:Permittivity rdfs:subClassOf [ a owl:Restriction ; owl:onProperty rep:HasRep
     ) ] ] .
 ```
 Write the alternatives as **one** union, never as two separate `rep:HasRepresentation` restrictions. Two restrictions mean *both*, which makes the class unsatisfiable (see §6.5).
+
+With the two-IRI approach, each IRI gets an ordinary binding instead:
+```
+tax:Permittivity        "Permittivity"  ─HasRepresentation─▶ [Scalar]                ─HasSignal─▶ qk:Permittivity
+tax:<tensor IRI>        "Permittivity"  ─HasRepresentation─▶ [Tensor2, Shape "3,3"]  ─HasSignal─▶ qk:Permittivity
+```
 
 ### 5.6 1Dmap: example `tax:ElectricHysteresis`
 
@@ -819,12 +827,14 @@ The module was checked with the HermiT reasoner, together with test bindings. Th
 
 | Not mapped, by reason | Rows |
 |---|---:|
-| Scalar or tensor (open modelling choice) | 13 |
+| Scalar or tensor (TBD: two-IRI approach decided, IRIs not created yet) | 13 |
 | Reviewer: remove / unclear / not a quantity | 9 |
 | No QUDT quantity kind / rank-3 tensor | 4 |
 | No matching representation type | 2 |
 | Parent class | 1 |
 | Contradicts class description | 1 |
+
+**Removed taxonomy class.** SpectroscopicProperty is removed (its class block is commented out in `main.ttl`). Its only subclass, Spectra, now sits directly under MaterialProperty.
 
 **Deprecated taxonomy classes.** MagneticHysteresis, Photoluminescence, Grain, Morphology and ParticleShape carry `owl:deprecated true` and a `skos:historyNote` (block `DEPRECATED TAXONOMY CLASSES` at the end of `main.ttl`). They keep their IRIs and have no binding.
 
